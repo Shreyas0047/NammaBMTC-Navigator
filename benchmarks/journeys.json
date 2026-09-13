@@ -1,0 +1,222 @@
+[
+  {
+    "id": "journey_01_corp_to_bommasandra",
+    "name": "Corporation Circle to Bommasandra",
+    "type": "urban_directional_junction",
+    "origin": {
+      "name": "Corporation Circle (Origin)",
+      "lat": 12.9680,
+      "lon": 77.5880
+    },
+    "destination": {
+      "name": "Bommasandra Industrial Area",
+      "lat": 12.8160,
+      "lon": 77.6920
+    },
+    "expected": {
+      "primary_boarding_stop_id": "20728",
+      "primary_boarding_stop_name": "Corporation (Towards Subbiah Circle)",
+      "avoid_stop_ids": ["20725", "20727"],
+      "key_routes": ["365", "365-A", "365-D", "365-P", "368"]
+    },
+    "notes": "Nearest stops (20727, 20725) head towards KR Market / Majestic. Correct boarding point is 20728 towards Subbiah Circle/Hosur Road."
+  },
+  {
+    "id": "journey_02_silkboard_to_marathahalli",
+    "name": "Central Silk Board to Marathahalli Bridge (ORR)",
+    "type": "urban_multi_platform_hub",
+    "origin": {
+      "name": "Central Silk Board Junction (West Side)",
+      "lat": 12.9175,
+      "lon": 77.6225
+    },
+    "destination": {
+      "name": "Marathahalli Bridge",
+      "lat": 12.9555,
+      "lon": 77.7010
+    },
+    "expected": {
+      "primary_boarding_stop_id": "20707",
+      "primary_boarding_stop_name": "Central Silk Board (Towards Marathahalli)",
+      "avoid_stop_ids": ["35768"],
+      "key_routes": ["500-D", "500-A", "500-C", "500-CH", "MF-1"]
+    },
+    "notes": "Must direct user to the Marathahalli/ORR platform, avoiding the Electronic City flyover platform (35768)."
+  },
+  {
+    "id": "journey_03_silkboard_to_ecity",
+    "name": "Central Silk Board to Electronic City",
+    "type": "urban_directional_split",
+    "origin": {
+      "name": "Central Silk Board Junction",
+      "lat": 12.9175,
+      "lon": 77.6225
+    },
+    "destination": {
+      "name": "Electronic City Wipro Gate",
+      "lat": 12.8452,
+      "lon": 77.6602
+    },
+    "expected": {
+      "primary_boarding_stop_id": "35768",
+      "primary_boarding_stop_name": "Central Silk Board (Towards Electronic City)",
+      "avoid_stop_ids": ["20707"],
+      "key_routes": ["356-C", "356-M", "600-F", "360-B"]
+    },
+    "notes": "Direct user towards Hosur Road / Electronic City side stop."
+  },
+  {
+    "id": "journey_04_majestic_to_nelamangala",
+    "name": "Majestic to Nelamangala Bus Station",
+    "type": "rural_northwest_radial",
+    "origin": {
+      "name": "Kempegowda Bus Station (Majestic)",
+      "lat": 12.9775,
+      "lon": 77.5714
+    },
+    "destination": {
+      "name": "Nelamangala Bus Station",
+      "lat": 13.0970,
+      "lon": 77.3970
+    },
+    "expected": {
+      "primary_boarding_stop_id": "20921",
+      "primary_boarding_stop_name": "Kempegowda Bus Station (Towards Departure)",
+      "avoid_stop_ids": [],
+      "key_routes": ["258", "258-B", "258-C", "256"]
+    },
+    "notes": "Direct suburban highway route from Majestic to Nelamangala via Tumkur Road."
+  },
+  {
+    "id": "journey_05_krpuram_to_hosakote",
+    "name": "KR Puram to Hosakote Bus Stand",
+    "type": "rural_northeast_radial",
+    "origin": {
+      "name": "KR Puram Railway Station",
+      "lat": 13.0010,
+      "lon": 77.6760
+    },
+    "destination": {
+      "name": "Hosakote Bus Stand",
+      "lat": 13.0710,
+      "lon": 77.7980
+    },
+    "expected": {
+      "primary_boarding_stop_id": null,
+      "primary_boarding_stop_name": "KR Puram / ITI Gate (Towards Hosakote)",
+      "avoid_stop_ids": [],
+      "key_routes": ["307", "311", "311-E", "311-C"]
+    },
+    "notes": "Old Madras Road outbound radial to Hosakote rural satellite town."
+  },
+  {
+    "id": "journey_06_hebbal_to_devanahalli",
+    "name": "Hebbal to Devanahalli Town",
+    "type": "rural_north_airport_corridor",
+    "origin": {
+      "name": "Hebbal Flyover (Bellary Road)",
+      "lat": 13.0360,
+      "lon": 77.5975
+    },
+    "destination": {
+      "name": "Devanahalli Old Bus Stand",
+      "lat": 13.2480,
+      "lon": 77.7120
+    },
+    "expected": {
+      "primary_boarding_stop_id": null,
+      "primary_boarding_stop_name": "Hebbal (Towards Airport / Yelahanka)",
+      "avoid_stop_ids": [],
+      "key_routes": ["298-M", "298", "KIA-9"]
+    },
+    "notes": "North highway corridor past airport to Devanahalli."
+  },
+  {
+    "id": "journey_07_banashankari_to_harohalli",
+    "name": "Banashankari to Harohalli",
+    "type": "rural_south_radial",
+    "origin": {
+      "name": "Banashankari Bus Station",
+      "lat": 12.9155,
+      "lon": 77.5735
+    },
+    "destination": {
+      "name": "Harohalli",
+      "lat": 12.6680,
+      "lon": 77.4570
+    },
+    "expected": {
+      "primary_boarding_stop_id": null,
+      "primary_boarding_stop_name": "Banashankari Bus Station",
+      "avoid_stop_ids": [],
+      "key_routes": ["211", "211-G", "211-J", "211-P"]
+    },
+    "notes": "Kanakapura Road south suburban corridor into Ramanagara/Rural boundary."
+  },
+  {
+    "id": "journey_08_kengeri_to_bidadi",
+    "name": "Kengeri TTMC to Bidadi",
+    "type": "rural_southwest_radial",
+    "origin": {
+      "name": "Kengeri TTMC / Metro",
+      "lat": 12.9090,
+      "lon": 77.4850
+    },
+    "destination": {
+      "name": "Bidadi Bus Stand",
+      "lat": 12.7968,
+      "lon": 77.3850
+    },
+    "expected": {
+      "primary_boarding_stop_id": null,
+      "primary_boarding_stop_name": "Kengeri TTMC (Towards Bidadi)",
+      "avoid_stop_ids": [],
+      "key_routes": ["226", "226-N", "226-P", "227"]
+    },
+    "notes": "Mysuru Road outbound corridor to Bidadi industrial satellite town."
+  },
+  {
+    "id": "journey_09_indiranagar_to_itpl",
+    "name": "Indiranagar to ITPL Whitefield",
+    "type": "urban_east_radial",
+    "origin": {
+      "name": "Indiranagar 100ft Road / CMH Road",
+      "lat": 12.9750,
+      "lon": 77.6400
+    },
+    "destination": {
+      "name": "ITPL Whitefield",
+      "lat": 12.9860,
+      "lon": 77.7400
+    },
+    "expected": {
+      "primary_boarding_stop_id": null,
+      "primary_boarding_stop_name": "Indiranagar (Towards Whitefield)",
+      "avoid_stop_ids": [],
+      "key_routes": ["335-E", "333-P", "V-335E"]
+    },
+    "notes": "Direct eastbound tech corridor bus."
+  },
+  {
+    "id": "journey_10_yelahanka_to_doddaballapura",
+    "name": "Yelahanka NES to Doddaballapura",
+    "type": "rural_north_corridor",
+    "origin": {
+      "name": "Yelahanka NES",
+      "lat": 13.1010,
+      "lon": 77.5960
+    },
+    "destination": {
+      "name": "Doddaballapura Old Bus Stand",
+      "lat": 13.2930,
+      "lon": 77.5430
+    },
+    "expected": {
+      "primary_boarding_stop_id": null,
+      "primary_boarding_stop_name": "Yelahanka NES (Towards Doddaballapura)",
+      "avoid_stop_ids": [],
+      "key_routes": ["285", "285-M", "285-F"]
+    },
+    "notes": "Suburban northern link between Yelahanka and Doddaballapura."
+  }
+]

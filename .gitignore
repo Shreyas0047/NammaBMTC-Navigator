@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+
+# Transit Data
+data/raw/
+data/gtfs/
+*.zip
+*.tar.gz
+
+# Benchmarks & scratch
+scratch/
+.system_generated/

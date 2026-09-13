@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>BMTC Boarding Recommender</title>
+  <link rel="stylesheet" href="vendor/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="mobile-app">
+    <!-- Top Navigation -->
+    <header class="app-navbar">
+      <div class="nav-brand">
+        <div class="bmtc-pill">BMTC</div>
+        <div class="brand-text">
+          <h1>Boarding Point</h1>
+          <span class="city-tag">Bengaluru Urban & Rural</span>
+        </div>
+      </div>
+      <!-- Live GPS Pill -->
+      <button id="gps-status-pill" class="location-pill active" type="button" title="Click to refresh location">
+        <span class="radar-dot"></span>
+        <span id="gps-status-text">Live Location</span>
+      </button>
+    </header>
+
+    <!-- Location Context Bar -->
+    <div class="location-bar">
+      <div class="loc-info">
+        <span class="loc-label">STARTING FROM</span>
+        <div class="loc-val-row">
+          <span id="current-loc-display" class="loc-val">Detecting GPS location...</span>
+          <button id="edit-origin-btn" class="edit-btn" type="button">Change</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden Origin Edit Drawer/Modal -->
+    <div id="origin-edit-drawer" class="origin-drawer hidden">
+      <div class="drawer-header">
+        <span>Set Starting Location</span>
+        <button id="close-drawer-btn" class="close-btn" type="button">✕</button>
+      </div>
+      <div class="drawer-body">
+        <div class="search-box">
+          <input type="text" id="origin-search-input" placeholder="Type a bus stop or area..." autocomplete="off">
+          <button id="use-gps-trigger" class="action-btn" type="button">📍 Use GPS</button>
+        </div>
+        <div id="origin-suggestions" class="suggestions-dropdown hidden"></div>
+      </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="app-main">
+      <!-- Destination Search Section -->
+      <section class="search-section">
+        <div class="destination-search-card">
+          <label for="dest-search-input" class="search-label">WHERE ARE YOU GOING?</label>
+          <div class="search-input-wrapper">
+            <div class="search-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </div>
+            <input 
+              type="text" 
+              id="dest-search-input" 
+              placeholder="Search destination stop or area..." 
+              autocomplete="off"
+            />
+            <button id="clear-dest-btn" class="clear-btn hidden" type="button">✕</button>
+          </div>
+          <div id="dest-suggestions" class="suggestions-dropdown hidden"></div>
+        </div>
+
+        <!-- Popular Destinations Grid -->
+        <div class="popular-section">
+          <span class="section-title">POPULAR HUBS</span>
+          <div class="hubs-grid">
+            <button class="hub-card" data-lat="12.9775" data-lon="77.5714" data-name="Kempegowda Bus Station (Majestic)">
+              <span class="hub-icon">🏢</span>
+              <div class="hub-info">
+                <span class="hub-name">Majestic</span>
+                <span class="hub-sub">Central Terminal</span>
+              </div>
+            </button>
+            <button class="hub-card" data-lat="12.9175" data-lon="77.6225" data-name="Central Silk Board">
+              <span class="hub-icon">🔴</span>
+              <div class="hub-info">
+                <span class="hub-name">Silk Board</span>
+                <span class="hub-sub">Hosur Rd / ORR</span>
+              </div>
+            </button>
+            <button class="hub-card" data-lat="12.8160" data-lon="77.6920" data-name="Bommasandra Industrial Area">
+              <span class="hub-icon">🏭</span>
+              <div class="hub-info">
+                <span class="hub-name">Bommasandra</span>
+                <span class="hub-sub">Hosur Highway</span>
+              </div>
+            </button>
+            <button class="hub-card" data-lat="12.8452" data-lon="77.6602" data-name="Electronic City Wipro Gate">
+              <span class="hub-icon">💼</span>
+              <div class="hub-info">
+                <span class="hub-name">Electronic City</span>
+                <span class="hub-sub">Phase 1 & 2</span>
+              </div>
+            </button>
+            <button class="hub-card" data-lat="12.9860" data-lon="77.7400" data-name="ITPL Whitefield">
+              <span class="hub-icon">💻</span>
+              <div class="hub-info">
+                <span class="hub-name">ITPL Whitefield</span>
+                <span class="hub-sub">Tech Corridor</span>
+              </div>
+            </button>
+            <button class="hub-card" data-lat="13.0970" data-lon="77.3970" data-name="Nelamangala Bus Station">
+              <span class="hub-icon">🌾</span>
+              <div class="hub-info">
+                <span class="hub-name">Nelamangala</span>
+                <span class="hub-sub">Tumkur Highway</span>
+              </div>
+            </button>
+            <button class="hub-card" data-lat="13.0710" data-lon="77.7980" data-name="Hosakote Bus Stand">
+              <span class="hub-icon">🌾</span>
+              <div class="hub-info">
+                <span class="hub-name">Hosakote</span>
+                <span class="hub-sub">Old Madras Rd</span>
+              </div>
+            </button>
+            <button class="hub-card" data-lat="13.2480" data-lon="77.7120" data-name="Devanahalli Old Bus Stand">
+              <span class="hub-icon">✈️</span>
+              <div class="hub-info">
+                <span class="hub-name">Devanahalli / KIA</span>
+                <span class="hub-sub">Airport North</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Big Primary Action Button -->
+        <button id="find-action-btn" class="main-action-btn" type="button">
+          <span>Recommend My Boarding Point</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </section>
+
+      <!-- Status Alerts -->
+      <div id="status-card" class="status-card hidden"></div>
+
+      <!-- Skeleton Loading View -->
+      <section id="skeleton-view" class="skeleton-view hidden" aria-label="Calculating best boarding stop">
+        <div class="skeleton-header">
+          <div class="skeleton skeleton-badge"></div>
+          <div class="skeleton skeleton-sub"></div>
+        </div>
+        <div class="skeleton-card">
+          <!-- Skeleton Origin Step -->
+          <div class="skeleton-step">
+            <div class="skeleton skeleton-node"></div>
+            <div class="skeleton-text-group">
+              <div class="skeleton skeleton-meta"></div>
+              <div class="skeleton skeleton-title" style="width: 140px;"></div>
+            </div>
+          </div>
+          <!-- Skeleton Walking Directive -->
+          <div class="skeleton-directive">
+            <div class="skeleton-walk-line"></div>
+            <div class="skeleton skeleton-pill"></div>
+          </div>
+          <!-- Skeleton Boarding Hub Box -->
+          <div class="skeleton-boarding">
+            <div class="skeleton skeleton-stop-title"></div>
+            <div class="skeleton skeleton-tag"></div>
+            <div class="skeleton skeleton-map">
+              <div class="skeleton-map-radar"></div>
+              <span class="skeleton-map-label">Calculating walking path...</span>
+            </div>
+            <div class="skeleton skeleton-btn"></div>
+            <div class="skeleton-routes">
+              <div class="skeleton skeleton-route-item"></div>
+              <div class="skeleton skeleton-route-item"></div>
+            </div>
+          </div>
+          <!-- Skeleton Transit Directive -->
+          <div class="skeleton-directive" style="margin-top: 10px; margin-bottom: 8px;">
+            <div class="skeleton-transit-line"></div>
+            <div class="skeleton skeleton-pill" style="width: 160px;"></div>
+          </div>
+          <!-- Skeleton Destination Step -->
+          <div class="skeleton-step">
+            <div class="skeleton skeleton-node dest-skeleton-node"></div>
+            <div class="skeleton-text-group">
+              <div class="skeleton skeleton-meta"></div>
+              <div class="skeleton skeleton-title" style="width: 190px;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Recommendation Journey Section -->
+      <section id="result-view" class="result-view hidden">
+        <div class="result-header">
+          <span id="result-badge-text" class="result-badge">PRIMARY RECOMMENDATION</span>
+          <span id="result-time-stamp" class="result-timestamp">Destination-Aware Match</span>
+        </div>
+
+        <!-- Visual Journey Stepper Card -->
+        <div class="journey-card">
+          <!-- Step 1: Origin -->
+          <div class="journey-step origin-step">
+            <div class="step-marker">
+              <div class="marker-circle origin-circle"></div>
+              <div class="connector-line walk-line"></div>
+            </div>
+            <div class="step-details">
+              <span class="step-meta">STARTING POINT</span>
+              <h4 class="step-heading" id="journey-origin-title">Your Current Location</h4>
+            </div>
+          </div>
+
+          <!-- Walk Directive Banner in Timeline -->
+          <div class="timeline-directive">
+            <div class="walk-pill">
+              <span class="walk-ico">🚶</span>
+              <span class="walk-label" id="timeline-walk-text">Walk 250 m (~3 min)</span>
+            </div>
+          </div>
+
+          <!-- Step 2: The Recommended Boarding Stop -->
+          <div class="journey-step boarding-step">
+            <div class="step-marker">
+              <div class="marker-circle boarding-circle"></div>
+              <div class="connector-line transit-line"></div>
+            </div>
+            <div class="step-details">
+              <div class="boarding-header">
+                <span id="boarding-tag-label" class="boarding-tag">BOARD YOUR BUS HERE</span>
+              </div>
+              <h3 class="boarding-title" id="rec-stop-name">Corporation Circle</h3>
+              <div class="direction-callout" id="rec-stop-desc">
+                <span class="dir-icon">📍</span>
+                <span class="dir-text">Towards Subbiah Circle</span>
+              </div>
+
+              <!-- Live Walking Radar & Navigation Section -->
+              <div class="walking-navigation-box">
+                <div class="nav-status-header">
+                  <div class="distance-badge">
+                    <span class="pulse-icon">🚶</span>
+                    <span id="live-distance-countdown">Walk 250 m (~3 min)</span>
+                  </div>
+                  <span id="arrival-status-pill" class="arrival-pill hidden">Arrived at Stop!</span>
+                </div>
+
+                <!-- Interactive Mini Map Canvas -->
+                <div id="walking-map-container" class="map-container">
+                  <div id="walking-map"></div>
+                  <button id="recenter-map-btn" class="map-recenter-btn" type="button" title="Center on your route">🎯 Re-center</button>
+                </div>
+
+                <!-- Native 1-Tap Walking Navigation Button -->
+                <a id="native-nav-btn" class="native-nav-btn" href="#" target="_blank" rel="noopener">
+                  <div class="nav-btn-content">
+                    <span class="btn-icon">🧭</span>
+                    <div class="btn-text-group">
+                      <span class="btn-primary-text">Start Walking Navigation</span>
+                      <span class="btn-sub-text">Opens Google Maps walking turn-by-turn</span>
+                    </div>
+                  </div>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                  </svg>
+                </a>
+              </div>
+
+              <!-- Route Options Box (Leg 1) -->
+              <div class="buses-box">
+                <span id="leg1-box-caption" class="box-caption">CATCH ANY OF THESE SERVICES</span>
+                <div id="rec-routes-list" class="buses-list">
+                  <!-- Injected dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 1st Transfer Interchange Step -->
+          <div id="transfer-step-box" class="journey-step transfer-step hidden">
+            <div class="step-marker">
+              <div class="marker-circle transfer-circle">⇄</div>
+              <div class="connector-line transit-line"></div>
+            </div>
+            <div class="step-details transfer-details">
+              <div class="transfer-tag" id="transfer1-tag-label">INTERCHANGE 1 • CHANGE BUS HERE</div>
+              <h4 class="transfer-title" id="transfer-hub-name">Kempegowda Bus Station (Majestic)</h4>
+              <div class="transfer-desc" id="transfer-hub-desc">Towards Bommasandra / Hosur Road</div>
+              <div class="buses-box leg2-box">
+                <span class="box-caption" id="leg2-box-caption">BOARD CONNECTING BUS (LEG 2)</span>
+                <div id="rec-leg2-routes-list" class="buses-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Optional 2nd Transfer Interchange Step (When transfers_count >= 2) -->
+          <div id="transfer2-step-box" class="journey-step transfer-step hidden">
+            <div class="step-marker">
+              <div class="marker-circle transfer-circle" style="background-color: #EA580C; box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.25);">⇄</div>
+              <div class="connector-line transit-line"></div>
+            </div>
+            <div class="step-details transfer-details" style="background-color: #FFF7ED !important; border-color: #FED7AA !important;">
+              <div class="transfer-tag" style="background-color: #FFEDD5; color: #C2410C;">INTERCHANGE 2 • CHANGE BUS HERE</div>
+              <h4 class="transfer-title" id="transfer2-hub-name" style="color: #9A3412;">Lakkasandra / Dairy Circle</h4>
+              <div class="transfer-desc" id="transfer2-hub-desc" style="color: #7C2D12;">Towards Destination</div>
+              <div class="buses-box leg2-box" style="border-top-color: #FED7AA !important;">
+                <span class="box-caption" style="color: #C2410C;">BOARD FINAL BUS (LEG 3)</span>
+                <div id="rec-leg3-routes-list" class="buses-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Transit Travel Line Banner -->
+          <div class="timeline-directive transit-directive">
+            <div class="transit-pill">
+              <span class="bus-ico">🚌</span>
+              <span class="transit-label" id="timeline-transit-text">Direct BMTC Bus Route</span>
+            </div>
+          </div>
+
+          <!-- Step 3: Destination Alighting Stop -->
+          <div class="journey-step destination-step">
+            <div class="step-marker">
+              <div class="marker-circle destination-circle"></div>
+            </div>
+            <div class="step-details">
+              <span class="step-meta">GET DOWN / ALIGHT AT</span>
+              <h4 class="step-heading" id="rec-dest-stop">Bommasandra Industrial Area</h4>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alternative Boarding Points Accordion -->
+        <div class="alternatives-accordion">
+          <button id="toggle-alts-btn" class="accordion-trigger" type="button">
+            <div class="acc-left">
+              <span class="acc-icon">⇄</span>
+              <span id="alts-count-label">Other Nearby Boarding Stops (2)</span>
+            </div>
+            <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          
+          <div id="alternatives-container" class="accordion-content hidden">
+            <!-- Alternative cards injected dynamically -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Clean Footer -->
+    <footer class="app-footer">
+      <div class="footer-badge">BMTC TRANSIT RECOG ENGINE</div>
+      <p>Official Bengaluru Urban & Rural GTFS • Open Database License (ODbL 1.0)</p>
+    </footer>
+  </div>
+
+  <script src="vendor/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
