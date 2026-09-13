@@ -49,12 +49,26 @@ def build_db(force: bool = False):
         CREATE TABLE stops (
             stop_id TEXT PRIMARY KEY,
             stop_name TEXT NOT NULL,
+            cluster_name TEXT,
             stop_desc TEXT,
             stop_lat REAL NOT NULL,
             stop_lon REAL NOT NULL,
             zone_id TEXT
         );
     """)
+    import re
+
+    def compute_cluster(name: str) -> str:
+        n = name.strip()
+        n = re.sub(r'^CS-', '', n)
+        n = re.sub(r'\s*-\s*Platform\s*[0-9A-Za-z.\s]+', '', n, flags=re.IGNORECASE)
+        m = re.sub(r'\s*\([^)]*\)', '', n).strip()
+        if m:
+            n = m
+        n = re.sub(r'\bK\.R\.Market\b', 'KR Market', n, flags=re.IGNORECASE)
+        n = re.sub(r'\bYeshawanthapura\b', 'Yeshwanthpur', n, flags=re.IGNORECASE)
+        return n.strip()
+
     stops_file = os.path.join(GTFS_DIR, "stops.txt")
     with open(stops_file, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
@@ -62,6 +76,7 @@ def build_db(force: bool = False):
             (
                 r["stop_id"].strip(),
                 r["stop_name"].strip(),
+                compute_cluster(r["stop_name"]),
                 r.get("stop_desc", "").strip(),
                 float(r["stop_lat"]),
                 float(r["stop_lon"]),
@@ -70,7 +85,7 @@ def build_db(force: bool = False):
             for r in reader
             if r.get("stop_lat") and r.get("stop_lon")
         ]
-        cur.executemany("INSERT INTO stops VALUES (?, ?, ?, ?, ?, ?);", stop_rows)
+        cur.executemany("INSERT INTO stops VALUES (?, ?, ?, ?, ?, ?, ?);", stop_rows)
     print(f"  Inserted {len(stop_rows):,} stops.")
 
     # 2. Routes table
@@ -151,6 +166,7 @@ def build_db(force: bool = False):
     # 5. Create Indexes
     print("  Creating indices for fast lookups...")
     cur.execute("CREATE INDEX idx_stops_lat_lon ON stops (stop_lat, stop_lon);")
+    cur.execute("CREATE INDEX idx_stops_cluster ON stops (cluster_name);")
     cur.execute("CREATE INDEX idx_trips_route ON trips (route_id);")
     cur.execute("CREATE INDEX idx_st_stop_trip ON stop_times (stop_id, trip_id);")
     cur.execute("CREATE INDEX idx_st_trip_seq ON stop_times (trip_id, stop_sequence);")
