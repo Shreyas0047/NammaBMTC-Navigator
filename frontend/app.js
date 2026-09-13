@@ -543,21 +543,103 @@ function renderJourney(data) {
     altsCountLabel.textContent = `Other Nearby Boarding Stops (${alts.length})`;
 
     alternativesContainer.innerHTML = alts
-      .map(
-        (alt, i) => `
-        <div class="alt-card">
-          <div class="alt-top">
-            <span class="alt-title">#${i + 2}. ${alt.stop_name}</span>
-            <span class="alt-dist">${alt.walk_distance_m}m walk</span>
+      .map((alt, i) => {
+        const leg1Routes = (alt.leg1_routes && alt.leg1_routes.length > 0) ? alt.leg1_routes : (alt.routes || []);
+        const tagClass = alt.transfers_count === 2 ? 'tag-two-transfer' : (alt.transfers_count === 1 ? 'tag-one-transfer' : 'tag-direct');
+        let tagText = 'DIRECT BMTC BUS ROUTE';
+        if (alt.transfers_count === 2) {
+          tagText = `2 TRANSFERS • VIA ${(alt.transfer_stop_name || 'HUB 1').toUpperCase()} & ${(alt.transfer2_stop_name || 'HUB 2').toUpperCase()}`;
+        } else if (alt.transfers_count === 1) {
+          tagText = `1 TRANSFER • VIA ${(alt.transfer_stop_name || 'HUB').toUpperCase()}`;
+        }
+
+        const altMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${state.origin.lat},${state.origin.lon}&destination=${alt.lat},${alt.lon}&travelmode=walking`;
+
+        return `
+        <div class="alt-journey-card" data-idx="${i}">
+          <div class="alt-card-header">
+            <span class="alt-rank-tag">OPTION #${i + 2}</span>
+            <div class="alt-walk-badge">
+              <span>🚶</span>
+              <span>Walk ${alt.walk_distance_m} m (~${alt.walk_duration_min} min)</span>
+            </div>
           </div>
-          <div class="alt-desc">${alt.stop_desc || ""}</div>
-          <div class="alt-buses">
-            Available: ${(alt.routes || alt.leg1_routes || []).slice(0, 3).map((r) => `<b>${r.route}</b>`).join(", ")}
+
+          <h4 class="alt-stop-name">${alt.stop_name}</h4>
+          ${alt.stop_desc ? `
+            <div class="alt-dir-callout">
+              <span class="dir-icon">📍</span>
+              <span class="dir-text">${alt.stop_desc}</span>
+            </div>
+          ` : ''}
+
+          <div class="alt-service-tag ${tagClass}">${tagText}</div>
+
+          <!-- Leg 1 Routes -->
+          <div class="alt-buses-section">
+            <span class="box-caption">${alt.transfers_count > 0 ? 'LEG 1: CATCH ANY TO INTERCHANGE' : 'CATCH ANY OF THESE SERVICES'}</span>
+            <div class="buses-list">
+              ${leg1Routes.slice(0, 3).map(r => `
+                <div class="route-row">
+                  <div class="route-ident">
+                    <span class="route-pill">${r.route}</span>
+                    <span class="route-headsign">Towards ${r.towards}</span>
+                  </div>
+                  <span class="route-frequency">${r.trips_per_day} buses/day</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Transfer Interchange Details (If Applicable) -->
+          ${alt.transfers_count >= 1 ? `
+            <div class="alt-transfer-summary">
+              <div class="alt-transfer-step">
+                <span class="hub-pill">⇄ Interchange 1</span>
+                <span class="hub-title">${alt.transfer_stop_name}</span>
+                ${(alt.leg2_routes && alt.leg2_routes.length > 0) ? `
+                  <div class="alt-sub-routes">Connecting buses: ${alt.leg2_routes.slice(0, 3).map(r => `<b>${r.route}</b> (${r.trips_per_day}/day)`).join(', ')}</div>
+                ` : ''}
+              </div>
+              ${alt.transfers_count === 2 ? `
+                <div class="alt-transfer-step" style="margin-top: 8px; border-top: 1px dashed #FDE68A; padding-top: 6px;">
+                  <span class="hub-pill" style="background-color: #FFEDD5; color: #C2410C;">⇄ Interchange 2</span>
+                  <span class="hub-title" style="color: #9A3412;">${alt.transfer2_stop_name}</span>
+                  ${(alt.leg3_routes && alt.leg3_routes.length > 0) ? `
+                    <div class="alt-sub-routes" style="color: #7C2D12;">Final connecting buses: ${alt.leg3_routes.slice(0, 3).map(r => `<b>${r.route}</b> (${r.trips_per_day}/day)`).join(', ')}</div>
+                  ` : ''}
+                </div>
+              ` : ''}
+            </div>
+          ` : ''}
+
+          <!-- Action Buttons -->
+          <div class="alt-action-row">
+            <button class="select-alt-btn" type="button" data-idx="${i}">
+              <span>🎯 Make This My Boarding Stop</span>
+            </button>
+            <a class="alt-maps-btn" href="${altMapsUrl}" target="_blank" rel="noopener" title="Open Google Maps Walking Navigation">
+              <span>🧭 Walk GPS</span>
+            </a>
           </div>
         </div>
-      `
-      )
-      .join("");
+      `;
+      }).join("");
+
+    // Wire switcher buttons
+    alternativesContainer.querySelectorAll(".select-alt-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.dataset.idx, 10);
+        if (!isNaN(idx) && data.alternatives && data.alternatives[idx]) {
+          const selectedAlt = data.alternatives[idx];
+          const oldPrimary = data.primary;
+          data.primary = selectedAlt;
+          data.alternatives[idx] = oldPrimary;
+          renderJourney(data);
+          resultView.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+    });
   } else {
     toggleAltsBtn.classList.add("hidden");
     alternativesContainer.classList.add("hidden");
