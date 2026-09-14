@@ -3,7 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>BMTC Boarding Recommender</title>
+  <title>NammaBMTC Navigator – BMTC Bus Route Finder & Boarding Point Recommender Bengaluru</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Find the exact BMTC bus boarding stop, real-time connecting bus transfers, walking directions, and direct routes across Bengaluru Urban and Rural. Fast, zero-hallucination transit navigation.">
+  <meta name="keywords" content="BMTC, BMTC bus routes, Bengaluru bus route finder, Bangalore bus timings, BMTC connecting bus, BMTC transfer routes, Namma BMTC, BMTC boarding point, Majestic bus stand, Silk Board bus routes, Bangalore transit">
+  <meta name="author" content="NammaBMTC Transit">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#1b5e20">
+  <link rel="canonical" href="https://nammabmtc.app/">
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Open Graph / Facebook / WhatsApp -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://nammabmtc.app/">
+  <meta property="og:title" content="NammaBMTC Navigator – Bengaluru Bus & Boarding Point Guide">
+  <meta property="og:description" content="Find exact BMTC boarding stops, multi-transfer bus connections, and street walking directions across Bengaluru.">
+  <meta property="og:locale" content="en_IN">
+  <meta property="og:site_name" content="NammaBMTC Navigator">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="NammaBMTC Navigator – BMTC Bus Route Finder">
+  <meta name="twitter:description" content="Find exact BMTC boarding stops and connecting bus routes across Bengaluru Urban & Rural.">
+
+  <!-- Structured Data: Schema.org WebApplication / TransitApp -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "NammaBMTC Navigator",
+    "alternateName": ["BMTC Boarding Recommender", "Namma BMTC Bus Route Finder", "Bangalore Bus Guide"],
+    "url": "https://nammabmtc.app/",
+    "description": "Destination-aware BMTC boarding point recommender and multi-transfer bus route guide for Bengaluru Urban and Rural.",
+    "applicationCategory": "TravelApplication",
+    "operatingSystem": "All",
+    "areaServed": {
+      "@type": "AdministrativeArea",
+      "name": "Bengaluru, Karnataka, India"
+    },
+    "provider": {
+      "@type": "Organization",
+      "name": "NammaBMTC Transit Guide"
+    }
+  }
+  </script>
+
   <link rel="stylesheet" href="vendor/leaflet.css">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,7 +62,7 @@
       <div class="nav-brand">
         <div class="bmtc-pill">BMTC</div>
         <div class="brand-text">
-          <h1>Boarding Point</h1>
+          <h1>NammaBMTC <span class="nav-sub">Navigator</span></h1>
           <span class="city-tag">Bengaluru Urban & Rural</span>
         </div>
       </div>

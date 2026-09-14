@@ -19,8 +19,8 @@ from engine.db import get_db_connection
 from engine.ranker import rank_boarding_points
 
 app = FastAPI(
-    title="BMTC Boarding Point Recommender",
-    description="Destination-aware transit boarding recommendations for Bengaluru",
+    title="NammaBMTC Navigator API",
+    description="Destination-aware BMTC transit boarding and multi-transfer routing recommendations for Bengaluru Urban & Rural",
     version="1.0.0",
 )
 

@@ -94,6 +94,12 @@ body {
   color: #FFFFFF;
 }
 
+.brand-text h1 .nav-sub {
+  font-weight: 600;
+  color: #E2E8F0;
+  font-size: 14px;
+}
+
 .city-tag {
   font-size: 11px;
   color: #CBD5E1;
