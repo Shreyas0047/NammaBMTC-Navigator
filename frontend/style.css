@@ -558,10 +558,11 @@ body {
   background: var(--bg-card);
   border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 11px 13px;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 8px;
   cursor: pointer;
   text-align: left;
   transition: all 0.2s var(--ease-spring);
@@ -571,7 +572,7 @@ body {
 }
 
 .hub-card:hover {
-  border-color: var(--bmtc-green-soft);
+  border-color: var(--bmtc-green-light);
   background: var(--bmtc-green-tint);
   box-shadow: var(--shadow-card);
   transform: translateY(-2px);
@@ -590,22 +591,26 @@ body {
 .hub-card.active::after {
   content: '✓';
   position: absolute;
-  top: 6px;
-  right: 8px;
+  top: 7px;
+  right: 10px;
   font-size: 12px;
   font-weight: 900;
   color: var(--bmtc-green);
 }
 
-.hub-icon {
-  font-size: 22px;
-  transition: transform 0.25s var(--ease-bounce);
+.hub-arrow {
+  color: var(--text-muted);
+  transition: transform 0.2s ease, color 0.2s ease;
   flex-shrink: 0;
 }
 
-.hub-card:hover .hub-icon,
-.hub-card:active .hub-icon {
-  transform: scale(1.18);
+.hub-card:hover .hub-arrow {
+  color: var(--bmtc-green);
+  transform: translateX(3px);
+}
+
+.hub-card.active .hub-arrow {
+  visibility: hidden;
 }
 
 .hub-info {
