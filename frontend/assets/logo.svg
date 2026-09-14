@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="navBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="60%" stop-color="#047857" />
+      <stop offset="100%" stop-color="#064E3B" />
+    </linearGradient>
+    <!-- Accent Gradient -->
+    <linearGradient id="redAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F43F5E" />
+      <stop offset="100%" stop-color="#BE123C" />
+    </linearGradient>
+    <linearGradient id="goldGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCD34D" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+    <!-- Shadow Filter -->
+    <filter id="logoGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- Base Rounded Shield / App Icon Container -->
+  <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#navBgGrad)" filter="url(#logoGlow)" />
+  <rect x="2" y="2" width="44" height="44" rx="12" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" />
+
+  <!-- Dynamic Transit Route Arc (representing navigation & connectivity) -->
+  <path d="M 8,36 C 14,24 24,14 40,11" fill="none" stroke="url(#goldGlow)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2 3" opacity="0.85" />
+
+  <!-- BMTC Bus Emblem Front Face -->
+  <g transform="translate(11, 10)">
+    <!-- Bus Body Shell -->
+    <rect x="2" y="3" width="22" height="24" rx="5" fill="#FFFFFF" />
+    
+    <!-- Top Destination Board Header -->
+    <rect x="4.5" y="5" width="17" height="4.5" rx="1.5" fill="#1E293B" />
+    <rect x="7" y="6.2" width="12" height="2" rx="0.8" fill="url(#goldGlow)" />
+    
+    <!-- Windshield Glass -->
+    <path d="M 4.5 11 L 21.5 11 C 21.8 11, 22 11.4, 21.8 12.2 L 21 16.5 C 20.8 17, 20.2 17.5, 19.5 17.5 L 6.5 17.5 C 5.8 17.5, 5.2 17, 5 16.5 L 4.2 12.2 C 4 11.4, 4.2 11, 4.5 11 Z" fill="#0EA5E9" opacity="0.9" />
+    <!-- Windshield Reflection -->
+    <path d="M 6 12 L 10 12 L 8 16.5 L 5.5 16.5 Z" fill="#FFFFFF" opacity="0.5" />
+
+    <!-- BMTC Heritage Red Chest Band -->
+    <rect x="2" y="18.5" width="22" height="3" fill="url(#redAccent)" />
+
+    <!-- Twin LED Headlights -->
+    <circle cx="5.5" cy="23" r="1.6" fill="#FBBF24" />
+    <circle cx="20.5" cy="23" r="1.6" fill="#FBBF24" />
+
+    <!-- Center Grille & Emblem Dot -->
+    <rect x="9.5" y="22" width="7" height="1.8" rx="0.9" fill="#94A3B8" />
+    <circle cx="13" cy="20" r="1.2" fill="#FFFFFF" />
+
+    <!-- Wheels -->
+    <rect x="3.5" y="27" width="4" height="2.5" rx="1" fill="#0F172A" />
+    <rect x="18.5" y="27" width="4" height="2.5" rx="1" fill="#0F172A" />
+  </g>
+
+  <!-- Sleek Waypoint Pin Badge (Upper Right) -->
+  <g transform="translate(30, 6)">
+    <circle cx="6" cy="6" r="6" fill="url(#redAccent)" filter="url(#logoGlow)" />
+    <circle cx="6" cy="6" r="5" fill="none" stroke="#FFFFFF" stroke-width="1.2" />
+    <!-- Inner Compass / Location Point -->
+    <path d="M 6 3.5 L 8.2 8.5 L 6 7.3 L 3.8 8.5 Z" fill="#FFFFFF" />
+  </g>
+</svg>
