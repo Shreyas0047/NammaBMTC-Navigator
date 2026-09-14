@@ -339,7 +339,10 @@
                 <!-- Interactive Mini Map Canvas -->
                 <div id="walking-map-container" class="map-container">
                   <div id="walking-map"></div>
-                  <button id="recenter-map-btn" class="map-recenter-btn" type="button" title="Center on your route">🎯 Re-center</button>
+                  <div class="map-controls-row">
+                    <button id="recenter-map-btn" class="map-recenter-btn" type="button" title="Center on your route">🎯 Route</button>
+                    <button id="map-live-buses-btn" class="map-recenter-btn map-bus-btn" type="button" title="Toggle Live Buses on Map">🚍 Live Buses (<span id="map-bus-count">0</span>)</button>
+                  </div>
                 </div>
 
                 <!-- Native 1-Tap Walking Navigation Button -->

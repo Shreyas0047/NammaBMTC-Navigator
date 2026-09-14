@@ -64,6 +64,7 @@ let telemetryIntervalId = null;
 let liveBusMarkers = [];
 let showLiveBusesOnMap = false;
 let currentTelemetryParams = null;
+let latestTelemetryData = null;
 
 const liveTelemetryBox = document.getElementById("live-bus-telemetry-box");
 const telemetryStatusTitle = document.getElementById("telemetry-status-title");
@@ -966,6 +967,7 @@ async function pollLiveBusTelemetry() {
     const resp = await fetch(url);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
+    latestTelemetryData = data;
 
     renderLiveBusTelemetry(data);
   } catch (err) {
@@ -1096,45 +1098,123 @@ function updateLiveBusMapMarkers(approachingBuses, allBuses) {
 
   clearLiveBusMarkers();
 
-  const busesToPlot = showLiveBusesOnMap ? allBuses : approachingBuses;
+  const hasApproaching = approachingBuses && approachingBuses.length > 0;
+  const hasAll = allBuses && allBuses.length > 0;
+
+  // Decide buses to plot: if user toggled on, plot all active buses.
+  // Otherwise, plot approaching buses if available; if approaching is empty, plot all active buses so the map is never empty!
+  let busesToPlot = [];
+  if (showLiveBusesOnMap) {
+    busesToPlot = hasAll ? allBuses : (hasApproaching ? approachingBuses : []);
+  } else {
+    busesToPlot = hasApproaching ? approachingBuses : (hasAll ? allBuses : []);
+  }
+
+  const mapBusCountEl = document.getElementById("map-bus-count");
+  if (mapBusCountEl) {
+    const totalCount = hasAll ? allBuses.length : (hasApproaching ? approachingBuses.length : 0);
+    mapBusCountEl.textContent = totalCount;
+  }
+
   if (!busesToPlot || busesToPlot.length === 0) return;
 
   busesToPlot.forEach((b, idx) => {
     if (!b.lat || !b.lon) return;
 
-    const isNearest = idx === 0 && approachingBuses.length > 0 && b.vehicle === approachingBuses[0].vehicle;
+    const isNearest = (hasApproaching && b.vehicle === approachingBuses[0].vehicle) || idx === 0;
+    const etaText = b.eta_mins ? `~${b.eta_mins}m` : "";
     const markerHtml = `
       <div class="bus-marker-pin ${isNearest ? 'is-nearest' : ''}">
-        <span>🚍</span>
-        <span>${b.vehicle}</span>
+        <span style="font-size: 13px;">🚍</span>
+        <span style="font-family: var(--font-mono); font-weight: 800;">${b.vehicle}</span>
+        ${etaText ? `<span style="font-size: 10px; background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 3px;">${etaText}</span>` : ""}
       </div>
     `;
 
     const icon = L.divIcon({
       className: "custom-bus-marker",
       html: markerHtml,
-      iconSize: [90, 24],
-      iconAnchor: [45, 12],
+      iconSize: [110, 26],
+      iconAnchor: [55, 13],
     });
 
-    const marker = L.marker([b.lat, b.lon], { icon }).addTo(mapInstance);
+    const marker = L.marker([b.lat, b.lon], { icon, zIndexOffset: isNearest ? 1000 : 500 }).addTo(mapInstance);
     marker.bindPopup(`
-      <div style="font-family: system-ui, -apple-system, sans-serif; font-size: 12px; line-height: 1.4;">
-        <div style="font-weight: 800; color: #065F46; font-size: 13px;">🚍 BMTC ${b.vehicle}</div>
-        <div><b>Type:</b> ${b.type || "Ordinary"}</div>
+      <div style="font-family: var(--font-sans); font-size: 12px; line-height: 1.4; padding: 2px;">
+        <div style="font-weight: 800; color: #065F46; font-size: 13px; font-family: var(--font-mono);">🚍 BMTC ${b.vehicle}</div>
+        <div style="margin-top: 3px;"><b>Type:</b> ${b.type || "Ordinary"}</div>
         <div><b>Distance:</b> ${b.dist_km} km to stop</div>
-        <div><b>ETA:</b> ~${b.eta_mins} min</div>
-        ${b.last_updated ? `<div style="color: #64748B; font-size: 10.5px; margin-top: 4px;">GPS Ping: ${b.last_updated}</div>` : ''}
+        <div><b>Live ETA:</b> <span style="font-weight: 800; color: #059669;">~${b.eta_mins} min</span></div>
+        ${b.last_updated ? `<div style="color: #64748B; font-size: 10.5px; margin-top: 4px;">Satellite Ping: ${b.last_updated}</div>` : ""}
       </div>
     `);
 
     liveBusMarkers.push(marker);
   });
 
-  // If user requested to view buses on map, zoom out to show buses
   if (showLiveBusesOnMap && liveBusMarkers.length > 0 && userMarker && stopMarker) {
     const group = new L.featureGroup([userMarker, stopMarker, ...liveBusMarkers]);
-    mapInstance.fitBounds(group.getBounds(), { padding: [40, 40], maxZoom: 16 });
+    mapInstance.fitBounds(group.getBounds(), { padding: [45, 45], maxZoom: 15 });
+  }
+}
+
+function toggleShowLiveBusesOnMap() {
+  showLiveBusesOnMap = !showLiveBusesOnMap;
+
+  if (toggleBusMapBtn) {
+    toggleBusMapBtn.classList.toggle("active", showLiveBusesOnMap);
+    toggleBusMapBtn.querySelector("span").textContent = showLiveBusesOnMap
+      ? "🗺️ Focus on Walking Route"
+      : "🚍 Show Live Buses on Map";
+  }
+
+  const mapBusQuickBtn = document.getElementById("map-live-buses-btn");
+  if (mapBusQuickBtn) {
+    mapBusQuickBtn.classList.toggle("active", showLiveBusesOnMap);
+  }
+
+  const mapContainer = document.getElementById("walking-map-container");
+  if (mapContainer) {
+    if (showLiveBusesOnMap) {
+      mapContainer.classList.add("expanded");
+    } else {
+      mapContainer.classList.remove("expanded");
+    }
+  }
+
+  setTimeout(() => {
+    if (mapInstance) {
+      mapInstance.invalidateSize();
+    }
+  }, 150);
+
+  if (latestTelemetryData) {
+    updateLiveBusMapMarkers(
+      latestTelemetryData.approaching_buses || [],
+      latestTelemetryData.all_active_buses || []
+    );
+  } else if (currentTelemetryParams) {
+    pollLiveBusTelemetry();
+  }
+
+  if (showLiveBusesOnMap) {
+    if (mapContainer) {
+      mapContainer.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    setTimeout(() => {
+      if (mapInstance && liveBusMarkers.length > 0 && userMarker && stopMarker) {
+        const group = new L.featureGroup([userMarker, stopMarker, ...liveBusMarkers]);
+        mapInstance.fitBounds(group.getBounds(), { padding: [45, 45], maxZoom: 15 });
+        if (liveBusMarkers[0]) {
+          liveBusMarkers[0].openPopup();
+        }
+      }
+    }, 250);
+  } else {
+    if (mapInstance && userMarker && stopMarker) {
+      const group = new L.featureGroup([userMarker, stopMarker]);
+      mapInstance.fitBounds(group.getBounds(), { padding: [35, 35], maxZoom: 17 });
+    }
   }
 }
 
@@ -1146,15 +1226,10 @@ if (telemetryRefreshBtn) {
 }
 
 if (toggleBusMapBtn) {
-  toggleBusMapBtn.addEventListener("click", () => {
-    showLiveBusesOnMap = !showLiveBusesOnMap;
-    toggleBusMapBtn.classList.toggle("active", showLiveBusesOnMap);
-    toggleBusMapBtn.querySelector("span").textContent = showLiveBusesOnMap
-      ? "🗺️ Focus on Walking Route"
-      : "🚍 Show Live Buses on Map";
+  toggleBusMapBtn.addEventListener("click", toggleShowLiveBusesOnMap);
+}
 
-    if (currentTelemetryParams) {
-      pollLiveBusTelemetry();
-    }
-  });
+const mapLiveBusesBtn = document.getElementById("map-live-buses-btn");
+if (mapLiveBusesBtn) {
+  mapLiveBusesBtn.addEventListener("click", toggleShowLiveBusesOnMap);
 }

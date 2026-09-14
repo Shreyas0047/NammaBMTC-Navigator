@@ -97,6 +97,7 @@ body {
   flex-direction: column;
   position: relative;
   box-shadow: 0 0 50px rgba(15, 23, 42, 0.15);
+  overflow-x: hidden;
 }
 
 /* ================= Top Navigation Bar ================= */
@@ -937,14 +938,18 @@ body {
   background: var(--bg-card);
   border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-xl);
-  padding: 20px 18px;
+  padding: 18px 14px;
   box-shadow: var(--shadow-elevated);
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .journey-step {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   position: relative;
+  min-width: 0;
 }
 
 .step-marker {
@@ -1005,6 +1010,8 @@ body {
 
 .step-details {
   flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
   padding-bottom: 8px;
 }
 
@@ -1056,14 +1063,19 @@ body {
 }
 
 /* ================= The Boarding Stop Hero Box ================= */
+/* ================= The Boarding Stop Hero Box ================= */
 .boarding-step .step-details {
   background: #FFFFFF;
   border: 1.5px solid var(--bmtc-green-soft);
   border-left: 5px solid var(--bmtc-green);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 14px 12px;
   box-shadow: 0 4px 18px rgba(4, 120, 87, 0.08);
   margin-bottom: 6px;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .boarding-header {
@@ -1086,11 +1098,12 @@ body {
 }
 
 .boarding-title {
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 800;
   color: var(--text-primary);
   line-height: 1.25;
   letter-spacing: -0.2px;
+  word-break: break-word;
 }
 
 .direction-callout {
@@ -1103,6 +1116,8 @@ body {
   align-items: center;
   gap: 8px;
   box-shadow: var(--shadow-subtle);
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .dir-icon {
@@ -1111,10 +1126,10 @@ body {
 }
 
 .dir-text {
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 12.5px;
+  font-weight: 700;
   color: #92400E;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 /* Walking Navigation Box */
@@ -1123,19 +1138,23 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .nav-status-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .distance-badge {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 800;
   color: var(--bmtc-green-dark);
   background: var(--bmtc-green-tint);
@@ -1156,12 +1175,18 @@ body {
 /* Leaflet Mini Map Container */
 .map-container {
   width: 100%;
-  height: 160px;
+  height: 165px;
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 1.5px solid var(--border-subtle);
   box-shadow: var(--shadow-subtle);
   position: relative;
+  transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.map-container.expanded {
+  height: 250px;
 }
 
 #walking-map {
@@ -1170,12 +1195,17 @@ body {
   background: #E2E8F0;
 }
 
-.map-recenter-btn {
+.map-controls-row {
   position: absolute;
   bottom: 8px;
   right: 8px;
   z-index: 400;
-  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  gap: 6px;
+}
+
+.map-recenter-btn {
+  background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-full);
   padding: 4px 10px;
@@ -1185,11 +1215,32 @@ body {
   box-shadow: var(--shadow-card);
   cursor: pointer;
   backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .map-recenter-btn:hover {
   background: #FFFFFF;
   color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.map-bus-btn {
+  background: #065F46;
+  color: #FFFFFF;
+  border-color: #047857;
+}
+
+.map-bus-btn:hover {
+  background: #047857;
+  color: #FFFFFF;
+}
+
+.map-bus-btn.active {
+  background: #059669;
+  box-shadow: 0 0 0 2px #34D399;
 }
 
 /* Native Google Maps 1-Tap CTA */
@@ -1432,9 +1483,13 @@ body {
   background: #FFFBEB !important;
   border: 1.5px solid #FDE68A !important;
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 14px 12px;
   margin-bottom: 6px;
   box-shadow: var(--shadow-subtle);
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .transfer-tag {
@@ -1450,14 +1505,15 @@ body {
 }
 
 .transfer-title {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 800;
   color: #78350F;
   line-height: 1.25;
+  word-break: break-word;
 }
 
 .transfer-desc {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   color: #92400E;
   margin-top: 2px;
@@ -1467,42 +1523,83 @@ body {
   border-top-color: #FDE68A !important;
 }
 
-/* ================= Alternative Boarding Stops Section ================= */
-.alt-section {
+/* ================= Alternative Boarding Stops Section & Accordion ================= */
+.alternatives-accordion {
+  margin-top: 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 10px;
 }
 
-.alt-section .section-title {
+.accordion-trigger {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: #FFFFFF;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-subtle);
+  box-sizing: border-box;
 }
 
-.alt-grid {
+.accordion-trigger:hover {
+  background: var(--bg-app);
+  border-color: #CBD5E1;
+}
+
+.acc-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.acc-icon {
+  font-size: 15px;
+  color: var(--bmtc-green);
+}
+
+.accordion-trigger .chevron {
+  transition: transform 0.25s var(--ease-spring);
+  color: var(--text-tertiary);
+}
+
+.accordion-trigger.active .chevron {
+  transform: rotate(180deg);
+}
+
+.accordion-content {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  margin-top: 4px;
 }
 
 .alt-journey-card {
   background: var(--bg-card);
   border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 14px 16px;
+  padding: 14px 14px;
   box-shadow: var(--shadow-subtle);
   transition: all 0.2s var(--ease-spring);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .alt-journey-card:hover {
   border-color: #CBD5E1;
   box-shadow: var(--shadow-card);
-  transform: translateY(-1px);
 }
 
 .alt-card-header {
@@ -1510,16 +1607,29 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
-.alt-stop-title {
-  font-size: 15px;
+.alt-rank-tag {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--text-tertiary);
+  background: var(--bg-subtle);
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  letter-spacing: 0.5px;
+}
+
+.alt-stop-name {
+  font-size: 16px;
   font-weight: 800;
   color: var(--text-primary);
+  line-height: 1.25;
+  word-break: break-word;
 }
 
 .alt-walk-badge {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--text-secondary);
   background: var(--bg-subtle);
@@ -1528,42 +1638,108 @@ body {
   white-space: nowrap;
 }
 
-.alt-direction-callout {
+.alt-dir-callout {
   font-size: 12px;
   font-weight: 600;
   color: #92400E;
   background: #FEF3C7;
-  padding: 4px 8px;
+  padding: 5px 8px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
-.alt-card-footer {
+.alt-service-tag {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  letter-spacing: 0.4px;
+  display: inline-block;
+  align-self: flex-start;
+}
+
+.tag-direct {
+  background: var(--bmtc-green-tint);
+  color: var(--bmtc-green-dark);
+  border: 1px solid var(--bmtc-green-soft);
+}
+
+.tag-one-transfer {
+  background: var(--bmtc-amber-tint);
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+.tag-two-transfer {
+  background: #FFEDD5;
+  color: #C2410C;
+  border: 1px solid #FED7AA;
+}
+
+.alt-transfer-summary {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 11.5px;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.alt-action-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   margin-top: 4px;
   padding-top: 8px;
   border-top: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
 }
 
-.alt-select-btn {
+.select-alt-btn {
+  flex: 1 1 180px;
   background: #FFFFFF;
   border: 1.5px solid var(--bmtc-green);
-  color: var(--bmtc-green);
+  color: var(--bmtc-green-dark);
   font-size: 12px;
   font-weight: 800;
-  padding: 5px 12px;
-  border-radius: var(--radius-full);
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
-.alt-select-btn:hover {
-  background: var(--bmtc-green);
-  color: #FFFFFF;
+.select-alt-btn:hover {
+  background: var(--bmtc-green-tint);
+}
+
+.alt-maps-btn {
+  flex: 0 0 auto;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-strong);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.alt-maps-btn:hover {
+  background: #FFFFFF;
+  color: var(--text-primary);
 }
 
 /* ================= Leaflet User Marker Pulse ================= */
