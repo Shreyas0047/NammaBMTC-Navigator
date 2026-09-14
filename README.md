@@ -9,14 +9,20 @@
 [![SQLite](https://img.shields.io/badge/SQLite-Spatial%20Graph-003B57.svg?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org/)
 [![BMTC VTMS Live](https://img.shields.io/badge/BMTC%20VTMS-Satellite%20Live-10b981.svg?style=for-the-badge&logo=google-maps&logoColor=white)](#-real-time-bmtc-vtms-telemetry)
 [![Tests](https://img.shields.io/badge/Tests-35%2F35%20Passing%20(100%25)-brightgreen.svg?style=for-the-badge)](#-pre-deployment-verification)
-[![Free Deployment](https://img.shields.io/badge/Render-Free%20Hosting%20Ready-46E3B7.svg?style=for-the-badge&logo=render&logoColor=white)](#-zero-cost-deployment-render-free-tier)
+[![Live Web App](https://img.shields.io/badge/Live%20Demo-nammabmtc--navigator.onrender.com-00C7B7.svg?style=for-the-badge&logo=render&logoColor=white)](https://nammabmtc-navigator.onrender.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 <p align="center">
   <strong>Next-generation destination-aware transit boarding recommender, multi-transfer routing engine, and real-time VTMS bus telemetry for Bengaluru Urban &amp; Rural.</strong>
 </p>
 
-[Key Capabilities](#-key-capabilities) • [The Bengaluru Transit Problem](#-the-bengaluru-transit-problem) • [Architecture](#-architecture) • [Live Demo Preview](#-live-journey-stepper-preview) • [API Reference](#-api-reference) • [Free Deployment](#-zero-cost-deployment-render-free-tier)
+<p align="center">
+  <a href="https://nammabmtc-navigator.onrender.com" target="_blank">
+    <img src="https://img.shields.io/badge/🚀_LAUNCH_LIVE_APP-https%3A%2F%2Fnammabmtc--navigator.onrender.com-2563eb?style=for-the-badge&logoColor=white" height="38" alt="Launch Live App" />
+  </a>
+</p>
+
+[Live Website](https://nammabmtc-navigator.onrender.com) • [Key Capabilities](#-key-capabilities) • [The Bengaluru Transit Problem](#-the-bengaluru-transit-problem) • [Architecture](#-architecture) • [Live Demo Preview](#-live-journey-stepper-preview) • [API Reference](#-api-reference)
 
 </div>
 
@@ -142,25 +148,21 @@ Open your browser at `http://localhost:8000`. The application is immediately fun
 
 ---
 
-## 🌐 Zero-Cost Deployment (Render Free Tier)
+## 🌐 Live Production Deployment
 
-Deploying to production requires **$0/month** and takes under 2 minutes:
+The application is deployed live in Singapore for minimum latency to Bengaluru:
 
-1. Push your code to a GitHub repository:
-   ```bash
-   git add .
-   git commit -m "feat: production release"
-   git push origin master
-   ```
-2. Open [Render.com](https://render.com) and click **New +** $\rightarrow$ **Blueprint**.
-3. Select this repository. Render will automatically detect [`render.yaml`](render.yaml):
-   * **Plan**: Free ($0/month)
-   * **Region**: Singapore (lowest latency to India)
-   * **Health Check**: `/health`
-4. Click **Apply**. Your app will be live with free SSL at `https://your-app.onrender.com`.
+<div align="center">
 
-> [!TIP]
-> To prevent the free instance from sleeping after 15 minutes of inactivity, set up a free monitor on [UptimeRobot](https://uptimerobot.com) pinging `https://<your-app>.onrender.com/health` every 10 minutes.
+| Environment | Production URL | Status | Health Probe |
+|:---|:---|:---:|:---|
+| **Live PWA App** | [**nammabmtc-navigator.onrender.com**](https://nammabmtc-navigator.onrender.com) | ![Live](https://img.shields.io/badge/Status-Online%20(24%2F7)-success?style=flat-square) | [`/health`](https://nammabmtc-navigator.onrender.com/health) |
+
+<br/>
+
+[![Open Live App](https://img.shields.io/badge/Open_Live_App-https%3A%2F%2Fnammabmtc--navigator.onrender.com-success?style=for-the-badge&logo=render&logoColor=white)](https://nammabmtc-navigator.onrender.com)
+
+</div>
 
 ---
 
