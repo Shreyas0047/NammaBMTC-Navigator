@@ -1635,7 +1635,354 @@ body {
   letter-spacing: 0.2px;
 }
 
+/* ==========================================================================
+   Live Bus VTMS Telemetry Box & Components
+   ========================================================================== */
+.live-telemetry-box {
+  margin-top: 14px;
+  background: #F0FDF4;
+  border: 1.5px solid #86EFAC;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.3s ease;
+}
+
+.live-telemetry-box.is-offline {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  box-shadow: none;
+}
+
+.telemetry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+  padding-bottom: 8px;
+}
+
+.live-telemetry-box.is-offline .telemetry-header {
+  border-bottom-color: #E2E8F0;
+}
+
+.telemetry-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #065F46;
+}
+
+.pulse-live-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #10B981;
+  position: relative;
+  display: inline-block;
+}
+
+.pulse-live-dot::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid #10B981;
+  animation: liveRadarPulse 1.8s infinite cubic-bezier(0, 0.2, 0.8, 1);
+}
+
+@keyframes liveRadarPulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.pulse-live-dot.offline {
+  background-color: #94A3B8;
+}
+
+.pulse-live-dot.offline::after {
+  display: none;
+}
+
+.telemetry-refresh-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sync-time {
+  font-size: 11px;
+  color: #047857;
+  font-weight: 600;
+}
+
+.refresh-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #FFFFFF;
+  border: 1px solid #A7F3D0;
+  color: #065F46;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.refresh-pill-btn:hover {
+  background: #ECFDF5;
+  border-color: #6EE7B7;
+  transform: translateY(-1px);
+}
+
+.refresh-pill-btn.spinning .spin-icon {
+  animation: spinSlow 0.7s linear infinite;
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.nearest-bus-banner {
+  background: #FFFFFF;
+  border: 1.5px solid #34D399;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.08);
+}
+
+.nearest-bus-card-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.nearest-bus-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.nearest-bus-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vehicle-reg-badge {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 800;
+  background: #065F46;
+  color: #FFFFFF;
+  padding: 2px 7px;
+  border-radius: 5px;
+  letter-spacing: 0.5px;
+}
+
+.vehicle-type-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #047857;
+  background: #D1FAE5;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.nearest-bus-eta-row {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.eta-highlight {
+  font-weight: 800;
+  color: #059669;
+  font-size: 13.5px;
+}
+
+.stops-count-badge {
+  background: #FEF3C7;
+  color: #B45309;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.arrived-badge {
+  background: #DCFCE7;
+  color: #166534;
+  font-weight: 800;
+  font-size: 11.5px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #86EFAC;
+}
+
+.approaching-buses-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.sub-bus-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FFFFFF;
+  border: 1px solid #D1FAE5;
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  transition: all 0.2s ease;
+}
+
+.sub-bus-row:hover {
+  background: #ECFDF5;
+  border-color: #A7F3D0;
+}
+
+.sub-bus-ident {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sub-reg {
+  font-family: monospace;
+  font-weight: 700;
+  color: #1F2937;
+}
+
+.sub-eta {
+  font-weight: 700;
+  color: #047857;
+}
+
+.sub-dist {
+  color: #6B7280;
+  font-size: 10.5px;
+}
+
+.telemetry-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.bus-map-toggle-btn {
+  background: #FFFFFF;
+  border: 1px solid #6EE7B7;
+  color: #047857;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bus-map-toggle-btn:hover {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.bus-map-toggle-btn.active {
+  background: #059669;
+  color: #FFFFFF;
+  border-color: #047857;
+}
+
+.telemetry-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #065F46;
+  font-weight: 600;
+  padding: 4px 0;
+}
+
+.telemetry-offline-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11.5px;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Custom Live Bus Leaflet Markers */
+.custom-bus-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bus-marker-pin {
+  background: #059669;
+  color: #FFFFFF;
+  border: 2px solid #FFFFFF;
+  border-radius: 20px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  transform-origin: center center;
+  transition: transform 0.4s ease;
+}
+
+.bus-marker-pin.is-nearest {
+  background: #DC2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.35), 0 3px 8px rgba(0, 0, 0, 0.3);
+  animation: nearestBusPulse 2s infinite ease-in-out;
+}
+
+@keyframes nearestBusPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
 /* Utilities */
 .hidden {
   display: none !important;
 }
+

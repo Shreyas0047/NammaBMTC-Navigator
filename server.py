@@ -17,6 +17,7 @@ sys.path.insert(0, BASE_DIR)
 
 from engine.db import get_db_connection
 from engine.ranker import rank_boarding_points
+from engine.live_tracker import get_live_route_telemetry
 
 app = FastAPI(
     title="NammaBMTC Navigator API",
@@ -139,6 +140,39 @@ def recommend(req: RecommendRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/live-bus")
+def live_bus_telemetry(
+    route: str = Query(..., description="BMTC route number e.g. 365, 500-D, KIA-8"),
+    orig_lat: float = Query(..., description="Boarding stop latitude"),
+    orig_lon: float = Query(..., description="Boarding stop longitude"),
+    dest_lat: Optional[float] = Query(None, description="Alighting stop latitude"),
+    dest_lon: Optional[float] = Query(None, description="Alighting stop longitude"),
+):
+    """
+    Returns real-time GPS telemetry from BMTC's Vehicle Tracking and Monitoring System (VTMS).
+    Locates active buses, determines approaching vehicles, and calculates ETAs.
+    """
+    try:
+        data = get_live_route_telemetry(
+            route_no=route,
+            orig_lat=orig_lat,
+            orig_lon=orig_lon,
+            dest_lat=dest_lat,
+            dest_lon=dest_lon,
+        )
+        return data
+    except Exception as e:
+        return {
+            "live": False,
+            "route": route,
+            "reason": f"Live telemetry lookup error: {str(e)}",
+            "approaching_count": 0,
+            "nearest_bus": None,
+            "approaching_buses": [],
+            "all_active_buses": [],
+        }
 
 
 # Mount static frontend

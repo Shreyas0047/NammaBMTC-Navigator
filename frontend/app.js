@@ -59,6 +59,20 @@ const toggleAltsBtn = document.getElementById("toggle-alts-btn");
 const altsCountLabel = document.getElementById("alts-count-label");
 const alternativesContainer = document.getElementById("alternatives-container");
 
+// Live Bus Telemetry State & DOM Elements
+let telemetryIntervalId = null;
+let liveBusMarkers = [];
+let showLiveBusesOnMap = false;
+let currentTelemetryParams = null;
+
+const liveTelemetryBox = document.getElementById("live-bus-telemetry-box");
+const telemetryStatusTitle = document.getElementById("telemetry-status-title");
+const telemetryLastSync = document.getElementById("telemetry-last-sync");
+const telemetryRefreshBtn = document.getElementById("telemetry-refresh-btn");
+const nearestBusBanner = document.getElementById("nearest-bus-banner");
+const approachingBusesList = document.getElementById("approaching-buses-list");
+const toggleBusMapBtn = document.getElementById("toggle-bus-map-btn");
+
 // ================= Geolocation Helpers =================
 function haversineMeters(lat1, lon1, lat2, lon2) {
   const R = 6371000;
@@ -233,6 +247,7 @@ clearDestBtn.addEventListener("click", () => {
     navigator.geolocation.clearWatch(liveWatchId);
     liveWatchId = null;
   }
+  stopLiveBusTelemetry();
 });
 
 // Hub Cards
@@ -538,6 +553,14 @@ function renderJourney(data) {
   // Destination
   const destName = p.routes.length > 0 ? p.routes[0].destination_stop : state.destination.name;
   recDestStop.textContent = destName;
+
+  // Trigger Real-Time Live Bus VTMS Telemetry Tracking
+  if (routesToDisplay && routesToDisplay.length > 0) {
+    const primaryRoute = routesToDisplay[0].route;
+    startLiveBusTelemetry(primaryRoute, p.lat, p.lon, state.destination.lat, state.destination.lon);
+  } else {
+    stopLiveBusTelemetry();
+  }
 
   // Alternatives Accordion
   const alts = data.alternatives || [];
@@ -879,3 +902,246 @@ function init3DCardEffects() {
 // Initialize 3D physics on DOM load
 document.addEventListener("DOMContentLoaded", init3DCardEffects);
 init3DCardEffects();
+
+// ================= Real-Time Live Bus VTMS Telemetry =================
+function startLiveBusTelemetry(routeNo, origLat, origLon, destLat, destLon) {
+  stopLiveBusTelemetry();
+  currentTelemetryParams = { routeNo, origLat, origLon, destLat, destLon };
+
+  if (liveTelemetryBox) {
+    liveTelemetryBox.classList.remove("is-offline");
+  }
+  if (nearestBusBanner) {
+    nearestBusBanner.innerHTML = `
+      <div class="telemetry-skeleton">
+        <span class="pulse-live-dot"></span>
+        <span>Polling live GPS satellite feed for Route ${routeNo}...</span>
+      </div>
+    `;
+  }
+  if (telemetryStatusTitle) {
+    telemetryStatusTitle.textContent = `LIVE BUS TRACKER • ROUTE ${routeNo}`;
+  }
+  if (telemetryLastSync) {
+    telemetryLastSync.textContent = "Connecting to BMTC VTMS...";
+  }
+
+  pollLiveBusTelemetry();
+  telemetryIntervalId = setInterval(pollLiveBusTelemetry, 18000);
+}
+
+function stopLiveBusTelemetry() {
+  if (telemetryIntervalId) {
+    clearInterval(telemetryIntervalId);
+    telemetryIntervalId = null;
+  }
+  clearLiveBusMarkers();
+}
+
+async function pollLiveBusTelemetry() {
+  if (!currentTelemetryParams) return;
+  const { routeNo, origLat, origLon, destLat, destLon } = currentTelemetryParams;
+
+  if (telemetryRefreshBtn) {
+    telemetryRefreshBtn.classList.add("spinning");
+  }
+
+  try {
+    const url = `/api/live-bus?route=${encodeURIComponent(routeNo)}&orig_lat=${origLat}&orig_lon=${origLon}` +
+      (destLat != null ? `&dest_lat=${destLat}&dest_lon=${destLon}` : "");
+
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    renderLiveBusTelemetry(data);
+  } catch (err) {
+    console.warn("Live telemetry poll failed:", err);
+    if (telemetryLastSync) {
+      telemetryLastSync.textContent = "Feed slow · Retrying";
+    }
+  } finally {
+    if (telemetryRefreshBtn) {
+      telemetryRefreshBtn.classList.remove("spinning");
+    }
+  }
+}
+
+function renderLiveBusTelemetry(data) {
+  if (!liveTelemetryBox) return;
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+  if (data.live && (data.approaching_count > 0 || data.active_buses_total > 0)) {
+    liveTelemetryBox.classList.remove("is-offline");
+
+    if (telemetryStatusTitle) {
+      telemetryStatusTitle.textContent = `LIVE BUS GPS TELEMETRY • ${data.approaching_count} APPROACHING`;
+    }
+    if (telemetryLastSync) {
+      telemetryLastSync.textContent = `Synced ${timeStr}`;
+    }
+
+    // Render nearest bus
+    if (data.nearest_bus) {
+      const b = data.nearest_bus;
+      const isAtStop = b.is_at_stop || b.dist_km <= 0.25;
+      const etaLabel = isAtStop
+        ? `<span class="arrived-badge">🟢 AT PLATFORM NOW</span>`
+        : `<span class="eta-highlight">~${b.eta_mins} min</span> (${(b.dist_km * 1000).toFixed(0)}m away)`;
+
+      const stopsLabel = b.stops_away !== undefined && b.stops_away > 0
+        ? `<span class="stops-count-badge">${b.stops_away} stop${b.stops_away > 1 ? "s" : ""} away</span>`
+        : "";
+
+      nearestBusBanner.innerHTML = `
+        <div class="nearest-bus-card-inner">
+          <div class="nearest-bus-meta">
+            <div class="nearest-bus-title-row">
+              <span class="vehicle-reg-badge">${b.vehicle}</span>
+              <span class="vehicle-type-tag">${b.type || "BMTC Bus"}</span>
+              ${stopsLabel}
+            </div>
+            <div class="nearest-bus-eta-row">
+              <span>Next Arrival:</span>
+              ${etaLabel}
+            </div>
+          </div>
+          <div class="nearest-bus-icon">
+            <span style="font-size: 26px;">🚍</span>
+          </div>
+        </div>
+      `;
+    } else {
+      nearestBusBanner.innerHTML = `
+        <div class="telemetry-offline-card">
+          <span>ℹ️</span>
+          <span><b>Active Fleet:</b> ${data.active_buses_total} buses running on Route ${data.route}. Currently past your boarding stop. Next schedule departing soon.</span>
+        </div>
+      `;
+    }
+
+    // Render other approaching buses
+    if (data.approaching_buses && data.approaching_buses.length > 1) {
+      approachingBusesList.classList.remove("hidden");
+      approachingBusesList.innerHTML = data.approaching_buses
+        .slice(1, 4)
+        .map(
+          (b) => `
+          <div class="sub-bus-row">
+            <div class="sub-bus-ident">
+              <span style="color: #059669;">🚍</span>
+              <span class="sub-reg">${b.vehicle}</span>
+              <span class="vehicle-type-tag" style="font-size: 9.5px; padding: 1px 4px;">${b.type}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="sub-eta">~${b.eta_mins}m</span>
+              <span class="sub-dist">${b.dist_km} km</span>
+            </div>
+          </div>
+        `
+        )
+        .join("");
+    } else {
+      approachingBusesList.classList.add("hidden");
+      approachingBusesList.innerHTML = "";
+    }
+
+    // Update markers on Leaflet map
+    updateLiveBusMapMarkers(data.approaching_buses || [], data.all_active_buses || []);
+
+  } else {
+    // Graceful offline fallback
+    liveTelemetryBox.classList.add("is-offline");
+    if (telemetryStatusTitle) {
+      telemetryStatusTitle.textContent = `SCHEDULED SERVICE ACTIVE • ROUTE ${data.route || ""}`;
+    }
+    if (telemetryLastSync) {
+      telemetryLastSync.textContent = "GTFS Timetable";
+    }
+    nearestBusBanner.innerHTML = `
+      <div class="telemetry-offline-card">
+        <span>📡</span>
+        <span><b>Official GTFS Frequency:</b> Regular high-frequency service. Live GPS satellite telemetry is currently quiet for this specific line.</span>
+      </div>
+    `;
+    approachingBusesList.classList.add("hidden");
+    clearLiveBusMarkers();
+  }
+}
+
+function clearLiveBusMarkers() {
+  if (mapInstance && liveBusMarkers.length > 0) {
+    liveBusMarkers.forEach((m) => mapInstance.removeLayer(m));
+    liveBusMarkers = [];
+  }
+}
+
+function updateLiveBusMapMarkers(approachingBuses, allBuses) {
+  if (!mapInstance || typeof L === "undefined") return;
+
+  clearLiveBusMarkers();
+
+  const busesToPlot = showLiveBusesOnMap ? allBuses : approachingBuses;
+  if (!busesToPlot || busesToPlot.length === 0) return;
+
+  busesToPlot.forEach((b, idx) => {
+    if (!b.lat || !b.lon) return;
+
+    const isNearest = idx === 0 && approachingBuses.length > 0 && b.vehicle === approachingBuses[0].vehicle;
+    const markerHtml = `
+      <div class="bus-marker-pin ${isNearest ? 'is-nearest' : ''}">
+        <span>🚍</span>
+        <span>${b.vehicle}</span>
+      </div>
+    `;
+
+    const icon = L.divIcon({
+      className: "custom-bus-marker",
+      html: markerHtml,
+      iconSize: [90, 24],
+      iconAnchor: [45, 12],
+    });
+
+    const marker = L.marker([b.lat, b.lon], { icon }).addTo(mapInstance);
+    marker.bindPopup(`
+      <div style="font-family: system-ui, -apple-system, sans-serif; font-size: 12px; line-height: 1.4;">
+        <div style="font-weight: 800; color: #065F46; font-size: 13px;">🚍 BMTC ${b.vehicle}</div>
+        <div><b>Type:</b> ${b.type || "Ordinary"}</div>
+        <div><b>Distance:</b> ${b.dist_km} km to stop</div>
+        <div><b>ETA:</b> ~${b.eta_mins} min</div>
+        ${b.last_updated ? `<div style="color: #64748B; font-size: 10.5px; margin-top: 4px;">GPS Ping: ${b.last_updated}</div>` : ''}
+      </div>
+    `);
+
+    liveBusMarkers.push(marker);
+  });
+
+  // If user requested to view buses on map, zoom out to show buses
+  if (showLiveBusesOnMap && liveBusMarkers.length > 0 && userMarker && stopMarker) {
+    const group = new L.featureGroup([userMarker, stopMarker, ...liveBusMarkers]);
+    mapInstance.fitBounds(group.getBounds(), { padding: [40, 40], maxZoom: 16 });
+  }
+}
+
+// Wire Telemetry Controls
+if (telemetryRefreshBtn) {
+  telemetryRefreshBtn.addEventListener("click", () => {
+    pollLiveBusTelemetry();
+  });
+}
+
+if (toggleBusMapBtn) {
+  toggleBusMapBtn.addEventListener("click", () => {
+    showLiveBusesOnMap = !showLiveBusesOnMap;
+    toggleBusMapBtn.classList.toggle("active", showLiveBusesOnMap);
+    toggleBusMapBtn.querySelector("span").textContent = showLiveBusesOnMap
+      ? "🗺️ Focus on Walking Route"
+      : "🚍 Show Live Buses on Map";
+
+    if (currentTelemetryParams) {
+      pollLiveBusTelemetry();
+    }
+  });
+}

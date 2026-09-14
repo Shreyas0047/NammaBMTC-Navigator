@@ -366,6 +366,45 @@
                   <!-- Injected dynamically -->
                 </div>
               </div>
+
+              <!-- Live Bus VTMS Telemetry Box -->
+              <div id="live-bus-telemetry-box" class="live-telemetry-box">
+                <div class="telemetry-header">
+                  <div class="telemetry-status-badge">
+                    <span class="pulse-live-dot"></span>
+                    <span id="telemetry-status-title">LIVE BUS GPS TELEMETRY (VTMS)</span>
+                  </div>
+                  <div class="telemetry-refresh-control">
+                    <span id="telemetry-last-sync" class="sync-time">Connecting to BMTC...</span>
+                    <button id="telemetry-refresh-btn" class="refresh-pill-btn" type="button" title="Refresh Live Bus GPS">
+                      <svg class="spin-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                      </svg>
+                      <span>Refresh</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div id="telemetry-content-area" class="telemetry-body">
+                  <!-- Nearest approaching bus highlight banner -->
+                  <div id="nearest-bus-banner" class="nearest-bus-banner">
+                    <div class="telemetry-skeleton">
+                      <div class="skeleton-shimmer"></div>
+                      <span>Locating approaching buses via satellite GPS...</span>
+                    </div>
+                  </div>
+
+                  <!-- Active approaching buses grid -->
+                  <div id="approaching-buses-list" class="approaching-buses-grid hidden"></div>
+
+                  <!-- Map View Toggle -->
+                  <div class="telemetry-actions">
+                    <button id="toggle-bus-map-btn" class="bus-map-toggle-btn" type="button">
+                      <span>🚍 Show Live Buses on Map</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
