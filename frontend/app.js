@@ -409,6 +409,9 @@ function renderJourney(data) {
   liveDistanceCountdown.textContent = walkStr;
   arrivalStatusPill.classList.add("hidden");
 
+  // Update Interactive 3D Directional Compass
+  update3DCompass(state.origin.lat, state.origin.lon, p.lat, p.lon);
+
   // Boarding Stop
   recStopName.textContent = p.stop_name;
   if (p.stop_desc) {
@@ -789,3 +792,90 @@ toggleAltsBtn.addEventListener("click", () => {
 
 // Auto-run GPS detection on initial load
 requestLiveLocation(true);
+
+// ================= Interactive 3D Physics & Directional Compass =================
+function calculateBearing(lat1, lon1, lat2, lon2) {
+  const toRad = (d) => (d * Math.PI) / 180;
+  const toDeg = (r) => (r * 180) / Math.PI;
+  const φ1 = toRad(lat1), φ2 = toRad(lat2);
+  const Δλ = toRad(lon2 - lon1);
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  let θ = toDeg(Math.atan2(y, x));
+  return (θ + 360) % 360;
+}
+
+function getCompassCardinal(deg) {
+  const cardinals = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const idx = Math.round(deg / 45) % 8;
+  return cardinals[idx];
+}
+
+function update3DCompass(oLat, oLon, dLat, dLon) {
+  const needle = document.getElementById("compass-needle");
+  const label = document.getElementById("compass-bearing-label");
+  if (!needle || !label) return;
+
+  if (oLat && oLon && dLat && dLon) {
+    const bearing = Math.round(calculateBearing(oLat, oLon, dLat, dLon));
+    needle.style.transform = `rotate(${bearing}deg)`;
+    const cardinal = getCompassCardinal(bearing);
+    label.textContent = `${cardinal} ${bearing}°`;
+  }
+}
+
+// 3D Parallax Tilt Physics on Cards
+function init3DCardEffects() {
+  const tiltElements = document.querySelectorAll(".interactive-3d-card, .interactive-3d-tilt, .hub-card");
+  
+  tiltElements.forEach((el) => {
+    el.addEventListener("pointermove", (e) => {
+      const rect = el.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const midX = rect.width / 2;
+      const midY = rect.height / 2;
+      
+      const rotX = -((y - midY) / midY) * 8.5;
+      const rotY = ((x - midX) / midX) * 8.5;
+
+      el.style.transform = `perspective(1000px) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg) scale3d(1.015, 1.015, 1.015)`;
+    });
+
+    el.addEventListener("pointerleave", () => {
+      el.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)";
+    });
+  });
+
+  // Interactive Click-to-Spin 3D Compass
+  const compassWidget = document.getElementById("compass-3d");
+  if (compassWidget) {
+    compassWidget.addEventListener("click", () => {
+      const needle = document.getElementById("compass-needle");
+      if (!needle) return;
+      needle.style.transition = "transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)";
+      const currentRot = needle.style.transform || "rotate(0deg)";
+      const match = currentRot.match(/rotate\(([-0-9.]+)deg\)/);
+      const base = match ? parseFloat(match[1]) : 0;
+      needle.style.transform = `rotate(${base + 360}deg)`;
+    });
+  }
+
+  // Subtle Device Gyroscope tilt on Mobile
+  if (window.DeviceOrientationEvent && typeof window.DeviceOrientationEvent.requestPermission !== "function") {
+    window.addEventListener("deviceorientation", (e) => {
+      if (e.gamma !== null && e.beta !== null) {
+        const tiltX = Math.min(8, Math.max(-8, (e.beta - 45) * 0.2));
+        const tiltY = Math.min(8, Math.max(-8, e.gamma * 0.2));
+        const heroCard = document.getElementById("journey-card-3d");
+        if (heroCard && !heroCard.matches(":hover")) {
+          heroCard.style.transform = `perspective(1000px) rotateX(${tiltX.toFixed(1)}deg) rotateY(${tiltY.toFixed(1)}deg)`;
+        }
+      }
+    });
+  }
+}
+
+// Initialize 3D physics on DOM load
+document.addEventListener("DOMContentLoaded", init3DCardEffects);
+init3DCardEffects();

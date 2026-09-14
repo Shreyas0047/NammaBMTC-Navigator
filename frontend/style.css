@@ -1503,6 +1503,138 @@ body {
   100% { transform: scale(2.8); opacity: 0; }
 }
 
+/* ================= Interactive 3D Elements ================= */
+.interactive-3d-tilt {
+  perspective: 600px;
+  cursor: pointer;
+}
+
+.logo-3d-wrapper {
+  position: relative;
+  display: inline-block;
+  transform-style: preserve-3d;
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.logo-3d-wrapper:hover {
+  transform: rotateY(15deg) rotateX(-10deg) scale(1.08);
+}
+
+.logo-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4), transparent 70%);
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+/* 3D Parallax Tilt Cards */
+.interactive-3d-card {
+  transform-style: preserve-3d;
+  perspective: 1200px;
+  transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s ease;
+  will-change: transform;
+}
+
+.interactive-3d-card:hover {
+  box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.12), 0 6px 14px -2px rgba(15, 23, 42, 0.04);
+}
+
+/* Pop-out 3D depth elements inside cards */
+.interactive-3d-card .boarding-title,
+.interactive-3d-card .search-input-wrapper,
+.interactive-3d-card .direction-callout {
+  transform: translateZ(12px);
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.interactive-3d-card .native-nav-btn,
+.interactive-3d-card .main-action-btn {
+  transform: translateZ(18px);
+}
+
+/* Interactive 3D Directional Compass Widget */
+.interactive-compass-3d {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFFFFF;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 4px 10px 4px 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: all 0.25s var(--ease-spring);
+  perspective: 500px;
+  transform-style: preserve-3d;
+}
+
+.interactive-compass-3d:hover {
+  border-color: var(--bmtc-green);
+  transform: translateY(-1px) rotateX(8deg) scale(1.04);
+  box-shadow: 0 6px 16px rgba(4, 120, 87, 0.18);
+}
+
+.compass-dial-plate {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #F1F5F9, #FFFFFF, #E2E8F0, #FFFFFF, #F1F5F9);
+  border: 1.5px solid #CBD5E1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+  transform-style: preserve-3d;
+}
+
+.compass-needle {
+  width: 3px;
+  height: 20px;
+  position: absolute;
+  transform-origin: center center;
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
+  filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.needle-tip {
+  width: 100%;
+  height: 50%;
+}
+
+.needle-tip.north {
+  background: linear-gradient(to top, #E11D48, #F43F5E);
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+.needle-tip.south {
+  background: linear-gradient(to bottom, #475569, #94A3B8);
+  clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+}
+
+.compass-cap {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #FBBF24;
+  border: 1px solid #B45309;
+  position: absolute;
+  z-index: 5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.compass-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--bmtc-green-dark);
+  letter-spacing: 0.2px;
+}
+
 /* Utilities */
 .hidden {
   display: none !important;

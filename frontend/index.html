@@ -61,8 +61,11 @@
   <div class="mobile-app">
     <!-- Top Navigation -->
     <header class="app-navbar">
-      <div class="nav-brand">
-        <img src="assets/logo.svg" alt="NammaBMTC Navigator Logo" class="app-logo" width="38" height="38">
+      <div class="nav-brand interactive-3d-tilt" id="brand-logo-3d" title="Interactive 3D NammaBMTC Logo">
+        <div class="logo-3d-wrapper">
+          <img src="assets/logo.svg" alt="NammaBMTC Navigator Logo" class="app-logo" width="38" height="38">
+          <div class="logo-glare"></div>
+        </div>
         <div class="brand-text">
           <h1>NammaBMTC <span class="nav-badge">NAVIGATOR</span></h1>
           <span class="city-tag">Bengaluru Transit • Urban & Rural</span>
@@ -105,7 +108,7 @@
     <main class="app-main">
       <!-- Destination Search Section -->
       <section class="search-section">
-        <div class="destination-search-card">
+        <div class="destination-search-card interactive-3d-card" id="search-card-3d">
           <label for="dest-search-input" class="search-label">WHERE ARE YOU GOING?</label>
           <div class="search-input-wrapper">
             <div class="search-icon">
@@ -275,7 +278,7 @@
         </div>
 
         <!-- Visual Journey Stepper Card -->
-        <div class="journey-card">
+        <div class="journey-card interactive-3d-card" id="journey-card-3d">
           <!-- Step 1: Origin -->
           <div class="journey-step origin-step">
             <div class="step-marker">
@@ -318,6 +321,17 @@
                   <div class="distance-badge">
                     <span class="pulse-icon">🚶</span>
                     <span id="live-distance-countdown">Walk 250 m (~3 min)</span>
+                  </div>
+                  <!-- Interactive 3D Directional Compass -->
+                  <div class="interactive-compass-3d" id="compass-3d" title="Interactive 3D Direction Compass">
+                    <div class="compass-dial-plate">
+                      <div class="compass-needle" id="compass-needle">
+                        <div class="needle-tip north"></div>
+                        <div class="needle-tip south"></div>
+                      </div>
+                      <div class="compass-cap"></div>
+                    </div>
+                    <span class="compass-label" id="compass-bearing-label">Heading</span>
                   </div>
                   <span id="arrival-status-pill" class="arrival-pill hidden">Arrived at Stop!</span>
                 </div>
