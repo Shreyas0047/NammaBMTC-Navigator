@@ -239,8 +239,13 @@ def find_transfer_candidates(
             direct_dist = max(100.0, haversine(stop.lat, stop.lon, t_dest_lat, t_dest_lon))
             via_dist = haversine(stop.lat, stop.lon, data["tx_lat"], data["tx_lon"]) + haversine(data["tx_lat"], data["tx_lon"], t_dest_lat, t_dest_lon)
             detour_ratio = via_dist / direct_dist
+            # Reject extreme detours (> 2.5x direct line distance) to eliminate backtracking
+            if detour_ratio > 2.5:
+                continue
             if detour_ratio > 1.30:
-                detour_penalty = min(35.0, (detour_ratio - 1.30) * 30.0)
+                detour_penalty = (detour_ratio - 1.30) * 35.0
+                if detour_ratio > 1.8:
+                    detour_penalty += 30.0
 
         composite_score = 58.0 - walk_penalty - transfer_penalty - tx_walk_penalty + frequency_bonus + hub_bonus - detour_penalty
         final_score = max(0.0, min(100.0, composite_score))
@@ -664,6 +669,46 @@ def rank_boarding_points(
     """
     cur.execute(query, o_ids + d_ids)
     rows = cur.fetchall()
+
+    # If no direct routes found in immediate vicinity, expand search radius up to 2400m
+    # to discover major arterial boarding stops (e.g. Hennagara Gate, Chandapura, Silk Board, etc.)
+    if not rows and walk_radius_m < 2500.0:
+        expanded_stops = find_nearby_stops(origin_lat, origin_lon, radius_meters=2400.0)
+        if expanded_stops:
+            exp_stop_map = {s.stop_id: (s, dist) for s, dist in expanded_stops}
+            exp_o_ids = list(exp_stop_map.keys())
+            exp_o_placeholders = ",".join(["?"] * len(exp_o_ids))
+            exp_query = f"""
+                SELECT 
+                    st1.stop_id as orig_stop_id,
+                    s2.stop_id as dest_stop_id,
+                    s2.stop_name as dest_stop_name,
+                    s2.stop_lat as dest_lat,
+                    s2.stop_lon as dest_lon,
+                    r.route_short_name,
+                    r.route_long_name,
+                    t.trip_headsign,
+                    t.direction_id,
+                    COUNT(DISTINCT t.trip_id) as trip_count,
+                    AVG(st2.stop_sequence - st1.stop_sequence) as avg_stops_away
+                FROM stop_times st1
+                JOIN stop_times st2 
+                  ON st1.trip_id = st2.trip_id 
+                 AND st2.stop_sequence > st1.stop_sequence
+                JOIN stops s2 ON st2.stop_id = s2.stop_id
+                JOIN trips t ON st1.trip_id = t.trip_id
+                JOIN routes r ON t.route_id = r.route_id
+                WHERE st1.stop_id IN ({exp_o_placeholders})
+                  AND st2.stop_id IN ({dest_placeholders})
+                GROUP BY st1.stop_id, r.route_short_name, t.trip_headsign, s2.stop_name
+                ORDER BY trip_count DESC
+            """
+            cur.execute(exp_query, exp_o_ids + d_ids)
+            exp_rows = cur.fetchall()
+            if exp_rows:
+                rows = exp_rows
+                orig_stop_map = exp_stop_map
+
     conn.close()
 
     s_routes: Dict[str, List[ViableRouteOption]] = {}

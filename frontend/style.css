@@ -518,22 +518,123 @@ body {
   animation: fadeInDown 0.18s var(--ease-spring);
 }
 
-/* Hide popular hubs while actively searching with live suggestions */
-.search-section.is-searching #popular-hubs-section {
-  display: none !important;
+/* ================= Recent Searches Quick Chips Tray ================= */
+.search-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
 }
 
+.search-header-row .search-label {
+  margin-bottom: 0;
+}
+
+.search-kbd-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.search-kbd-hint kbd {
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.recent-tray {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recent-tray-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recent-tray-title {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.clear-recent-action {
+  background: none;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.clear-recent-action:hover {
+  color: var(--bmtc-red);
+}
+
+.recent-chips-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.recent-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.recent-chip:hover {
+  background: var(--bmtc-green-tint);
+  border-color: var(--bmtc-green-soft);
+  color: var(--bmtc-green-dark);
+  transform: translateY(-1px);
+}
+
+.recent-chip .chip-icon {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* ================= Autocomplete Dropdown Styling ================= */
 @keyframes fadeInDown {
   from { opacity: 0; transform: translateY(-6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .suggestion-item {
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border-subtle);
   cursor: pointer;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   transition: background-color 0.15s ease;
 }
 
@@ -542,128 +643,73 @@ body {
 }
 
 .suggestion-item:hover,
-.suggestion-item:active {
+.suggestion-item.active {
   background-color: var(--bmtc-green-tint);
 }
 
-.sugg-name {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.sugg-desc {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  margin-top: 2px;
+.sugg-left {
   display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-/* ================= Popular Hubs Section ================= */
-.popular-section {
-  display: flex;
-  flex-direction: column;
+  align-items: flex-start;
   gap: 10px;
-}
-
-.section-title {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-}
-
-.hubs-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
-.hub-card {
-  background: var(--bg-card);
-  border: 1.5px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 12px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.2s var(--ease-spring);
-  position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-subtle);
 }
 
-.hub-card:hover {
-  border-color: var(--bmtc-green-light);
-  background: var(--bmtc-green-tint);
-  box-shadow: var(--shadow-card);
-  transform: translateY(-2px);
-}
-
-.hub-card:active {
-  transform: scale(0.97);
-}
-
-.hub-card.active {
-  border-color: var(--bmtc-green);
-  background: linear-gradient(135deg, var(--bmtc-green-tint) 0%, #D1FAE5 100%);
-  box-shadow: 0 0 0 2px rgba(4, 120, 87, 0.2), var(--shadow-card);
-}
-
-.hub-card.active::after {
-  content: '✓';
-  position: absolute;
-  top: 7px;
-  right: 10px;
-  font-size: 12px;
-  font-weight: 900;
-  color: var(--bmtc-green);
-}
-
-.hub-arrow {
-  color: var(--text-muted);
-  transition: transform 0.2s ease, color 0.2s ease;
+.sugg-pin-icon {
+  font-size: 16px;
+  margin-top: 1px;
   flex-shrink: 0;
 }
 
-.hub-card:hover .hub-arrow {
-  color: var(--bmtc-green);
-  transform: translateX(3px);
-}
-
-.hub-card.active .hub-arrow {
-  visibility: hidden;
-}
-
-.hub-info {
+.sugg-meta {
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.hub-name {
-  font-size: 13px;
-  font-weight: 800;
+.sugg-name {
+  font-size: 13.5px;
+  font-weight: 700;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.hub-sub {
-  font-size: 11px;
-  font-weight: 600;
+.sugg-desc {
+  font-size: 11.5px;
   color: var(--text-tertiary);
+  margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 1px;
+}
+
+.sugg-dist-tag {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--bmtc-green-dark);
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  border-radius: var(--radius-full);
+  padding: 2px 7px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.suggestion-empty {
+  padding: 18px 16px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.suggestion-empty .empty-icon {
+  font-size: 20px;
+  flex-shrink: 0;
 }
 
 /* ================= Big Hero Action Button ================= */
@@ -1767,60 +1813,15 @@ body {
   100% { transform: scale(2.8); opacity: 0; }
 }
 
-/* ================= Interactive 3D Elements ================= */
-.interactive-3d-tilt {
-  perspective: 600px;
-  cursor: pointer;
+/* ================= Clean Brand Logo & Direction Compass ================= */
+.logo-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.logo-3d-wrapper {
-  position: relative;
-  display: inline-block;
-  transform-style: preserve-3d;
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.logo-3d-wrapper:hover {
-  transform: rotateY(15deg) rotateX(-10deg) scale(1.08);
-}
-
-.logo-glare {
-  position: absolute;
-  inset: 0;
-  border-radius: 10px;
-  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4), transparent 70%);
-  pointer-events: none;
-  opacity: 0.6;
-  transition: opacity 0.2s;
-}
-
-/* 3D Parallax Tilt Cards */
-.interactive-3d-card {
-  transform-style: preserve-3d;
-  perspective: 1200px;
-  transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s ease;
-  will-change: transform;
-}
-
-.interactive-3d-card:hover {
-  box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.12), 0 6px 14px -2px rgba(15, 23, 42, 0.04);
-}
-
-/* Pop-out 3D depth elements inside cards */
-.interactive-3d-card .boarding-title,
-.interactive-3d-card .search-input-wrapper,
-.interactive-3d-card .direction-callout {
-  transform: translateZ(12px);
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.interactive-3d-card .native-nav-btn,
-.interactive-3d-card .main-action-btn {
-  transform: translateZ(18px);
-}
-
-/* Interactive 3D Directional Compass Widget */
-.interactive-compass-3d {
+/* Directional Compass Widget */
+.compass-badge {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1828,39 +1829,32 @@ body {
   border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-full);
   padding: 4px 10px 4px 5px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  cursor: pointer;
-  transition: all 0.25s var(--ease-spring);
-  perspective: 500px;
-  transform-style: preserve-3d;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.2s ease;
 }
 
-.interactive-compass-3d:hover {
+.compass-badge:hover {
   border-color: var(--bmtc-green);
-  transform: translateY(-1px) rotateX(8deg) scale(1.04);
-  box-shadow: 0 6px 16px rgba(4, 120, 87, 0.18);
 }
 
 .compass-dial-plate {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: conic-gradient(from 0deg, #F1F5F9, #FFFFFF, #E2E8F0, #FFFFFF, #F1F5F9);
+  background: #F8FAFC;
   border: 1.5px solid #CBD5E1;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
-  transform-style: preserve-3d;
 }
 
 .compass-needle {
   width: 3px;
-  height: 20px;
+  height: 18px;
   position: absolute;
   transform-origin: center center;
-  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.5s ease-out;
   display: flex;
   flex-direction: column;
   filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.3));

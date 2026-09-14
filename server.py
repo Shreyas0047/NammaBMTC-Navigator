@@ -17,6 +17,7 @@ sys.path.insert(0, BASE_DIR)
 
 from engine.db import get_db_connection
 from engine.ranker import rank_boarding_points
+from engine.spatial_index import haversine
 from engine.live_tracker import get_live_route_telemetry
 
 app = FastAPI(
@@ -44,6 +45,7 @@ class RecommendRequest(BaseModel):
     dest_name: Optional[str] = "Destination"
 
 
+@app.get("/health")
 @app.get("/api/health")
 def health():
     try:
@@ -52,38 +54,97 @@ def health():
         cur.execute("SELECT COUNT(*) as count FROM stops")
         count = cur.fetchone()["count"]
         conn.close()
-        return {"status": "ok", "stops_indexed": count}
+        return {
+            "status": "healthy",
+            "service": "NammaBMTC Navigator",
+            "version": "1.0.0",
+            "stops_indexed": count
+        }
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
 
+SEARCH_ALIASES = {
+    "majestic": "Kempegowda Bus Station",
+    "kbs": "Kempegowda Bus Station",
+    "silk board": "Central Silk Board",
+    "silkboard": "Central Silk Board",
+    "csb": "Central Silk Board",
+    "airport": "Kempegowda International Airport",
+    "kia": "Kempegowda International Airport",
+    "bial": "Kempegowda International Airport",
+    "whitefield": "White Field",
+    "itpl": "ITPL",
+    "ecity": "Electronic City",
+    "e-city": "Electronic City",
+    "kr market": "Krishna Rajendra Market",
+    "krmarket": "Krishna Rajendra Market",
+    "market": "Krishna Rajendra Market",
+    "kalasipalya": "Krishna Rajendra Market (Kalasipalya)",
+    "tin factory": "Tin Factory",
+    "tinfactory": "Tin Factory",
+    "marathahalli": "Marathahalli",
+    "marathalli": "Marathahalli",
+    "mekhri": "Mehkri Circle",
+    "mekhri circle": "Mehkri Circle",
+    "btm": "BTM Layout",
+    "hsr": "HSR Layout",
+    "hebbal": "Hebbala",
+    "jayanagar": "Jayanagara",
+    "vijaynagar": "Vijayanagar",
+    "rajajinagar": "Rajajinagara",
+}
+
+
 @app.get("/api/stops/search")
-def search_stops(q: str = Query(..., min_length=2), limit: int = 8):
+def search_stops(
+    q: str = Query(..., min_length=2),
+    user_lat: Optional[float] = Query(None),
+    user_lon: Optional[float] = Query(None),
+    limit: int = 8,
+):
     """
-    Fast substring and prefix search for stops across Bengaluru Urban and Rural.
+    Fast, alias-aware search for stops across Bengaluru Urban and Rural.
+    Resolves popular nicknames (Majestic -> KBS, Silk Board, Airport, ITPL, E-City)
+    and provides real-time distance from user.
     """
     term = q.strip()
     if not term:
         return []
 
+    norm = term.lower()
+    expanded = SEARCH_ALIASES.get(norm, term)
+
     conn = get_db_connection()
     cur = conn.cursor()
-    # Prioritize prefix match, then substring match
     cur.execute(
         """
         SELECT stop_id, stop_name, stop_desc, stop_lat, stop_lon
         FROM stops
-        WHERE stop_name LIKE ? OR stop_desc LIKE ?
+        WHERE stop_name LIKE ? OR stop_name LIKE ? OR stop_desc LIKE ?
+           OR stop_name LIKE ? OR stop_name LIKE ?
         ORDER BY 
             CASE 
-                WHEN stop_name LIKE ? THEN 1
-                WHEN stop_desc LIKE ? THEN 2
-                ELSE 3
+                WHEN lower(stop_name) = ? THEN 1
+                WHEN lower(stop_name) = ? THEN 2
+                WHEN lower(stop_name) LIKE ? THEN 3
+                WHEN lower(stop_name) LIKE ? THEN 4
+                WHEN lower(stop_name) LIKE ? THEN 5
+                WHEN lower(stop_name) LIKE ? THEN 6
+                WHEN lower(stop_desc) LIKE ? THEN 7
+                ELSE 8
             END,
-            stop_name ASC
-        LIMIT ?
+            length(stop_name) ASC
+        LIMIT 30
         """,
-        (f"%{term}%", f"%{term}%", f"{term}%", f"{term}%", limit),
+        (
+            f"%{term}%", f"%{expanded}%", f"%{term}%",
+            f"{term}%", f"{expanded}%",
+            norm, expanded.lower(),
+            f"{norm}%", f"{expanded.lower()}%",
+            f"%{norm}%", f"%{expanded.lower()}%",
+            f"%{norm}%",
+        ),
     )
     rows = cur.fetchall()
     conn.close()
@@ -91,17 +152,25 @@ def search_stops(q: str = Query(..., min_length=2), limit: int = 8):
     results = []
     seen = set()
     for r in rows:
-        key = (r["stop_name"], round(r["stop_lat"], 4), round(r["stop_lon"], 4))
-        if key in seen:
+        name = r["stop_name"].strip()
+        if name in seen:
             continue
-        seen.add(key)
+        seen.add(name)
+
+        dist_km = None
+        if user_lat is not None and user_lon is not None:
+            dist_km = round(haversine(user_lat, user_lon, r["stop_lat"], r["stop_lon"]) / 1000.0, 1)
+
         results.append({
             "stop_id": r["stop_id"],
-            "stop_name": r["stop_name"],
+            "stop_name": name,
             "stop_desc": r["stop_desc"] or "",
             "lat": r["stop_lat"],
             "lon": r["stop_lon"],
+            "dist_km": dist_km,
         })
+        if len(results) >= limit:
+            break
     return results
 
 

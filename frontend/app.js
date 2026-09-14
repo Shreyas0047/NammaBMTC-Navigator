@@ -147,30 +147,169 @@ closeDrawerBtn.addEventListener("click", () => {
   originDrawer.classList.add("hidden");
 });
 
-// ================= Autocomplete Search =================
+// ================= Enhanced Autocomplete & Recent Searches =================
+const RECENT_SEARCHES_KEY = "bmtc_recent_destinations";
+const recentTray = document.getElementById("recent-searches-tray");
+const recentChipsList = document.getElementById("recent-chips-list");
+const clearRecentBtn = document.getElementById("clear-recent-btn");
+
+function getRecentSearches() {
+  try {
+    const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveRecentSearch(item) {
+  if (!item || !item.name) return;
+  try {
+    let recents = getRecentSearches();
+    recents = recents.filter((r) => r.name.toLowerCase() !== item.name.toLowerCase());
+    recents.unshift({
+      name: item.name,
+      lat: item.lat,
+      lon: item.lon,
+      desc: item.desc || "",
+    });
+    recents = recents.slice(0, 5);
+    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(recents));
+    renderRecentSearches();
+  } catch (e) {
+    console.warn("Failed to persist recent search:", e);
+  }
+}
+
+function renderRecentSearches() {
+  if (!recentTray || !recentChipsList) return;
+  const recents = getRecentSearches();
+  if (recents.length === 0) {
+    recentTray.classList.add("hidden");
+    recentChipsList.innerHTML = "";
+    return;
+  }
+
+  recentTray.classList.remove("hidden");
+  recentChipsList.innerHTML = recents
+    .map(
+      (r) => `
+      <button class="recent-chip" type="button" data-name="${r.name}" data-lat="${r.lat}" data-lon="${r.lon}">
+        <span class="chip-icon">🕒</span>
+        <span class="chip-name">${r.name}</span>
+      </button>
+    `
+    )
+    .join("");
+
+  recentChipsList.querySelectorAll(".recent-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const name = chip.dataset.name;
+      const lat = parseFloat(chip.dataset.lat);
+      const lon = parseFloat(chip.dataset.lon);
+      setDestination(name, lat, lon);
+      triggerRecommendation();
+    });
+  });
+}
+
+if (clearRecentBtn) {
+  clearRecentBtn.addEventListener("click", () => {
+    try {
+      localStorage.removeItem(RECENT_SEARCHES_KEY);
+    } catch (e) {}
+    renderRecentSearches();
+  });
+}
+
+// Global Keyboard Shortcut: Press '/' or 'Ctrl+K' to focus search
+document.addEventListener("keydown", (e) => {
+  if (
+    (e.key === "/" && document.activeElement !== destSearchInput && document.activeElement !== originSearchInput) ||
+    ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")
+  ) {
+    e.preventDefault();
+    destSearchInput.focus();
+    destSearchInput.select();
+  }
+});
+
 let debounceTimer = null;
 function setupAutocomplete(inputEl, dropdownEl, onSelect) {
+  let activeIndex = -1;
+
+  function closeDropdown() {
+    dropdownEl.innerHTML = "";
+    dropdownEl.classList.add("hidden");
+    activeIndex = -1;
+    if (dropdownEl === destSuggestions) {
+      document.querySelector(".search-section")?.classList.remove("is-searching");
+    }
+  }
+
+  // Keyboard navigation inside input (ArrowDown, ArrowUp, Enter, Escape)
+  inputEl.addEventListener("keydown", (e) => {
+    const items = dropdownEl.querySelectorAll(".suggestion-item");
+    if (!items || items.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      activeIndex = (activeIndex + 1) % items.length;
+      updateActiveItem(items, activeIndex);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      activeIndex = (activeIndex - 1 + items.length) % items.length;
+      updateActiveItem(items, activeIndex);
+    } else if (e.key === "Enter" && activeIndex >= 0 && items[activeIndex]) {
+      e.preventDefault();
+      items[activeIndex].click();
+    } else if (e.key === "Escape") {
+      closeDropdown();
+    }
+  });
+
   inputEl.addEventListener("input", () => {
     const q = inputEl.value.trim();
     if (q.length < 2) {
-      dropdownEl.innerHTML = "";
-      dropdownEl.classList.add("hidden");
-      if (dropdownEl === destSuggestions) {
-        document.querySelector(".search-section")?.classList.remove("is-searching");
-      }
+      closeDropdown();
       return;
     }
 
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/stops/search?q=${encodeURIComponent(q)}`);
+        const uLat = state.origin.lat || "";
+        const uLon = state.origin.lon || "";
+        const url = `/api/stops/search?q=${encodeURIComponent(q)}&user_lat=${uLat}&user_lon=${uLon}`;
+        const res = await fetch(url);
         const stops = await res.json();
-        renderDropdown(stops, dropdownEl, onSelect);
+        activeIndex = -1;
+        renderDropdown(stops, dropdownEl, (item) => {
+          onSelect(item);
+          closeDropdown();
+        });
       } catch (e) {
         console.error("Search failed:", e);
       }
-    }, 200);
+    }, 120);
+  });
+
+  // Close on outside click
+  document.addEventListener("click", (e) => {
+    if (!inputEl.contains(e.target) && !dropdownEl.contains(e.target)) {
+      closeDropdown();
+    }
+  });
+}
+
+function updateActiveItem(items, index) {
+  items.forEach((item, idx) => {
+    if (idx === index) {
+      item.classList.add("active");
+      item.scrollIntoView({ block: "nearest" });
+    } else {
+      item.classList.remove("active");
+    }
   });
 }
 
@@ -180,7 +319,12 @@ function renderDropdown(items, dropdownEl, onSelect) {
   }
 
   if (!items || items.length === 0) {
-    dropdownEl.innerHTML = `<div class="suggestion-item"><span class="sugg-name">No stops found</span></div>`;
+    dropdownEl.innerHTML = `
+      <div class="suggestion-empty">
+        <span class="empty-icon">🔍</span>
+        <span>No matching BMTC stops found. Try typing a landmark or area (e.g. Majestic, Silk Board, ITPL).</span>
+      </div>
+    `;
     dropdownEl.classList.remove("hidden");
     return;
   }
@@ -189,8 +333,14 @@ function renderDropdown(items, dropdownEl, onSelect) {
     .map(
       (s) => `
       <div class="suggestion-item" data-id="${s.stop_id}" data-name="${s.stop_name}" data-desc="${s.stop_desc}" data-lat="${s.lat}" data-lon="${s.lon}">
-        <div class="sugg-name">${s.stop_name}</div>
-        <div class="sugg-desc">${s.stop_desc || "BMTC Stop"}</div>
+        <div class="sugg-left">
+          <span class="sugg-pin-icon">🚏</span>
+          <div class="sugg-meta">
+            <div class="sugg-name">${s.stop_name}</div>
+            <div class="sugg-desc">${s.stop_desc || "BMTC Boarding Node"}</div>
+          </div>
+        </div>
+        ${s.dist_km != null ? `<span class="sugg-dist-tag">${s.dist_km} km</span>` : ""}
       </div>
     `
     )
@@ -208,10 +358,6 @@ function renderDropdown(items, dropdownEl, onSelect) {
         lon: parseFloat(el.dataset.lon),
       };
       onSelect(data);
-      dropdownEl.classList.add("hidden");
-      if (dropdownEl === destSuggestions) {
-        document.querySelector(".search-section")?.classList.remove("is-searching");
-      }
     });
   });
 }
@@ -232,7 +378,7 @@ setupAutocomplete(originSearchInput, originSuggestions, (stop) => {
 // Wire Destination Autocomplete
 setupAutocomplete(destSearchInput, destSuggestions, (stop) => {
   setDestination(stop.name, stop.lat, stop.lon);
-  document.querySelectorAll(".hub-card").forEach((c) => c.classList.remove("active"));
+  saveRecentSearch(stop);
   triggerRecommendation();
 });
 
@@ -253,7 +399,6 @@ clearDestBtn.addEventListener("click", () => {
   clearDestBtn.classList.add("hidden");
   destSuggestions.classList.add("hidden");
   document.querySelector(".search-section")?.classList.remove("is-searching");
-  document.querySelectorAll(".hub-card").forEach((c) => c.classList.remove("active"));
   resultView.classList.remove("is-visible");
   resultView.classList.add("hidden");
   if (liveWatchId !== null && navigator.geolocation) {
@@ -261,22 +406,11 @@ clearDestBtn.addEventListener("click", () => {
     liveWatchId = null;
   }
   stopLiveBusTelemetry();
+  destSearchInput.focus();
 });
 
-// Hub Cards
-document.querySelectorAll(".hub-card").forEach((card) => {
-  card.addEventListener("click", () => {
-    document.querySelectorAll(".hub-card").forEach((c) => c.classList.remove("active"));
-    card.classList.add("active");
-
-    const lat = parseFloat(card.dataset.lat);
-    const lon = parseFloat(card.dataset.lon);
-    const name = card.dataset.name;
-
-    setDestination(name, lat, lon);
-    triggerRecommendation();
-  });
-});
+// Render recent searches on startup
+renderRecentSearches();
 
 // Close dropdowns on outside click
 document.addEventListener("click", (e) => {
@@ -349,12 +483,12 @@ async function triggerRecommendation() {
           return;
         }
       } catch (e) {
-        showStatus("Please enter your destination or choose one of the popular hubs.", "error");
+        showStatus("Please enter your destination bus stop or area.", "error");
         destSearchInput.focus();
         return;
       }
     } else {
-      showStatus("Please enter your destination or choose one of the popular hubs.", "error");
+      showStatus("Please enter your destination bus stop or area.", "error");
       destSearchInput.focus();
       return;
     }
@@ -568,10 +702,11 @@ function renderJourney(data) {
   const destName = p.routes.length > 0 ? p.routes[0].destination_stop : state.destination.name;
   recDestStop.textContent = destName;
 
-  // Trigger Real-Time Live Bus VTMS Telemetry Tracking
+  // Trigger Real-Time Live Bus VTMS Telemetry Tracking with Multi-Route aggregation
   if (routesToDisplay && routesToDisplay.length > 0) {
-    const primaryRoute = routesToDisplay[0].route;
-    startLiveBusTelemetry(primaryRoute, p.lat, p.lon, state.destination.lat, state.destination.lon);
+    const candidateRoutes = [...new Set(routesToDisplay.map((r) => (r.route || "").trim()).filter(Boolean))].slice(0, 4);
+    const routesParam = candidateRoutes.length > 0 ? candidateRoutes.join(",") : routesToDisplay[0].route;
+    startLiveBusTelemetry(routesParam, p.lat, p.lon, state.destination.lat, state.destination.lon);
   } else {
     stopLiveBusTelemetry();
   }
@@ -830,7 +965,7 @@ toggleAltsBtn.addEventListener("click", () => {
 // Auto-run GPS detection on initial load
 requestLiveLocation(true);
 
-// ================= Interactive 3D Physics & Directional Compass =================
+// ================= Walking Direction Compass =================
 function calculateBearing(lat1, lon1, lat2, lon2) {
   const toRad = (d) => (d * Math.PI) / 180;
   const toDeg = (r) => (r * 180) / Math.PI;
@@ -861,62 +996,6 @@ function update3DCompass(oLat, oLon, dLat, dLon) {
   }
 }
 
-// 3D Parallax Tilt Physics on Cards
-function init3DCardEffects() {
-  const tiltElements = document.querySelectorAll(".interactive-3d-card, .interactive-3d-tilt, .hub-card");
-  
-  tiltElements.forEach((el) => {
-    el.addEventListener("pointermove", (e) => {
-      const rect = el.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const midX = rect.width / 2;
-      const midY = rect.height / 2;
-      
-      const rotX = -((y - midY) / midY) * 8.5;
-      const rotY = ((x - midX) / midX) * 8.5;
-
-      el.style.transform = `perspective(1000px) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg) scale3d(1.015, 1.015, 1.015)`;
-    });
-
-    el.addEventListener("pointerleave", () => {
-      el.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)";
-    });
-  });
-
-  // Interactive Click-to-Spin 3D Compass
-  const compassWidget = document.getElementById("compass-3d");
-  if (compassWidget) {
-    compassWidget.addEventListener("click", () => {
-      const needle = document.getElementById("compass-needle");
-      if (!needle) return;
-      needle.style.transition = "transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)";
-      const currentRot = needle.style.transform || "rotate(0deg)";
-      const match = currentRot.match(/rotate\(([-0-9.]+)deg\)/);
-      const base = match ? parseFloat(match[1]) : 0;
-      needle.style.transform = `rotate(${base + 360}deg)`;
-    });
-  }
-
-  // Subtle Device Gyroscope tilt on Mobile
-  if (window.DeviceOrientationEvent && typeof window.DeviceOrientationEvent.requestPermission !== "function") {
-    window.addEventListener("deviceorientation", (e) => {
-      if (e.gamma !== null && e.beta !== null) {
-        const tiltX = Math.min(8, Math.max(-8, (e.beta - 45) * 0.2));
-        const tiltY = Math.min(8, Math.max(-8, e.gamma * 0.2));
-        const heroCard = document.getElementById("journey-card-3d");
-        if (heroCard && !heroCard.matches(":hover")) {
-          heroCard.style.transform = `perspective(1000px) rotateX(${tiltX.toFixed(1)}deg) rotateY(${tiltY.toFixed(1)}deg)`;
-        }
-      }
-    });
-  }
-}
-
-// Initialize 3D physics on DOM load
-document.addEventListener("DOMContentLoaded", init3DCardEffects);
-init3DCardEffects();
-
 // ================= Real-Time Live Bus VTMS Telemetry =================
 function startLiveBusTelemetry(routeNo, origLat, origLon, destLat, destLon) {
   stopLiveBusTelemetry();
@@ -929,12 +1008,12 @@ function startLiveBusTelemetry(routeNo, origLat, origLon, destLat, destLon) {
     nearestBusBanner.innerHTML = `
       <div class="telemetry-skeleton">
         <span class="pulse-live-dot"></span>
-        <span>Polling live GPS satellite feed for Route ${routeNo}...</span>
+        <span>Polling real-time GPS satellite feed for Route ${routeNo.replace(/,/g, " / ")}...</span>
       </div>
     `;
   }
   if (telemetryStatusTitle) {
-    telemetryStatusTitle.textContent = `LIVE BUS TRACKER • ROUTE ${routeNo}`;
+    telemetryStatusTitle.textContent = `LIVE BUS TRACKER • ROUTE ${routeNo.replace(/,/g, " / ")}`;
   }
   if (telemetryLastSync) {
     telemetryLastSync.textContent = "Connecting to BMTC VTMS...";
@@ -991,8 +1070,11 @@ function renderLiveBusTelemetry(data) {
   if (data.live && (data.approaching_count > 0 || data.active_buses_total > 0)) {
     liveTelemetryBox.classList.remove("is-offline");
 
+    const routesListStr = data.routes_queried && data.routes_queried.length > 0 ? data.routes_queried.join(", ") : (data.route || "");
     if (telemetryStatusTitle) {
-      telemetryStatusTitle.textContent = `LIVE BUS GPS TELEMETRY • ${data.approaching_count} APPROACHING`;
+      telemetryStatusTitle.textContent = data.approaching_count > 0
+        ? `LIVE BUS GPS RADAR • ${data.approaching_count} APPROACHING (${routesListStr})`
+        : `LIVE FLEET RADAR • ${data.active_buses_total} BUSES ACTIVE (${routesListStr})`;
     }
     if (telemetryLastSync) {
       telemetryLastSync.textContent = `Synced ${timeStr}`;
@@ -1006,14 +1088,18 @@ function renderLiveBusTelemetry(data) {
         ? `<span class="arrived-badge">🟢 AT PLATFORM NOW</span>`
         : `<span class="eta-highlight">~${b.eta_mins} min</span> (${(b.dist_km * 1000).toFixed(0)}m away)`;
 
-      const stopsLabel = b.stops_away !== undefined && b.stops_away > 0
-        ? `<span class="stops-count-badge">${b.stops_away} stop${b.stops_away > 1 ? "s" : ""} away</span>`
-        : "";
+      let stopsLabel = "";
+      if (b.is_terminal_inbound) {
+        stopsLabel = `<span class="stops-count-badge" style="background: #0284C7; color: #fff;">Arriving at Terminal</span>`;
+      } else if (b.stops_away !== undefined && b.stops_away > 0) {
+        stopsLabel = `<span class="stops-count-badge">${b.stops_away} stop${b.stops_away > 1 ? "s" : ""} away</span>`;
+      }
 
       nearestBusBanner.innerHTML = `
         <div class="nearest-bus-card-inner">
           <div class="nearest-bus-meta">
             <div class="nearest-bus-title-row">
+              <span class="route-pill" style="font-size: 11px; padding: 2px 7px; margin-right: 4px;">${b.route || data.route}</span>
               <span class="vehicle-reg-badge">${b.vehicle}</span>
               <span class="vehicle-type-tag">${b.type || "BMTC Bus"}</span>
               ${stopsLabel}
@@ -1029,10 +1115,29 @@ function renderLiveBusTelemetry(data) {
         </div>
       `;
     } else {
+      const fallbackBus = data.nearest_active_bus;
       nearestBusBanner.innerHTML = `
-        <div class="telemetry-offline-card">
-          <span>ℹ️</span>
-          <span><b>Active Fleet:</b> ${data.active_buses_total} buses running on Route ${data.route}. Currently past your boarding stop. Next schedule departing soon.</span>
+        <div class="nearest-bus-card-inner" style="border-left: 4px solid #0284C7;">
+          <div class="nearest-bus-meta">
+            <div class="nearest-bus-title-row">
+              <span class="route-pill" style="background:#0284C7; color:#fff; font-size:11px; padding:2px 7px; margin-right:4px;">${fallbackBus ? (fallbackBus.route || data.route) : data.route}</span>
+              <span class="vehicle-reg-badge">${fallbackBus ? fallbackBus.vehicle : "Fleet Active"}</span>
+              <span class="vehicle-type-tag">${fallbackBus ? (fallbackBus.type || "In Service") : "Active Fleet"}</span>
+            </div>
+            <div class="nearest-bus-eta-row">
+              <span>Active Corridor Fleet:</span>
+              <span class="eta-highlight" style="color:#0284C7;">${data.active_buses_total} Buses in Transit</span>
+              ${fallbackBus ? `<span>(${fallbackBus.dist_km} km away)</span>` : ""}
+            </div>
+            <div style="margin-top: 6px;">
+              <button onclick="toggleShowLiveBusesOnMap()" style="font-size: 11.5px; font-weight: 700; color: #0284C7; background: rgba(2,132,199,0.08); border: 1px solid rgba(2,132,199,0.25); border-radius: 4px; padding: 4px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                🗺️ Show All ${data.active_buses_total} Buses on Live Map
+              </button>
+            </div>
+          </div>
+          <div class="nearest-bus-icon">
+            <span style="font-size: 26px;">🚍</span>
+          </div>
         </div>
       `;
     }
@@ -1041,12 +1146,13 @@ function renderLiveBusTelemetry(data) {
     if (data.approaching_buses && data.approaching_buses.length > 1) {
       approachingBusesList.classList.remove("hidden");
       approachingBusesList.innerHTML = data.approaching_buses
-        .slice(1, 4)
+        .slice(1, 5)
         .map(
           (b) => `
           <div class="sub-bus-row">
             <div class="sub-bus-ident">
               <span style="color: #059669;">🚍</span>
+              <span class="sub-route-tag" style="background: #ECFDF5; color: #065F46; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 3px; font-family: var(--font-mono);">${b.route || ""}</span>
               <span class="sub-reg">${b.vehicle}</span>
               <span class="vehicle-type-tag" style="font-size: 9.5px; padding: 1px 4px;">${b.type}</span>
             </div>
@@ -1078,7 +1184,7 @@ function renderLiveBusTelemetry(data) {
     nearestBusBanner.innerHTML = `
       <div class="telemetry-offline-card">
         <span>📡</span>
-        <span><b>Official GTFS Frequency:</b> Regular high-frequency service. Live GPS satellite telemetry is currently quiet for this specific line.</span>
+        <span><b>Official GTFS Frequency:</b> Regular high-frequency service. Live GPS satellite telemetry is currently quiet for this line. Next trip running per timetable.</span>
       </div>
     `;
     approachingBusesList.classList.add("hidden");
@@ -1101,8 +1207,6 @@ function updateLiveBusMapMarkers(approachingBuses, allBuses) {
   const hasApproaching = approachingBuses && approachingBuses.length > 0;
   const hasAll = allBuses && allBuses.length > 0;
 
-  // Decide buses to plot: if user toggled on, plot all active buses.
-  // Otherwise, plot approaching buses if available; if approaching is empty, plot all active buses so the map is never empty!
   let busesToPlot = [];
   if (showLiveBusesOnMap) {
     busesToPlot = hasAll ? allBuses : (hasApproaching ? approachingBuses : []);
@@ -1123,9 +1227,12 @@ function updateLiveBusMapMarkers(approachingBuses, allBuses) {
 
     const isNearest = (hasApproaching && b.vehicle === approachingBuses[0].vehicle) || idx === 0;
     const etaText = b.eta_mins ? `~${b.eta_mins}m` : "";
+    const routeTag = b.route ? `<span style="background: rgba(0,0,0,0.25); padding: 1px 4px; border-radius: 3px; margin-right: 3px; font-weight: 800;">${b.route}</span>` : "";
+
     const markerHtml = `
       <div class="bus-marker-pin ${isNearest ? 'is-nearest' : ''}">
-        <span style="font-size: 13px;">🚍</span>
+        <span style="font-size: 12px;">🚍</span>
+        ${routeTag}
         <span style="font-family: var(--font-mono); font-weight: 800;">${b.vehicle}</span>
         ${etaText ? `<span style="font-size: 10px; background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 3px;">${etaText}</span>` : ""}
       </div>
@@ -1134,18 +1241,21 @@ function updateLiveBusMapMarkers(approachingBuses, allBuses) {
     const icon = L.divIcon({
       className: "custom-bus-marker",
       html: markerHtml,
-      iconSize: [110, 26],
-      iconAnchor: [55, 13],
+      iconSize: [120, 26],
+      iconAnchor: [60, 13],
     });
 
     const marker = L.marker([b.lat, b.lon], { icon, zIndexOffset: isNearest ? 1000 : 500 }).addTo(mapInstance);
     marker.bindPopup(`
       <div style="font-family: var(--font-sans); font-size: 12px; line-height: 1.4; padding: 2px;">
-        <div style="font-weight: 800; color: #065F46; font-size: 13px; font-family: var(--font-mono);">🚍 BMTC ${b.vehicle}</div>
-        <div style="margin-top: 3px;"><b>Type:</b> ${b.type || "Ordinary"}</div>
-        <div><b>Distance:</b> ${b.dist_km} km to stop</div>
-        <div><b>Live ETA:</b> <span style="font-weight: 800; color: #059669;">~${b.eta_mins} min</span></div>
-        ${b.last_updated ? `<div style="color: #64748B; font-size: 10.5px; margin-top: 4px;">Satellite Ping: ${b.last_updated}</div>` : ""}
+        <div style="font-weight: 800; color: #065F46; font-size: 13px; font-family: var(--font-mono);">
+          🚍 BMTC ${b.route ? `Route ${b.route} • ` : ""}${b.vehicle}
+        </div>
+        <div style="margin-top: 3px;"><b>Service:</b> ${b.type || "Ordinary"}</div>
+        <div><b>Distance to stop:</b> ${b.dist_km} km</div>
+        <div><b>Live Arrival:</b> <span style="font-weight: 800; color: #059669;">~${b.eta_mins} min</span></div>
+        ${b.is_terminal_inbound ? '<div style="color: #0284C7; font-size: 11px; font-weight: 600; margin-top: 2px;">🔄 Inbound / Turnaround at terminal</div>' : ''}
+        ${b.last_updated ? `<div style="color: #64748B; font-size: 10.5px; margin-top: 4px;">🛰️ Satellite Sync: ${b.last_updated}</div>` : ""}
       </div>
     `);
 

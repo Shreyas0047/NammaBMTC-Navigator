@@ -61,10 +61,9 @@
   <div class="mobile-app">
     <!-- Top Navigation -->
     <header class="app-navbar">
-      <div class="nav-brand interactive-3d-tilt" id="brand-logo-3d" title="Interactive 3D NammaBMTC Logo">
-        <div class="logo-3d-wrapper">
+      <div class="nav-brand" id="brand-logo">
+        <div class="logo-wrapper">
           <img src="assets/logo.svg" alt="NammaBMTC Navigator Logo" class="app-logo" width="38" height="38">
-          <div class="logo-glare"></div>
         </div>
         <div class="brand-text">
           <h1>NammaBMTC <span class="nav-badge">NAVIGATOR</span></h1>
@@ -108,8 +107,11 @@
     <main class="app-main">
       <!-- Destination Search Section -->
       <section class="search-section">
-        <div class="destination-search-card interactive-3d-card" id="search-card-3d">
-          <label for="dest-search-input" class="search-label">WHERE ARE YOU GOING?</label>
+        <div class="destination-search-card" id="search-card">
+          <div class="search-header-row">
+            <label for="dest-search-input" class="search-label">WHERE ARE YOU GOING?</label>
+            <span class="search-kbd-hint" title="Press / or Ctrl+K to search">Press <kbd>/</kbd></span>
+          </div>
           <div class="search-input-wrapper">
             <div class="search-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -120,91 +122,23 @@
             <input 
               type="text" 
               id="dest-search-input" 
-              placeholder="Search destination stop or area..." 
+              placeholder="Search destination (e.g. Majestic, Silk Board, ITPL, Airport, Anekal)..." 
               autocomplete="off"
+              autofocus
             />
-            <button id="clear-dest-btn" class="clear-btn hidden" type="button">✕</button>
+            <button id="clear-dest-btn" class="clear-btn hidden" type="button" title="Clear search">✕</button>
           </div>
-          <div id="dest-suggestions" class="suggestions-dropdown hidden"></div>
-        </div>
+          
+          <!-- Recent Searches Quick Chips Tray -->
+          <div id="recent-searches-tray" class="recent-tray hidden">
+            <div class="recent-tray-header">
+              <span class="recent-tray-title">Recent Searches</span>
+              <button id="clear-recent-btn" class="clear-recent-action" type="button">Clear</button>
+            </div>
+            <div id="recent-chips-list" class="recent-chips-list"></div>
+          </div>
 
-        <!-- Popular Destinations Grid -->
-        <div id="popular-hubs-section" class="popular-section">
-          <span class="section-title">POPULAR HUBS</span>
-          <div class="hubs-grid">
-            <button class="hub-card" data-lat="12.9775" data-lon="77.5714" data-name="Kempegowda Bus Station (Majestic)">
-              <div class="hub-info">
-                <span class="hub-name">Majestic</span>
-                <span class="hub-sub">Central Terminal</span>
-              </div>
-              <svg class="hub-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-            <button class="hub-card" data-lat="12.9175" data-lon="77.6225" data-name="Central Silk Board">
-              <div class="hub-info">
-                <span class="hub-name">Silk Board</span>
-                <span class="hub-sub">Hosur Rd / ORR</span>
-              </div>
-              <svg class="hub-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-            <button class="hub-card" data-lat="12.8160" data-lon="77.6920" data-name="Bommasandra Industrial Area">
-              <div class="hub-info">
-                <span class="hub-name">Bommasandra</span>
-                <span class="hub-sub">Hosur Highway</span>
-              </div>
-              <svg class="hub-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-            <button class="hub-card" data-lat="12.8452" data-lon="77.6602" data-name="Electronic City Wipro Gate">
-              <div class="hub-info">
-                <span class="hub-name">Electronic City</span>
-                <span class="hub-sub">Phase 1 & 2</span>
-              </div>
-              <svg class="hub-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-            <button class="hub-card" data-lat="12.9860" data-lon="77.7400" data-name="ITPL Whitefield">
-              <div class="hub-info">
-                <span class="hub-name">ITPL Whitefield</span>
-                <span class="hub-sub">Tech Corridor</span>
-              </div>
-              <svg class="hub-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-            <button class="hub-card" data-lat="13.0970" data-lon="77.3970" data-name="Nelamangala Bus Station">
-              <div class="hub-info">
-                <span class="hub-name">Nelamangala</span>
-                <span class="hub-sub">Tumkur Highway</span>
-              </div>
-              <svg class="hub-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-            <button class="hub-card" data-lat="13.0710" data-lon="77.7980" data-name="Hosakote Bus Stand">
-              <div class="hub-info">
-                <span class="hub-name">Hosakote</span>
-                <span class="hub-sub">Old Madras Rd</span>
-              </div>
-              <svg class="hub-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-            <button class="hub-card" data-lat="13.2480" data-lon="77.7120" data-name="Devanahalli Old Bus Stand">
-              <div class="hub-info">
-                <span class="hub-name">Devanahalli / KIA</span>
-                <span class="hub-sub">Airport North</span>
-              </div>
-              <svg class="hub-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-          </div>
+          <div id="dest-suggestions" class="suggestions-dropdown hidden"></div>
         </div>
 
         <!-- Big Primary Action Button -->
@@ -278,7 +212,7 @@
         </div>
 
         <!-- Visual Journey Stepper Card -->
-        <div class="journey-card interactive-3d-card" id="journey-card-3d">
+        <div class="journey-card" id="journey-card">
           <!-- Step 1: Origin -->
           <div class="journey-step origin-step">
             <div class="step-marker">
@@ -322,8 +256,8 @@
                     <span class="pulse-icon">🚶</span>
                     <span id="live-distance-countdown">Walk 250 m (~3 min)</span>
                   </div>
-                  <!-- Interactive 3D Directional Compass -->
-                  <div class="interactive-compass-3d" id="compass-3d" title="Interactive 3D Direction Compass">
+                  <!-- Directional Compass Badge -->
+                  <div class="compass-badge" id="compass-badge" title="Walking heading">
                     <div class="compass-dial-plate">
                       <div class="compass-needle" id="compass-needle">
                         <div class="needle-tip north"></div>
