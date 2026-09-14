@@ -154,6 +154,9 @@ function setupAutocomplete(inputEl, dropdownEl, onSelect) {
     if (q.length < 2) {
       dropdownEl.innerHTML = "";
       dropdownEl.classList.add("hidden");
+      if (dropdownEl === destSuggestions) {
+        document.querySelector(".search-section")?.classList.remove("is-searching");
+      }
       return;
     }
 
@@ -166,11 +169,15 @@ function setupAutocomplete(inputEl, dropdownEl, onSelect) {
       } catch (e) {
         console.error("Search failed:", e);
       }
-    }, 220);
+    }, 200);
   });
 }
 
 function renderDropdown(items, dropdownEl, onSelect) {
+  if (dropdownEl === destSuggestions) {
+    document.querySelector(".search-section")?.classList.add("is-searching");
+  }
+
   if (!items || items.length === 0) {
     dropdownEl.innerHTML = `<div class="suggestion-item"><span class="sugg-name">No stops found</span></div>`;
     dropdownEl.classList.remove("hidden");
@@ -201,6 +208,9 @@ function renderDropdown(items, dropdownEl, onSelect) {
       };
       onSelect(data);
       dropdownEl.classList.add("hidden");
+      if (dropdownEl === destSuggestions) {
+        document.querySelector(".search-section")?.classList.remove("is-searching");
+      }
     });
   });
 }
@@ -240,6 +250,8 @@ clearDestBtn.addEventListener("click", () => {
   state.destination.lon = null;
   destSearchInput.value = "";
   clearDestBtn.classList.add("hidden");
+  destSuggestions.classList.add("hidden");
+  document.querySelector(".search-section")?.classList.remove("is-searching");
   document.querySelectorAll(".hub-card").forEach((c) => c.classList.remove("active"));
   resultView.classList.remove("is-visible");
   resultView.classList.add("hidden");
@@ -269,6 +281,7 @@ document.querySelectorAll(".hub-card").forEach((card) => {
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".destination-search-card")) {
     destSuggestions.classList.add("hidden");
+    document.querySelector(".search-section")?.classList.remove("is-searching");
   }
   if (!e.target.closest(".search-box")) {
     originSuggestions.classList.add("hidden");
