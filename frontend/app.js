@@ -1,13 +1,14 @@
 /**
- * BMTC Boarding Point Recommender - Destination-First Client
- * With Live Walking Radar, Interactive Map, and Native Turn-by-Turn Deep-Link
+ * NammaBMTC Navigator - Modern Windows XP / Luna Frutiger Aero Controller
+ * Integrates Destination-Aware Transit Engine with Real-Time BMTC VTMS Telemetry
  */
 
-const state = {
+// Application State
+const appState = {
   origin: {
     name: "Detecting GPS location...",
-    lat: null,
-    lon: null,
+    lat: 12.9774,
+    lon: 77.5708,
     isLive: false,
   },
   destination: {
@@ -15,1331 +16,721 @@ const state = {
     lat: null,
     lon: null,
   },
+  primaryCandidate: null,
+  alternatives: [],
+  activeBusMarker: null,
+  telemetryTimer: null,
 };
 
-// Map & Navigation State
-let mapInstance = null;
+// Map instances
+let map = null;
 let userMarker = null;
 let stopMarker = null;
-let walkPolyline = null;
-let liveWatchId = null;
-let currentPrimaryStop = null;
+let walkLine = null;
+let busMarker = null;
 
-// DOM Elements
-const gpsStatusPill = document.getElementById("gps-status-pill");
+// DOM Cache
 const gpsStatusText = document.getElementById("gps-status-text");
-const currentLocDisplay = document.getElementById("current-loc-display");
-const editOriginBtn = document.getElementById("edit-origin-btn");
-const originDrawer = document.getElementById("origin-edit-drawer");
-const closeDrawerBtn = document.getElementById("close-drawer-btn");
-const originSearchInput = document.getElementById("origin-search-input");
-const originSuggestions = document.getElementById("origin-suggestions");
-const useGpsTrigger = document.getElementById("use-gps-trigger");
+const currentOriginText = document.getElementById("current-origin-text");
+const changeOriginBtn = document.getElementById("change-origin-btn");
+const originModal = document.getElementById("origin-modal");
+const modalCloseBtn = document.getElementById("modal-close-btn");
+const modalCancelBtn = document.getElementById("modal-cancel-btn");
+const modalSaveBtn = document.getElementById("modal-save-btn");
+const modalOriginInput = document.getElementById("modal-origin-input");
+const modalOriginSuggestions = document.getElementById("modal-origin-suggestions");
 
-const destSearchInput = document.getElementById("dest-search-input");
-const destSuggestions = document.getElementById("dest-suggestions");
-const clearDestBtn = document.getElementById("clear-dest-btn");
-const findActionBtn = document.getElementById("find-action-btn");
-const statusCard = document.getElementById("status-card");
+const destinationInput = document.getElementById("destination-input");
+const clearSearchBtn = document.getElementById("clear-search-btn");
+const suggestionsDropdown = document.getElementById("suggestions-dropdown");
+const recentChipsContainer = document.getElementById("recent-chips-container");
+const clearRecentBtn = document.getElementById("clear-recent-btn");
+const loadingIndicator = document.getElementById("loading-indicator");
 
-const resultView = document.getElementById("result-view");
-const journeyOriginTitle = document.getElementById("journey-origin-title");
-const timelineWalkText = document.getElementById("timeline-walk-text");
-const recStopName = document.getElementById("rec-stop-name");
-const recStopDesc = document.getElementById("rec-stop-desc");
-const recRoutesList = document.getElementById("rec-routes-list");
-const recDestStop = document.getElementById("rec-dest-stop");
+const journeyResults = document.getElementById("journey-results");
+const primaryCard = document.getElementById("primary-card");
+const step1OriginName = document.getElementById("step1-origin-name");
+const walkInfoChip = document.getElementById("walk-info-chip");
+const step2StopName = document.getElementById("step2-stop-name");
+const step2PlatformDesc = document.getElementById("step2-platform-desc");
+const vtmsStatusTitle = document.getElementById("vtms-status-title");
+const radarEtaPill = document.getElementById("radar-eta-pill");
+const fleetPillsRow = document.getElementById("fleet-pills-row");
+const walkingNavBtn = document.getElementById("walking-nav-btn");
+const step3DestName = document.getElementById("step3-dest-name");
+const step3Subtext = document.getElementById("step3-subtext");
+const fareSummaryBadge = document.getElementById("fare-summary-badge");
 
-const liveDistanceCountdown = document.getElementById("live-distance-countdown");
-const arrivalStatusPill = document.getElementById("arrival-status-pill");
-const nativeNavBtn = document.getElementById("native-nav-btn");
-const recenterMapBtn = document.getElementById("recenter-map-btn");
+const transferBox = document.getElementById("transfer-box");
+const transferRow = document.getElementById("transfer-row");
+const alternativesDrawer = document.getElementById("alternatives-drawer");
+const altDrawerTrigger = document.getElementById("alt-drawer-trigger");
+const altDrawerContent = document.getElementById("alt-drawer-content");
+const altChevron = document.getElementById("alt-chevron");
+const altHeading = document.getElementById("alt-heading");
 
-const toggleAltsBtn = document.getElementById("toggle-alts-btn");
-const altsCountLabel = document.getElementById("alts-count-label");
-const alternativesContainer = document.getElementById("alternatives-container");
+const navToast = document.getElementById("nav-toast");
+const navToastMsg = document.getElementById("nav-toast-msg");
 
-// Live Bus Telemetry State & DOM Elements
-let telemetryIntervalId = null;
-let liveBusMarkers = [];
-let showLiveBusesOnMap = false;
-let currentTelemetryParams = null;
-let latestTelemetryData = null;
-
-const liveTelemetryBox = document.getElementById("live-bus-telemetry-box");
-const telemetryStatusTitle = document.getElementById("telemetry-status-title");
-const telemetryLastSync = document.getElementById("telemetry-last-sync");
-const telemetryRefreshBtn = document.getElementById("telemetry-refresh-btn");
-const nearestBusBanner = document.getElementById("nearest-bus-banner");
-const approachingBusesList = document.getElementById("approaching-buses-list");
-const toggleBusMapBtn = document.getElementById("toggle-bus-map-btn");
-
-// ================= Geolocation Helpers =================
-function haversineMeters(lat1, lon1, lat2, lon2) {
-  const R = 6371000;
-  const toRad = (x) => (x * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-function requestLiveLocation(silent = false) {
+// ==========================================
+// 1. Geolocation Setup
+// ==========================================
+function initGeolocation() {
   if (!navigator.geolocation) {
-    fallbackLocation("GPS not supported by your browser");
+    setFallbackOrigin("Majestic (Kempegowda Bus Station)", 12.9774, 77.5708);
     return;
   }
 
-  currentLocDisplay.textContent = "Acquiring live GPS satellite lock...";
-  gpsStatusText.textContent = "Acquiring...";
+  currentOriginText.textContent = "Acquiring satellite lock...";
+  gpsStatusText.textContent = "Acquiring GPS...";
 
   navigator.geolocation.getCurrentPosition(
     (pos) => {
-      state.origin.lat = pos.coords.latitude;
-      state.origin.lon = pos.coords.longitude;
-      state.origin.name = "My Live Street Location";
-      state.origin.isLive = true;
+      appState.origin.lat = pos.coords.latitude;
+      appState.origin.lon = pos.coords.longitude;
+      appState.origin.isLive = true;
+      appState.origin.name = "Your Live Location (GPS)";
 
-      currentLocDisplay.textContent = "📍 Live GPS Location";
-      gpsStatusText.textContent = "Live GPS Active";
-      gpsStatusPill.classList.add("active");
-      hideStatus();
+      gpsStatusText.textContent = "● Live GPS Active";
+      currentOriginText.textContent = "Live GPS Location";
+      step1OriginName.textContent = "Your Location";
+
+      // If destination already selected, refresh recommendation
+      if (appState.destination.lat && appState.destination.lon) {
+        fetchRecommendation();
+      }
     },
     (err) => {
-      console.warn("GPS Error / Denied:", err);
-      fallbackLocation("Location denied. Defaulted to Corporation Circle.");
+      console.warn("GPS access denied or unavailable:", err.message);
+      setFallbackOrigin("Majestic (KBS)", 12.9774, 77.5708);
     },
-    { enableHighAccuracy: true, timeout: 9000 }
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
   );
 }
 
-function fallbackLocation(msg) {
-  // Default: Corporation Circle
-  state.origin.lat = 12.9680;
-  state.origin.lon = 77.5880;
-  state.origin.name = "Corporation Circle (Default)";
-  state.origin.isLive = false;
+function setFallbackOrigin(name, lat, lon) {
+  appState.origin.lat = lat;
+  appState.origin.lon = lon;
+  appState.origin.isLive = false;
+  appState.origin.name = name;
 
-  currentLocDisplay.textContent = "Corporation Circle (Tap 'Change' to pick)";
-  gpsStatusText.textContent = "Set Location";
-  gpsStatusPill.classList.remove("active");
-  if (msg) showStatus(msg, "info");
+  gpsStatusText.textContent = "● Preset Origin";
+  currentOriginText.textContent = name;
+  step1OriginName.textContent = name;
 }
 
-gpsStatusPill.addEventListener("click", () => requestLiveLocation(false));
-useGpsTrigger.addEventListener("click", () => {
-  requestLiveLocation(false);
-  originDrawer.classList.add("hidden");
-});
+// ==========================================
+// 2. Leaflet Mini-Map
+// ==========================================
+function initOrUpdateMap(originLat, originLon, stopLat, stopLon, stopName, approachingBus = null) {
+  const mapContainer = document.getElementById("mini-map");
+  if (!mapContainer) return;
 
-// Origin Edit Drawer
-editOriginBtn.addEventListener("click", () => {
-  originDrawer.classList.toggle("hidden");
-  if (!originDrawer.classList.contains("hidden")) {
-    originSearchInput.focus();
+  if (!map) {
+    map = L.map("mini-map", {
+      zoomControl: false,
+      attributionControl: false,
+    }).setView([originLat, originLon], 14);
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      maxZoom: 19,
+    }).addTo(map);
+
+    L.control.zoom({ position: "topleft" }).addTo(map);
   }
-});
 
-closeDrawerBtn.addEventListener("click", () => {
-  originDrawer.classList.add("hidden");
-});
+  // Clear previous markers & lines
+  if (userMarker) map.removeLayer(userMarker);
+  if (stopMarker) map.removeLayer(stopMarker);
+  if (walkLine) map.removeLayer(walkLine);
+  if (busMarker) map.removeLayer(busMarker);
 
-// ================= Enhanced Autocomplete & Recent Searches =================
-const RECENT_SEARCHES_KEY = "bmtc_recent_destinations";
-const recentTray = document.getElementById("recent-searches-tray");
-const recentChipsList = document.getElementById("recent-chips-list");
-const clearRecentBtn = document.getElementById("clear-recent-btn");
+  // User Marker
+  const userIcon = L.divIcon({
+    className: "user-pin-marker",
+    html: `<div style="width:14px;height:14px;border-radius:50%;background:#0a246a;border:2px solid #fff;box-shadow:0 0 6px #0a246a;"></div>`,
+    iconSize: [14, 14],
+  });
+  userMarker = L.marker([originLat, originLon], { icon: userIcon })
+    .addTo(map)
+    .bindPopup(`<b>Your Location</b><br>${appState.origin.name}`);
 
-function getRecentSearches() {
-  try {
-    const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    return [];
-  }
-}
+  // Stop Marker
+  const stopIcon = L.divIcon({
+    className: "stop-pin-marker",
+    html: `<div id="map-stop-pill" style="background:#127533;color:#fff;padding:3px 8px;font-size:11px;font-weight:bold;border:1px solid #fff;border-radius:3px;box-shadow:1px 1px 4px rgba(0,0,0,0.4);white-space:nowrap;">🚏 ${stopName}</div>`,
+    iconSize: [120, 24],
+  });
+  stopMarker = L.marker([stopLat, stopLon], { icon: stopIcon })
+    .addTo(map)
+    .bindPopup(`<b>Boarding Point</b><br>${stopName}`);
 
-function saveRecentSearch(item) {
-  if (!item || !item.name) return;
-  try {
-    let recents = getRecentSearches();
-    recents = recents.filter((r) => r.name.toLowerCase() !== item.name.toLowerCase());
-    recents.unshift({
-      name: item.name,
-      lat: item.lat,
-      lon: item.lon,
-      desc: item.desc || "",
+  // Walking Dotted Line
+  walkLine = L.polyline([[originLat, originLon], [stopLat, stopLon]], {
+    color: "#0a246a",
+    weight: 3,
+    dashArray: "5, 6",
+    opacity: 0.85,
+  }).addTo(map);
+
+  const bounds = [[originLat, originLon], [stopLat, stopLon]];
+
+  // If live approaching bus available, plot it
+  if (approachingBus && approachingBus.lat && approachingBus.lon) {
+    const busIcon = L.divIcon({
+      className: "bus-pin-marker",
+      html: `<div style="background:#0a246a;color:#fff;padding:3px 8px;font-size:11px;font-weight:bold;border:1px solid #fff;border-radius:3px;box-shadow:1px 1px 5px rgba(0,0,0,0.5);white-space:nowrap;">🚌 ${approachingBus.route || 'BMTC'} (${approachingBus.eta_mins || '?'}m)</div>`,
+      iconSize: [100, 24],
     });
-    recents = recents.slice(0, 5);
-    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(recents));
-    renderRecentSearches();
-  } catch (e) {
-    console.warn("Failed to persist recent search:", e);
+    busMarker = L.marker([approachingBus.lat, approachingBus.lon], { icon: busIcon })
+      .addTo(map)
+      .bindPopup(`<b>Live BMTC Bus (${approachingBus.route || 'BMTC'})</b><br>Vehicle: ${approachingBus.vehicle_no || 'In Service'}<br>ETA: ~${approachingBus.eta_mins || 2} min`);
+    bounds.push([approachingBus.lat, approachingBus.lon]);
   }
+
+  map.fitBounds(bounds, { padding: [35, 35] });
+  setTimeout(() => map.invalidateSize(), 200);
 }
 
-function renderRecentSearches() {
-  if (!recentTray || !recentChipsList) return;
-  const recents = getRecentSearches();
-  if (recents.length === 0) {
-    recentTray.classList.add("hidden");
-    recentChipsList.innerHTML = "";
+// ==========================================
+// 3. Stop Autocomplete & Search Engine
+// ==========================================
+let searchDebounceTimer = null;
+
+destinationInput.addEventListener("input", (e) => {
+  const query = e.target.value.trim();
+  clearSearchBtn.style.display = query.length > 0 ? "flex" : "none";
+
+  clearTimeout(searchDebounceTimer);
+  if (query.length < 2) {
+    suggestionsDropdown.style.display = "none";
     return;
   }
 
-  recentTray.classList.remove("hidden");
-  recentChipsList.innerHTML = recents
-    .map(
-      (r) => `
-      <button class="recent-chip" type="button" data-name="${r.name}" data-lat="${r.lat}" data-lon="${r.lon}">
-        <span class="chip-icon">🕒</span>
-        <span class="chip-name">${r.name}</span>
+  searchDebounceTimer = setTimeout(() => {
+    fetchStopSuggestions(query);
+  }, 220);
+});
+
+clearSearchBtn.addEventListener("click", () => {
+  destinationInput.value = "";
+  clearSearchBtn.style.display = "none";
+  suggestionsDropdown.style.display = "none";
+  destinationInput.focus();
+});
+
+async function fetchStopSuggestions(query) {
+  try {
+    const params = new URLSearchParams({
+      q: query,
+      user_lat: appState.origin.lat,
+      user_lon: appState.origin.lon,
+    });
+    const res = await fetch(`/api/stops/search?${params.toString()}`);
+    if (!res.ok) return;
+    const stops = await res.json();
+
+    if (stops.length === 0) {
+      suggestionsDropdown.innerHTML = `<div style="padding:10px;font-size:12px;color:#666;">No BMTC stops found matching "${query}"</div>`;
+      suggestionsDropdown.style.display = "block";
+      return;
+    }
+
+    suggestionsDropdown.innerHTML = stops
+      .slice(0, 8)
+      .map(
+        (s) => `
+      <div class="suggestion-item" data-id="${s.stop_id}" data-name="${s.stop_name}" data-lat="${s.lat}" data-lon="${s.lon}">
+        <div>
+          <div class="sugg-name">${s.stop_name}</div>
+          <div class="sugg-sub">${s.stop_desc ? s.stop_desc : 'Bengaluru BMTC Transit Stop'}</div>
+        </div>
+        ${s.dist_km !== undefined && s.dist_km !== null ? `<span class="sugg-dist-chip">${s.dist_km} km</span>` : ''}
+      </div>
+    `
+      )
+      .join("");
+
+    suggestionsDropdown.style.display = "block";
+
+    // Attach click handlers
+    suggestionsDropdown.querySelectorAll(".suggestion-item").forEach((item) => {
+      item.addEventListener("click", () => {
+        const name = item.getAttribute("data-name");
+        const lat = parseFloat(item.getAttribute("data-lat"));
+        const lon = parseFloat(item.getAttribute("data-lon"));
+
+        selectDestination(name, lat, lon);
+      });
+    });
+  } catch (e) {
+    console.error("Autocomplete fetch error:", e);
+  }
+}
+
+function selectDestination(name, lat, lon) {
+  appState.destination.name = name;
+  appState.destination.lat = lat;
+  appState.destination.lon = lon;
+
+  destinationInput.value = name;
+  clearSearchBtn.style.display = "flex";
+  suggestionsDropdown.style.display = "none";
+
+  saveRecentSearch(name, lat, lon);
+  fetchRecommendation();
+}
+
+// Document click to close suggestions
+document.addEventListener("click", (e) => {
+  if (!destinationInput.contains(e.target) && !suggestionsDropdown.contains(e.target)) {
+    suggestionsDropdown.style.display = "none";
+  }
+});
+
+// Keyboard Shortcut Ctrl+K / /
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    destinationInput.focus();
+    destinationInput.select();
+  }
+  if (e.key === "Escape") {
+    suggestionsDropdown.style.display = "none";
+    originModal.style.display = "none";
+  }
+});
+
+// ==========================================
+// 4. Recent Searches Tray (localStorage)
+// ==========================================
+const RECENT_STORAGE_KEY = "nammabmtc_recent_commutes";
+
+function loadRecentSearches() {
+  try {
+    const raw = localStorage.getItem(RECENT_STORAGE_KEY);
+    const recents = raw ? JSON.parse(raw) : [];
+    renderRecentChips(recents);
+  } catch (e) {
+    renderRecentChips([]);
+  }
+}
+
+function saveRecentSearch(name, lat, lon) {
+  try {
+    let recents = [];
+    const raw = localStorage.getItem(RECENT_STORAGE_KEY);
+    if (raw) recents = JSON.parse(raw);
+
+    recents = recents.filter((r) => r.name !== name);
+    recents.unshift({ name, lat, lon });
+    if (recents.length > 5) recents.pop();
+
+    localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(recents));
+    renderRecentChips(recents);
+  } catch (e) {
+    console.warn("localStorage save failed:", e);
+  }
+}
+
+function renderRecentChips(recents) {
+  if (!recents || recents.length === 0) {
+    // Default preset hubs for immediate first-time discovery
+    const defaults = [
+      { name: "Silk Board", lat: 12.9176, lon: 77.6238, color: "#2ecc71" },
+      { name: "Electronic City", lat: 12.8452, lon: 77.6602, color: "#3b82f6" },
+      { name: "ITPL Tech Park", lat: 12.9863, lon: 77.7378, color: "#f59e0b" },
+      { name: "Majestic", lat: 12.9774, lon: 77.5708, color: "#8b5cf6" },
+    ];
+    recentChipsContainer.innerHTML = defaults
+      .map(
+        (d) => `
+      <button class="luna-chip" data-name="${d.name}" data-lat="${d.lat}" data-lon="${d.lon}">
+        <span style="color:${d.color};">●</span> ${d.name}
       </button>
     `
-    )
-    .join("");
-
-  recentChipsList.querySelectorAll(".recent-chip").forEach((chip) => {
-    chip.addEventListener("click", () => {
-      const name = chip.dataset.name;
-      const lat = parseFloat(chip.dataset.lat);
-      const lon = parseFloat(chip.dataset.lon);
-      setDestination(name, lat, lon);
-      triggerRecommendation();
-    });
-  });
-}
-
-if (clearRecentBtn) {
-  clearRecentBtn.addEventListener("click", () => {
-    try {
-      localStorage.removeItem(RECENT_SEARCHES_KEY);
-    } catch (e) {}
-    renderRecentSearches();
-  });
-}
-
-// Global Keyboard Shortcut: Press '/' or 'Ctrl+K' to focus search
-document.addEventListener("keydown", (e) => {
-  if (
-    (e.key === "/" && document.activeElement !== destSearchInput && document.activeElement !== originSearchInput) ||
-    ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")
-  ) {
-    e.preventDefault();
-    destSearchInput.focus();
-    destSearchInput.select();
-  }
-});
-
-let debounceTimer = null;
-function setupAutocomplete(inputEl, dropdownEl, onSelect) {
-  let activeIndex = -1;
-
-  function closeDropdown() {
-    dropdownEl.innerHTML = "";
-    dropdownEl.classList.add("hidden");
-    activeIndex = -1;
-    if (dropdownEl === destSuggestions) {
-      document.querySelector(".search-section")?.classList.remove("is-searching");
-    }
-  }
-
-  // Keyboard navigation inside input (ArrowDown, ArrowUp, Enter, Escape)
-  inputEl.addEventListener("keydown", (e) => {
-    const items = dropdownEl.querySelectorAll(".suggestion-item");
-    if (!items || items.length === 0) return;
-
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      activeIndex = (activeIndex + 1) % items.length;
-      updateActiveItem(items, activeIndex);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      activeIndex = (activeIndex - 1 + items.length) % items.length;
-      updateActiveItem(items, activeIndex);
-    } else if (e.key === "Enter" && activeIndex >= 0 && items[activeIndex]) {
-      e.preventDefault();
-      items[activeIndex].click();
-    } else if (e.key === "Escape") {
-      closeDropdown();
-    }
-  });
-
-  inputEl.addEventListener("input", () => {
-    const q = inputEl.value.trim();
-    if (q.length < 2) {
-      closeDropdown();
-      return;
-    }
-
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(async () => {
-      try {
-        const uLat = state.origin.lat || "";
-        const uLon = state.origin.lon || "";
-        const url = `/api/stops/search?q=${encodeURIComponent(q)}&user_lat=${uLat}&user_lon=${uLon}`;
-        const res = await fetch(url);
-        const stops = await res.json();
-        activeIndex = -1;
-        renderDropdown(stops, dropdownEl, (item) => {
-          onSelect(item);
-          closeDropdown();
-        });
-      } catch (e) {
-        console.error("Search failed:", e);
-      }
-    }, 120);
-  });
-
-  // Close on outside click
-  document.addEventListener("click", (e) => {
-    if (!inputEl.contains(e.target) && !dropdownEl.contains(e.target)) {
-      closeDropdown();
-    }
-  });
-}
-
-function updateActiveItem(items, index) {
-  items.forEach((item, idx) => {
-    if (idx === index) {
-      item.classList.add("active");
-      item.scrollIntoView({ block: "nearest" });
-    } else {
-      item.classList.remove("active");
-    }
-  });
-}
-
-function renderDropdown(items, dropdownEl, onSelect) {
-  if (dropdownEl === destSuggestions) {
-    document.querySelector(".search-section")?.classList.add("is-searching");
-  }
-
-  if (!items || items.length === 0) {
-    dropdownEl.innerHTML = `
-      <div class="suggestion-empty">
-        <span class="empty-icon">🔍</span>
-        <span>No matching BMTC stops found. Try typing a landmark or area (e.g. Majestic, Silk Board, ITPL).</span>
-      </div>
-    `;
-    dropdownEl.classList.remove("hidden");
-    return;
-  }
-
-  dropdownEl.innerHTML = items
-    .map(
-      (s) => `
-      <div class="suggestion-item" data-id="${s.stop_id}" data-name="${s.stop_name}" data-desc="${s.stop_desc}" data-lat="${s.lat}" data-lon="${s.lon}">
-        <div class="sugg-left">
-          <span class="sugg-pin-icon">🚏</span>
-          <div class="sugg-meta">
-            <div class="sugg-name">${s.stop_name}</div>
-            <div class="sugg-desc">${s.stop_desc || "BMTC Boarding Node"}</div>
-          </div>
-        </div>
-        ${s.dist_km != null ? `<span class="sugg-dist-tag">${s.dist_km} km</span>` : ""}
-      </div>
+      )
+      .join("");
+  } else {
+    const colors = ["#2ecc71", "#3b82f6", "#f59e0b", "#8b5cf6", "#ec4899"];
+    recentChipsContainer.innerHTML = recents
+      .map(
+        (r, idx) => `
+      <button class="luna-chip" data-name="${r.name}" data-lat="${r.lat}" data-lon="${r.lon}">
+        <span style="color:${colors[idx % colors.length]};">●</span> ${r.name}
+      </button>
     `
-    )
-    .join("");
+      )
+      .join("");
+  }
 
-  dropdownEl.classList.remove("hidden");
-
-  dropdownEl.querySelectorAll(".suggestion-item").forEach((el) => {
-    el.addEventListener("click", () => {
-      const data = {
-        id: el.dataset.id,
-        name: el.dataset.name,
-        desc: el.dataset.desc,
-        lat: parseFloat(el.dataset.lat),
-        lon: parseFloat(el.dataset.lon),
-      };
-      onSelect(data);
+  recentChipsContainer.querySelectorAll(".luna-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const name = chip.getAttribute("data-name");
+      const lat = parseFloat(chip.getAttribute("data-lat"));
+      const lon = parseFloat(chip.getAttribute("data-lon"));
+      selectDestination(name, lat, lon);
     });
   });
 }
 
-// Wire Origin Autocomplete
-setupAutocomplete(originSearchInput, originSuggestions, (stop) => {
-  state.origin.name = stop.name;
-  state.origin.lat = stop.lat;
-  state.origin.lon = stop.lon;
-  state.origin.isLive = false;
-
-  currentLocDisplay.textContent = stop.name;
-  gpsStatusText.textContent = "Custom Origin";
-  gpsStatusPill.classList.remove("active");
-  originDrawer.classList.add("hidden");
+clearRecentBtn.addEventListener("click", () => {
+  localStorage.removeItem(RECENT_STORAGE_KEY);
+  renderRecentChips([]);
 });
 
-// Wire Destination Autocomplete
-setupAutocomplete(destSearchInput, destSuggestions, (stop) => {
-  setDestination(stop.name, stop.lat, stop.lon);
-  saveRecentSearch(stop);
-  triggerRecommendation();
-});
+// ==========================================
+// 5. Recommendation Fetch & Render Engine
+// ==========================================
+async function fetchRecommendation() {
+  if (!appState.destination.lat || !appState.destination.lon) return;
 
-function setDestination(name, lat, lon) {
-  state.destination.name = name;
-  state.destination.lat = lat;
-  state.destination.lon = lon;
-  destSearchInput.value = name;
-  clearDestBtn.classList.remove("hidden");
-  hideStatus();
-}
-
-clearDestBtn.addEventListener("click", () => {
-  state.destination.name = null;
-  state.destination.lat = null;
-  state.destination.lon = null;
-  destSearchInput.value = "";
-  clearDestBtn.classList.add("hidden");
-  destSuggestions.classList.add("hidden");
-  document.querySelector(".search-section")?.classList.remove("is-searching");
-  resultView.classList.remove("is-visible");
-  resultView.classList.add("hidden");
-  if (liveWatchId !== null && navigator.geolocation) {
-    navigator.geolocation.clearWatch(liveWatchId);
-    liveWatchId = null;
-  }
-  stopLiveBusTelemetry();
-  destSearchInput.focus();
-});
-
-// Render recent searches on startup
-renderRecentSearches();
-
-// Close dropdowns on outside click
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".destination-search-card")) {
-    destSuggestions.classList.add("hidden");
-    document.querySelector(".search-section")?.classList.remove("is-searching");
-  }
-  if (!e.target.closest(".search-box")) {
-    originSuggestions.classList.add("hidden");
-  }
-});
-
-// Status Card Helper
-function showStatus(msg, type = "info") {
-  statusCard.textContent = msg;
-  statusCard.className = `status-card ${type}`;
-  statusCard.classList.remove("hidden");
-}
-
-function hideStatus() {
-  statusCard.classList.add("hidden");
-}
-
-const skeletonView = document.getElementById("skeleton-view");
-const resultBadgeText = document.getElementById("result-badge-text");
-const boardingTagLabel = document.getElementById("boarding-tag-label");
-const leg1BoxCaption = document.getElementById("leg1-box-caption");
-const transferStepBox = document.getElementById("transfer-step-box");
-const transferHubName = document.getElementById("transfer-hub-name");
-const transferHubDesc = document.getElementById("transfer-hub-desc");
-const recLeg2RoutesList = document.getElementById("rec-leg2-routes-list");
-const transfer2StepBox = document.getElementById("transfer2-step-box");
-const transfer2HubName = document.getElementById("transfer2-hub-name");
-const transfer2HubDesc = document.getElementById("transfer2-hub-desc");
-const recLeg3RoutesList = document.getElementById("rec-leg3-routes-list");
-const timelineTransitText = document.getElementById("timeline-transit-text");
-
-// Handle Enter key in destination input
-destSearchInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    destSuggestions.classList.add("hidden");
-    triggerRecommendation();
-  }
-});
-
-// ================= Find Action Handler =================
-findActionBtn.addEventListener("click", () => {
-  triggerRecommendation();
-});
-
-async function triggerRecommendation() {
-  if (!state.origin.lat || !state.origin.lon) {
-    showStatus("Please allow GPS location or pick a starting stop.", "error");
-    return;
-  }
-
-  // Smart resolution: if user typed destination but didn't click dropdown item
-  if (!state.destination.lat || !state.destination.lon) {
-    const typed = destSearchInput.value.trim();
-    if (typed.length >= 2) {
-      try {
-        const searchRes = await fetch(`/api/stops/search?q=${encodeURIComponent(typed)}`);
-        const items = await searchRes.json();
-        if (items && items.length > 0) {
-          setDestination(items[0].stop_name, items[0].lat, items[0].lon);
-        } else {
-          showStatus(`No BMTC stops found matching "${typed}". Please check spelling.`, "error");
-          destSearchInput.focus();
-          return;
-        }
-      } catch (e) {
-        showStatus("Please enter your destination bus stop or area.", "error");
-        destSearchInput.focus();
-        return;
-      }
-    } else {
-      showStatus("Please enter your destination bus stop or area.", "error");
-      destSearchInput.focus();
-      return;
-    }
-  }
-
-  hideStatus();
-  resultView.classList.remove("is-visible");
-  resultView.classList.add("hidden");
-  skeletonView.classList.remove("hidden");
-  skeletonView.scrollIntoView({ behavior: "smooth", block: "nearest" });
-
-  findActionBtn.disabled = true;
-  findActionBtn.innerHTML = `<span>Finding Best Boarding Stop...</span>`;
-
-  const startTime = Date.now();
-  const MIN_SKELETON_MS = 550; // Smooth skeleton shimmer duration
+  loadingIndicator.style.display = "block";
+  journeyResults.style.display = "none";
 
   try {
     const payload = {
-      origin_lat: state.origin.lat,
-      origin_lon: state.origin.lon,
-      dest_lat: state.destination.lat,
-      dest_lon: state.destination.lon,
-      origin_name: state.origin.name,
-      dest_name: state.destination.name,
+      origin_lat: appState.origin.lat,
+      origin_lon: appState.origin.lon,
+      dest_lat: appState.destination.lat,
+      dest_lon: appState.destination.lon,
+      origin_name: appState.origin.name,
+      dest_name: appState.destination.name,
     };
 
-    const fetchPromise = fetch("/api/recommend", {
+    const res = await fetch("/api/recommend", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
-    const [res] = await Promise.all([
-      fetchPromise,
-      new Promise((resolve) => {
-        const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, MIN_SKELETON_MS - elapsed);
-        setTimeout(resolve, remaining);
-      }),
-    ]);
+    loadingIndicator.style.display = "none";
 
-    const data = await res.json();
-
-    if (!res.ok || data.status !== "OK" || !data.primary) {
-      skeletonView.classList.add("hidden");
-      showStatus(data.message || "No viable BMTC bus route found between these points.", "error");
-      resultView.classList.add("hidden");
+    if (!res.ok) {
+      alert("Unable to find transit options for this corridor. Please select another stop.");
       return;
     }
 
-    renderJourney(data);
-  } catch (err) {
-    console.error("API Error:", err);
-    skeletonView.classList.add("hidden");
-    showStatus("Failed to connect to local recommender server.", "error");
-  } finally {
-    findActionBtn.disabled = false;
-    findActionBtn.innerHTML = `
-      <span>Recommend My Boarding Point</span>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-        <polyline points="12 5 19 12 12 19"></polyline>
-      </svg>
-    `;
+    const data = await res.json();
+    if (!data.primary) {
+      alert("No direct or connecting BMTC routes found between these locations.");
+      return;
+    }
+
+    appState.primaryCandidate = data.primary;
+    appState.alternatives = data.alternatives || [];
+
+    renderRecommendation(data.primary, data.alternatives);
+    journeyResults.style.display = "block";
+
+    // Scroll to results smoothly
+    journeyResults.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    // Start Live VTMS Polling
+    startLiveTelemetryPolling(data.primary);
+  } catch (e) {
+    loadingIndicator.style.display = "none";
+    console.error("Failed to compute recommendation:", e);
   }
 }
 
-// ================= Render Journey Stepper & Map =================
-function renderJourney(data) {
-  skeletonView.classList.add("hidden");
-  const p = data.primary;
-  currentPrimaryStop = p;
+function renderRecommendation(primary, alternatives) {
+  // Step 1: Origin
+  step1OriginName.textContent = appState.origin.name;
+  walkInfoChip.textContent = `🚶 Walk ${primary.walk_distance_m} m (~${primary.walk_duration_min} min)`;
 
-  // Origin step
-  journeyOriginTitle.textContent = state.origin.name || "Your Current Location";
+  // Step 2: Optimal Boarding Stop
+  step2StopName.textContent = primary.stop_name;
+  step2PlatformDesc.textContent = primary.stop_desc
+    ? `${primary.stop_desc}`
+    : "Verified directional platform towards destination";
 
-  // Walk Directive
-  const walkStr = `Walk ${p.walk_distance_m} m (~${p.walk_duration_min} min)`;
-  timelineWalkText.textContent = walkStr;
-  liveDistanceCountdown.textContent = walkStr;
-  arrivalStatusPill.classList.add("hidden");
+  // Step 3: Destination
+  step3DestName.textContent = appState.destination.name;
+  step3Subtext.textContent = primary.is_direct
+    ? "Direct route reachability confirmed (Zero transfers)"
+    : `Connecting route via ${primary.transfer_stop_name || 'Hub'}`;
 
-  // Update Interactive 3D Directional Compass
-  update3DCompass(state.origin.lat, state.origin.lon, p.lat, p.lon);
+  fareSummaryBadge.textContent = primary.is_direct
+    ? "Direct Transit Route"
+    : `1 Transfer via ${primary.transfer_stop_name || 'Transfer Hub'}`;
 
-  // Boarding Stop
-  recStopName.textContent = p.stop_name;
-  if (p.stop_desc) {
-    recStopDesc.innerHTML = `<span class="dir-icon">📍</span> <span class="dir-text">${p.stop_desc}</span>`;
-    recStopDesc.classList.remove("hidden");
-  } else {
-    recStopDesc.classList.add("hidden");
-  }
+  // Route Fleet Pills
+  const routesToRender = primary.is_direct
+    ? primary.routes || []
+    : primary.leg1_routes || primary.routes || [];
 
-  // Handle Direct vs 1-Transfer vs 2-Transfer Journey
-  if (p.transfers_count === 2) {
-    resultBadgeText.textContent = "2 BUS CHANGES • 3-LEG JOURNEY";
-    resultBadgeText.style.backgroundColor = "#C2410C";
-    boardingTagLabel.textContent = "BOARD BUS 1 HERE";
-    leg1BoxCaption.textContent = "LEG 1: CATCH ANY TO 1ST INTERCHANGE";
-
-    // 1st Transfer Step
-    transferStepBox.classList.remove("hidden");
-    transferHubName.textContent = p.transfer_stop_name;
-    transferHubDesc.textContent = p.transfer_stop_desc || "Change to Bus 2";
-    const leg2Routes = p.leg2_routes || [];
-    recLeg2RoutesList.innerHTML = leg2Routes
-      .slice(0, 4)
+  if (routesToRender.length > 0) {
+    fleetPillsRow.innerHTML = routesToRender
+      .slice(0, 5)
       .map(
-        (r) => `
-        <div class="route-row">
-          <div class="route-ident">
-            <span class="route-pill" style="background-color: #B45309;">${r.route}</span>
-            <span class="route-headsign">Towards ${r.towards}</span>
-          </div>
-          <span class="route-frequency">${r.trips_per_day} buses/day</span>
-        </div>
-      `
-      )
-      .join("");
-
-    // 2nd Transfer Step
-    transfer2StepBox.classList.remove("hidden");
-    transfer2HubName.textContent = p.transfer2_stop_name;
-    transfer2HubDesc.textContent = p.transfer2_stop_desc || "Change to Bus 3 towards destination";
-    const leg3Routes = p.leg3_routes || [];
-    recLeg3RoutesList.innerHTML = leg3Routes
-      .slice(0, 4)
-      .map(
-        (r) => `
-        <div class="route-row">
-          <div class="route-ident">
-            <span class="route-pill" style="background-color: #C2410C;">${r.route}</span>
-            <span class="route-headsign">Towards ${r.towards}</span>
-          </div>
-          <span class="route-frequency">${r.trips_per_day} buses/day</span>
-        </div>
-      `
-      )
-      .join("");
-
-    timelineTransitText.textContent = `Via ${p.transfer_stop_name} & ${p.transfer2_stop_name}`;
-  } else if (p.is_direct === false || p.transfers_count === 1) {
-    resultBadgeText.textContent = "TRANSFER ROUTE • 1 BUS CHANGE";
-    resultBadgeText.style.backgroundColor = "#D97706";
-    boardingTagLabel.textContent = "BOARD BUS 1 HERE";
-    leg1BoxCaption.textContent = "LEG 1: CATCH ANY TO INTERCHANGE";
-
-    transferStepBox.classList.remove("hidden");
-    transfer2StepBox.classList.add("hidden");
-    transferHubName.textContent = p.transfer_stop_name;
-    transferHubDesc.textContent = p.transfer_stop_desc || "Change to connecting bus";
-
-    // Leg 2 routes
-    const leg2Routes = p.leg2_routes || [];
-    recLeg2RoutesList.innerHTML = leg2Routes
-      .slice(0, 4)
-      .map(
-        (r) => `
-        <div class="route-row">
-          <div class="route-ident">
-            <span class="route-pill" style="background-color: #B45309;">${r.route}</span>
-            <span class="route-headsign">Towards ${r.towards}</span>
-          </div>
-          <span class="route-frequency">${r.trips_per_day} buses/day</span>
-        </div>
-      `
-      )
-      .join("");
-
-    timelineTransitText.textContent = `Change at ${p.transfer_stop_name}`;
-  } else {
-    resultBadgeText.textContent = "PRIMARY RECOMMENDATION (DIRECT)";
-    resultBadgeText.style.backgroundColor = "var(--bmtc-navy)";
-    boardingTagLabel.textContent = "BOARD YOUR BUS HERE";
-    leg1BoxCaption.textContent = "CATCH ANY OF THESE SERVICES";
-    transferStepBox.classList.add("hidden");
-    transfer2StepBox.classList.add("hidden");
-    timelineTransitText.textContent = "Direct BMTC Bus Route";
-  }
-
-  // Setup Native Walking Navigation Deep-Link (Google Maps Walking Mode)
-  const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${state.origin.lat},${state.origin.lon}&destination=${p.lat},${p.lon}&travelmode=walking`;
-  nativeNavBtn.href = mapsUrl;
-
-  // Initialize or update the interactive walking map
-  initOrUpdateWalkingMap(state.origin.lat, state.origin.lon, p.lat, p.lon, p.stop_name, p.stop_desc);
-
-  // Start live walking radar tracker
-  startWalkingTracker(p.lat, p.lon);
-
-  // Routes (Leg 1 or Direct)
-  const routesToDisplay = p.leg1_routes && p.leg1_routes.length > 0 ? p.leg1_routes : p.routes;
-  recRoutesList.innerHTML = routesToDisplay
-    .slice(0, 4)
-    .map(
-      (r) => `
-      <div class="route-row">
-        <div class="route-ident">
-          <span class="route-pill">${r.route}</span>
-          <span class="route-headsign">Towards ${r.towards}</span>
-        </div>
-        <span class="route-frequency">${r.trips_per_day} buses/day</span>
+        (r, idx) => `
+      <div class="route-pill-jelly ${idx % 2 === 0 ? 'blue' : 'dark'}" data-route="${r.route}">
+        <span class="badge-code">${r.route}</span>
+        <span class="route-freq-tag">${r.trips_per_day} trips/day</span>
       </div>
     `
-    )
-    .join("");
-
-  // Destination
-  const destName = p.routes.length > 0 ? p.routes[0].destination_stop : state.destination.name;
-  recDestStop.textContent = destName;
-
-  // Trigger Real-Time Live Bus VTMS Telemetry Tracking with Multi-Route aggregation
-  if (routesToDisplay && routesToDisplay.length > 0) {
-    const candidateRoutes = [...new Set(routesToDisplay.map((r) => (r.route || "").trim()).filter(Boolean))].slice(0, 4);
-    const routesParam = candidateRoutes.length > 0 ? candidateRoutes.join(",") : routesToDisplay[0].route;
-    startLiveBusTelemetry(routesParam, p.lat, p.lon, state.destination.lat, state.destination.lon);
+      )
+      .join("");
   } else {
-    stopLiveBusTelemetry();
+    fleetPillsRow.innerHTML = `<div style="font-size:12px;color:#555;">Multiple connecting buses available</div>`;
   }
 
-  // Alternatives Accordion
-  const alts = data.alternatives || [];
-  if (alts.length > 0) {
-    toggleAltsBtn.classList.remove("hidden");
-    altsCountLabel.textContent = `Other Nearby Boarding Stops (${alts.length})`;
+  // Google Maps 1-Tap Deep Link
+  walkingNavBtn.onclick = () => {
+    const navUrl = `https://www.google.com/maps/dir/?api=1&origin=${appState.origin.lat},${appState.origin.lon}&destination=${primary.lat},${primary.lon}&travelmode=walking`;
+    window.open(navUrl, "_blank");
 
-    alternativesContainer.innerHTML = alts
-      .map((alt, i) => {
-        const leg1Routes = (alt.leg1_routes && alt.leg1_routes.length > 0) ? alt.leg1_routes : (alt.routes || []);
-        const tagClass = alt.transfers_count === 2 ? 'tag-two-transfer' : (alt.transfers_count === 1 ? 'tag-one-transfer' : 'tag-direct');
-        let tagText = 'DIRECT BMTC BUS ROUTE';
-        if (alt.transfers_count === 2) {
-          tagText = `2 TRANSFERS • VIA ${(alt.transfer_stop_name || 'HUB 1').toUpperCase()} & ${(alt.transfer2_stop_name || 'HUB 2').toUpperCase()}`;
-        } else if (alt.transfers_count === 1) {
-          tagText = `1 TRANSFER • VIA ${(alt.transfer_stop_name || 'HUB').toUpperCase()}`;
-        }
+    navToastMsg.textContent = `Walking navigation active: Head towards ${primary.stop_name}`;
+    navToast.classList.add("active");
+    setTimeout(() => navToast.classList.remove("active"), 4000);
+  };
 
-        const altMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${state.origin.lat},${state.origin.lon}&destination=${alt.lat},${alt.lon}&travelmode=walking`;
+  // Multi-Transfer Section
+  if (!primary.is_direct && primary.transfer_stop_name) {
+    transferBox.style.display = "block";
+    const l1 = (primary.leg1_routes || []).map((r) => r.route).slice(0, 2).join(", ");
+    const l2 = (primary.leg2_routes || []).map((r) => r.route).slice(0, 2).join(", ");
 
-        return `
-        <div class="alt-journey-card" data-idx="${i}">
-          <div class="alt-card-header">
-            <span class="alt-rank-tag">OPTION #${i + 2}</span>
-            <div class="alt-walk-badge">
-              <span>🚶</span>
-              <span>Walk ${alt.walk_distance_m} m (~${alt.walk_duration_min} min)</span>
-            </div>
-          </div>
+    transferRow.innerHTML = `
+      <div class="transfer-leg">
+        <span style="font-weight:700;color:#0a246a;">Leg 1: Bus ${l1 || 'Primary'}</span>
+        <span class="leg-sub">Board at ${primary.stop_name}</span>
+      </div>
+      <span class="transfer-arrow">➔</span>
+      <div class="transfer-leg">
+        <span style="font-weight:700;color:#127533;">${primary.transfer_stop_name}</span>
+        <span class="leg-sub">🚶 Transfer at platform</span>
+      </div>
+      <span class="transfer-arrow">➔</span>
+      <div class="transfer-leg">
+        <span style="font-weight:700;color:#8b5cf6;">Leg 2: Bus ${l2 || 'Connecting'}</span>
+        <span class="leg-sub">Direct to ${appState.destination.name}</span>
+      </div>
+    `;
+  } else {
+    transferBox.style.display = "none";
+  }
 
-          <h4 class="alt-stop-name">${alt.stop_name}</h4>
-          ${alt.stop_desc ? `
-            <div class="alt-dir-callout">
-              <span class="dir-icon">📍</span>
-              <span class="dir-text">${alt.stop_desc}</span>
-            </div>
-          ` : ''}
-
-          <div class="alt-service-tag ${tagClass}">${tagText}</div>
-
-          <!-- Leg 1 Routes -->
-          <div class="alt-buses-section">
-            <span class="box-caption">${alt.transfers_count > 0 ? 'LEG 1: CATCH ANY TO INTERCHANGE' : 'CATCH ANY OF THESE SERVICES'}</span>
-            <div class="buses-list">
-              ${leg1Routes.slice(0, 3).map(r => `
-                <div class="route-row">
-                  <div class="route-ident">
-                    <span class="route-pill">${r.route}</span>
-                    <span class="route-headsign">Towards ${r.towards}</span>
-                  </div>
-                  <span class="route-frequency">${r.trips_per_day} buses/day</span>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-
-          <!-- Transfer Interchange Details (If Applicable) -->
-          ${alt.transfers_count >= 1 ? `
-            <div class="alt-transfer-summary">
-              <div class="alt-transfer-step">
-                <span class="hub-pill">⇄ Interchange 1</span>
-                <span class="hub-title">${alt.transfer_stop_name}</span>
-                ${(alt.leg2_routes && alt.leg2_routes.length > 0) ? `
-                  <div class="alt-sub-routes">Connecting buses: ${alt.leg2_routes.slice(0, 3).map(r => `<b>${r.route}</b> (${r.trips_per_day}/day)`).join(', ')}</div>
-                ` : ''}
-              </div>
-              ${alt.transfers_count === 2 ? `
-                <div class="alt-transfer-step" style="margin-top: 8px; border-top: 1px dashed #FDE68A; padding-top: 6px;">
-                  <span class="hub-pill" style="background-color: #FFEDD5; color: #C2410C;">⇄ Interchange 2</span>
-                  <span class="hub-title" style="color: #9A3412;">${alt.transfer2_stop_name}</span>
-                  ${(alt.leg3_routes && alt.leg3_routes.length > 0) ? `
-                    <div class="alt-sub-routes" style="color: #7C2D12;">Final connecting buses: ${alt.leg3_routes.slice(0, 3).map(r => `<b>${r.route}</b> (${r.trips_per_day}/day)`).join(', ')}</div>
-                  ` : ''}
-                </div>
-              ` : ''}
-            </div>
-          ` : ''}
-
-          <!-- Action Buttons -->
-          <div class="alt-action-row">
-            <button class="select-alt-btn" type="button" data-idx="${i}">
-              <span>🎯 Make This My Boarding Stop</span>
-            </button>
-            <a class="alt-maps-btn" href="${altMapsUrl}" target="_blank" rel="noopener" title="Open Google Maps Walking Navigation">
-              <span>🧭 Walk GPS</span>
-            </a>
-          </div>
+  // Alternatives Drawer
+  if (alternatives && alternatives.length > 0) {
+    alternativesDrawer.style.display = "block";
+    altHeading.textContent = `Alternative Boarding Stops (${alternatives.length} other viable options)`;
+    altDrawerContent.innerHTML = alternatives
+      .map(
+        (alt, idx) => `
+      <div class="alt-stop-row" data-idx="${idx}">
+        <div class="alt-stop-info">
+          <span class="alt-stop-name">${alt.stop_name}</span>
+          <span class="alt-stop-metrics">${alt.walk_distance_m} m walk (~${alt.walk_duration_min} min) • Score ${Math.round(alt.score)} pts</span>
         </div>
-      `;
-      }).join("");
+        <div class="alt-routes-badges">
+          ${(alt.routes || alt.leg1_routes || [])
+            .slice(0, 2)
+            .map((r) => `<span class="alt-pill">${r.route}</span>`)
+            .join("")}
+        </div>
+      </div>
+    `
+      )
+      .join("");
 
-    // Wire switcher buttons
-    alternativesContainer.querySelectorAll(".select-alt-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const idx = parseInt(btn.dataset.idx, 10);
-        if (!isNaN(idx) && data.alternatives && data.alternatives[idx]) {
-          const selectedAlt = data.alternatives[idx];
-          const oldPrimary = data.primary;
-          data.primary = selectedAlt;
-          data.alternatives[idx] = oldPrimary;
-          renderJourney(data);
-          resultView.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Clicking an alternative swaps it
+    altDrawerContent.querySelectorAll(".alt-stop-row").forEach((row) => {
+      row.addEventListener("click", () => {
+        const idx = parseInt(row.getAttribute("data-idx"));
+        const chosenAlt = alternatives[idx];
+        if (chosenAlt) {
+          renderRecommendation(chosenAlt, []);
+          initOrUpdateMap(appState.origin.lat, appState.origin.lon, chosenAlt.lat, chosenAlt.lon, chosenAlt.stop_name);
         }
       });
     });
   } else {
-    toggleAltsBtn.classList.add("hidden");
-    alternativesContainer.classList.add("hidden");
+    alternativesDrawer.style.display = "none";
   }
 
-  resultView.classList.remove("hidden");
-  // Force reflow to replay spring animations fresh
-  void resultView.offsetWidth;
-  resultView.classList.add("is-visible");
-  resultView.scrollIntoView({ behavior: "smooth", block: "start" });
-
-  setTimeout(() => {
-    if (mapInstance) {
-      mapInstance.invalidateSize();
-    }
-  }, 350);
+  // Update Leaflet Map
+  initOrUpdateMap(appState.origin.lat, appState.origin.lon, primary.lat, primary.lon, primary.stop_name);
 }
 
-// ================= Interactive Walking Map =================
-function initOrUpdateWalkingMap(userLat, userLon, stopLat, stopLon, stopName, stopDesc) {
-  if (typeof L === "undefined") {
-    console.warn("Leaflet not loaded");
+// Alternatives Accordion Toggle
+altDrawerTrigger.addEventListener("click", () => {
+  const isHidden = altDrawerContent.style.display === "none";
+  altDrawerContent.style.display = isHidden ? "flex" : "none";
+  altChevron.classList.toggle("rotated", isHidden);
+});
+
+// ==========================================
+// 6. Real-Time BMTC VTMS Satellite Telemetry
+// ==========================================
+function startLiveTelemetryPolling(candidate) {
+  clearInterval(appState.telemetryTimer);
+
+  const routes = (candidate.routes || candidate.leg1_routes || [])
+    .map((r) => r.route)
+    .filter(Boolean);
+
+  if (routes.length === 0) return;
+
+  fetchLiveTelemetry(routes.join(","), candidate);
+
+  // Poll every 25 seconds
+  appState.telemetryTimer = setInterval(() => {
+    fetchLiveTelemetry(routes.join(","), candidate);
+  }, 25000);
+}
+
+async function fetchLiveTelemetry(routesQuery, candidate) {
+  try {
+    const params = new URLSearchParams({
+      route: routesQuery,
+      orig_lat: candidate.lat,
+      orig_lon: candidate.lon,
+      dest_lat: appState.destination.lat,
+      dest_lon: appState.destination.lon,
+    });
+
+    const res = await fetch(`/api/live-bus?${params.toString()}`);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    if (data.live && data.all_active_buses && data.all_active_buses.length > 0) {
+      const activeCount = data.all_active_buses.length;
+      const nearest = data.nearest_bus;
+
+      vtmsStatusTitle.textContent = `LIVE VTMS: ${activeCount} BUSES ACTIVE ON CORRIDOR`;
+      if (nearest) {
+        radarEtaPill.innerHTML = `<span>⚡ ETA ${nearest.eta_mins} MINS</span>`;
+        // Plot nearest moving bus on map
+        initOrUpdateMap(
+          appState.origin.lat,
+          appState.origin.lon,
+          candidate.lat,
+          candidate.lon,
+          candidate.stop_name,
+          {
+            lat: nearest.lat,
+            lon: nearest.lon,
+            route: nearest.route_no || candidate.routes?.[0]?.route,
+            vehicle_no: nearest.vehicle_no,
+            eta_mins: nearest.eta_mins,
+          }
+        );
+      } else {
+        radarEtaPill.innerHTML = `<span>⚡ ${activeCount} ACTIVE</span>`;
+      }
+    } else {
+      vtmsStatusTitle.textContent = "BMTC FLEET: TIMETABLE SCHEDULE ACTIVE";
+      radarEtaPill.innerHTML = `<span>⚡ HIGH FREQUENCY</span>`;
+    }
+  } catch (e) {
+    console.warn("VTMS telemetry poll error:", e);
+  }
+}
+
+// ==========================================
+// 7. Origin Override Modal Handlers
+// ==========================================
+changeOriginBtn.addEventListener("click", () => {
+  originModal.style.display = "flex";
+  modalOriginInput.value = appState.origin.name === "Your Live Location (GPS)" ? "" : appState.origin.name;
+  modalOriginInput.focus();
+});
+
+modalCloseBtn.addEventListener("click", () => (originModal.style.display = "none"));
+modalCancelBtn.addEventListener("click", () => (originModal.style.display = "none"));
+
+document.querySelectorAll(".preset-chip").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const name = btn.textContent.trim();
+    const lat = parseFloat(btn.getAttribute("data-lat"));
+    const lon = parseFloat(btn.getAttribute("data-lon"));
+
+    setFallbackOrigin(name, lat, lon);
+    originModal.style.display = "none";
+
+    if (appState.destination.lat && appState.destination.lon) {
+      fetchRecommendation();
+    }
+  });
+});
+
+let modalDebounceTimer = null;
+modalOriginInput.addEventListener("input", (e) => {
+  const query = e.target.value.trim();
+  clearTimeout(modalDebounceTimer);
+  if (query.length < 2) {
+    modalOriginSuggestions.style.display = "none";
     return;
   }
 
-  const mapEl = document.getElementById("walking-map");
-  if (!mapEl) return;
-
-  if (!mapInstance) {
-    mapInstance = L.map("walking-map", {
-      zoomControl: false,
-      attributionControl: false,
-    });
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-    }).addTo(mapInstance);
-  }
-
-  const userIcon = L.divIcon({
-    className: "custom-user-icon",
-    html: '<div class="user-marker-pulse"></div>',
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-  });
-
-  const stopIcon = L.divIcon({
-    className: "custom-stop-icon",
-    html: `<div class="stop-marker-pin">🚏 ${stopName}</div>`,
-    iconSize: [120, 24],
-    iconAnchor: [60, 12],
-  });
-
-  if (!userMarker) {
-    userMarker = L.marker([userLat, userLon], { icon: userIcon }).addTo(mapInstance);
-  } else {
-    userMarker.setLatLng([userLat, userLon]);
-  }
-
-  if (!stopMarker) {
-    stopMarker = L.marker([stopLat, stopLon], { icon: stopIcon }).addTo(mapInstance);
-  } else {
-    stopMarker.setLatLng([stopLat, stopLon]);
-  }
-
-  const polylineCoords = [
-    [userLat, userLon],
-    [stopLat, stopLon],
-  ];
-
-  if (!walkPolyline) {
-    walkPolyline = L.polyline(polylineCoords, {
-      color: "#0284C7",
-      weight: 3,
-      dashArray: "6, 6",
-      opacity: 0.9,
-    }).addTo(mapInstance);
-  } else {
-    walkPolyline.setLatLngs(polylineCoords);
-  }
-
-  mapInstance.fitBounds(polylineCoords, { padding: [35, 35], maxZoom: 17 });
-  setTimeout(() => mapInstance && mapInstance.invalidateSize(), 250);
-}
-
-// Re-center Map
-recenterMapBtn.addEventListener("click", () => {
-  if (mapInstance && currentPrimaryStop && state.origin.lat) {
-    mapInstance.fitBounds(
-      [
-        [state.origin.lat, state.origin.lon],
-        [currentPrimaryStop.lat, currentPrimaryStop.lon],
-      ],
-      { padding: [35, 35], maxZoom: 17 }
-    );
-  }
-});
-
-// ================= Live Walking Tracker =================
-function startWalkingTracker(stopLat, stopLon) {
-  if (liveWatchId !== null && navigator.geolocation) {
-    navigator.geolocation.clearWatch(liveWatchId);
-    liveWatchId = null;
-  }
-
-  if (!navigator.geolocation) return;
-
-  liveWatchId = navigator.geolocation.watchPosition(
-    (pos) => {
-      const curLat = pos.coords.latitude;
-      const curLon = pos.coords.longitude;
-      state.origin.lat = curLat;
-      state.origin.lon = curLon;
-
-      const rawDist = haversineMeters(curLat, curLon, stopLat, stopLon);
-      const estWalkM = Math.round(rawDist * 1.35);
-      const estWalkMin = Math.max(1, Math.ceil(estWalkM / 72));
-
-      if (rawDist <= 30) {
-        liveDistanceCountdown.textContent = "You have arrived at the stop!";
-        arrivalStatusPill.classList.remove("hidden");
-      } else {
-        const liveStr = `Walk ${estWalkM} m (~${estWalkMin} min)`;
-        liveDistanceCountdown.textContent = liveStr;
-        timelineWalkText.textContent = liveStr;
-        arrivalStatusPill.classList.add("hidden");
+  modalDebounceTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`/api/stops/search?q=${encodeURIComponent(query)}`);
+      if (!res.ok) return;
+      const stops = await res.json();
+      if (stops.length === 0) {
+        modalOriginSuggestions.style.display = "none";
+        return;
       }
 
-      if (userMarker) userMarker.setLatLng([curLat, curLon]);
-      if (walkPolyline) walkPolyline.setLatLngs([[curLat, curLon], [stopLat, stopLon]]);
-    },
-    (err) => console.warn("Live watch error:", err),
-    { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
-  );
-}
-
-// Alternatives Toggle
-toggleAltsBtn.addEventListener("click", () => {
-  const isHidden = alternativesContainer.classList.contains("hidden");
-  if (isHidden) {
-    alternativesContainer.classList.remove("hidden");
-    toggleAltsBtn.classList.add("expanded");
-  } else {
-    alternativesContainer.classList.add("hidden");
-    toggleAltsBtn.classList.remove("expanded");
-  }
-});
-
-// Auto-run GPS detection on initial load
-requestLiveLocation(true);
-
-// ================= Walking Direction Compass =================
-function calculateBearing(lat1, lon1, lat2, lon2) {
-  const toRad = (d) => (d * Math.PI) / 180;
-  const toDeg = (r) => (r * 180) / Math.PI;
-  const φ1 = toRad(lat1), φ2 = toRad(lat2);
-  const Δλ = toRad(lon2 - lon1);
-  const y = Math.sin(Δλ) * Math.cos(φ2);
-  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-  let θ = toDeg(Math.atan2(y, x));
-  return (θ + 360) % 360;
-}
-
-function getCompassCardinal(deg) {
-  const cardinals = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
-  const idx = Math.round(deg / 45) % 8;
-  return cardinals[idx];
-}
-
-function update3DCompass(oLat, oLon, dLat, dLon) {
-  const needle = document.getElementById("compass-needle");
-  const label = document.getElementById("compass-bearing-label");
-  if (!needle || !label) return;
-
-  if (oLat && oLon && dLat && dLon) {
-    const bearing = Math.round(calculateBearing(oLat, oLon, dLat, dLon));
-    needle.style.transform = `rotate(${bearing}deg)`;
-    const cardinal = getCompassCardinal(bearing);
-    label.textContent = `${cardinal} ${bearing}°`;
-  }
-}
-
-// ================= Real-Time Live Bus VTMS Telemetry =================
-function startLiveBusTelemetry(routeNo, origLat, origLon, destLat, destLon) {
-  stopLiveBusTelemetry();
-  currentTelemetryParams = { routeNo, origLat, origLon, destLat, destLon };
-
-  if (liveTelemetryBox) {
-    liveTelemetryBox.classList.remove("is-offline");
-  }
-  if (nearestBusBanner) {
-    nearestBusBanner.innerHTML = `
-      <div class="telemetry-skeleton">
-        <span class="pulse-live-dot"></span>
-        <span>Polling real-time GPS satellite feed for Route ${routeNo.replace(/,/g, " / ")}...</span>
-      </div>
-    `;
-  }
-  if (telemetryStatusTitle) {
-    telemetryStatusTitle.textContent = `LIVE BUS TRACKER • ROUTE ${routeNo.replace(/,/g, " / ")}`;
-  }
-  if (telemetryLastSync) {
-    telemetryLastSync.textContent = "Connecting to BMTC VTMS...";
-  }
-
-  pollLiveBusTelemetry();
-  telemetryIntervalId = setInterval(pollLiveBusTelemetry, 18000);
-}
-
-function stopLiveBusTelemetry() {
-  if (telemetryIntervalId) {
-    clearInterval(telemetryIntervalId);
-    telemetryIntervalId = null;
-  }
-  clearLiveBusMarkers();
-}
-
-async function pollLiveBusTelemetry() {
-  if (!currentTelemetryParams) return;
-  const { routeNo, origLat, origLon, destLat, destLon } = currentTelemetryParams;
-
-  if (telemetryRefreshBtn) {
-    telemetryRefreshBtn.classList.add("spinning");
-  }
-
-  try {
-    const url = `/api/live-bus?route=${encodeURIComponent(routeNo)}&orig_lat=${origLat}&orig_lon=${origLon}` +
-      (destLat != null ? `&dest_lat=${destLat}&dest_lon=${destLon}` : "");
-
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
-    latestTelemetryData = data;
-
-    renderLiveBusTelemetry(data);
-  } catch (err) {
-    console.warn("Live telemetry poll failed:", err);
-    if (telemetryLastSync) {
-      telemetryLastSync.textContent = "Feed slow · Retrying";
-    }
-  } finally {
-    if (telemetryRefreshBtn) {
-      telemetryRefreshBtn.classList.remove("spinning");
-    }
-  }
-}
-
-function renderLiveBusTelemetry(data) {
-  if (!liveTelemetryBox) return;
-
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-
-  if (data.live && (data.approaching_count > 0 || data.active_buses_total > 0)) {
-    liveTelemetryBox.classList.remove("is-offline");
-
-    const routesListStr = data.routes_queried && data.routes_queried.length > 0 ? data.routes_queried.join(", ") : (data.route || "");
-    if (telemetryStatusTitle) {
-      telemetryStatusTitle.textContent = data.approaching_count > 0
-        ? `LIVE BUS GPS RADAR • ${data.approaching_count} APPROACHING (${routesListStr})`
-        : `LIVE FLEET RADAR • ${data.active_buses_total} BUSES ACTIVE (${routesListStr})`;
-    }
-    if (telemetryLastSync) {
-      telemetryLastSync.textContent = `Synced ${timeStr}`;
-    }
-
-    // Render nearest bus
-    if (data.nearest_bus) {
-      const b = data.nearest_bus;
-      const isAtStop = b.is_at_stop || b.dist_km <= 0.25;
-      const etaLabel = isAtStop
-        ? `<span class="arrived-badge">🟢 AT PLATFORM NOW</span>`
-        : `<span class="eta-highlight">~${b.eta_mins} min</span> (${(b.dist_km * 1000).toFixed(0)}m away)`;
-
-      let stopsLabel = "";
-      if (b.is_terminal_inbound) {
-        stopsLabel = `<span class="stops-count-badge" style="background: #0284C7; color: #fff;">Arriving at Terminal</span>`;
-      } else if (b.stops_away !== undefined && b.stops_away > 0) {
-        stopsLabel = `<span class="stops-count-badge">${b.stops_away} stop${b.stops_away > 1 ? "s" : ""} away</span>`;
-      }
-
-      nearestBusBanner.innerHTML = `
-        <div class="nearest-bus-card-inner">
-          <div class="nearest-bus-meta">
-            <div class="nearest-bus-title-row">
-              <span class="route-pill" style="font-size: 11px; padding: 2px 7px; margin-right: 4px;">${b.route || data.route}</span>
-              <span class="vehicle-reg-badge">${b.vehicle}</span>
-              <span class="vehicle-type-tag">${b.type || "BMTC Bus"}</span>
-              ${stopsLabel}
-            </div>
-            <div class="nearest-bus-eta-row">
-              <span>Next Arrival:</span>
-              ${etaLabel}
-            </div>
-          </div>
-          <div class="nearest-bus-icon">
-            <span style="font-size: 26px;">🚍</span>
-          </div>
-        </div>
-      `;
-    } else {
-      const fallbackBus = data.nearest_active_bus;
-      nearestBusBanner.innerHTML = `
-        <div class="nearest-bus-card-inner" style="border-left: 4px solid #0284C7;">
-          <div class="nearest-bus-meta">
-            <div class="nearest-bus-title-row">
-              <span class="route-pill" style="background:#0284C7; color:#fff; font-size:11px; padding:2px 7px; margin-right:4px;">${fallbackBus ? (fallbackBus.route || data.route) : data.route}</span>
-              <span class="vehicle-reg-badge">${fallbackBus ? fallbackBus.vehicle : "Fleet Active"}</span>
-              <span class="vehicle-type-tag">${fallbackBus ? (fallbackBus.type || "In Service") : "Active Fleet"}</span>
-            </div>
-            <div class="nearest-bus-eta-row">
-              <span>Active Corridor Fleet:</span>
-              <span class="eta-highlight" style="color:#0284C7;">${data.active_buses_total} Buses in Transit</span>
-              ${fallbackBus ? `<span>(${fallbackBus.dist_km} km away)</span>` : ""}
-            </div>
-            <div style="margin-top: 6px;">
-              <button onclick="toggleShowLiveBusesOnMap()" style="font-size: 11.5px; font-weight: 700; color: #0284C7; background: rgba(2,132,199,0.08); border: 1px solid rgba(2,132,199,0.25); border-radius: 4px; padding: 4px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                🗺️ Show All ${data.active_buses_total} Buses on Live Map
-              </button>
-            </div>
-          </div>
-          <div class="nearest-bus-icon">
-            <span style="font-size: 26px;">🚍</span>
-          </div>
-        </div>
-      `;
-    }
-
-    // Render other approaching buses
-    if (data.approaching_buses && data.approaching_buses.length > 1) {
-      approachingBusesList.classList.remove("hidden");
-      approachingBusesList.innerHTML = data.approaching_buses
-        .slice(1, 5)
+      modalOriginSuggestions.innerHTML = stops
+        .slice(0, 5)
         .map(
-          (b) => `
-          <div class="sub-bus-row">
-            <div class="sub-bus-ident">
-              <span style="color: #059669;">🚍</span>
-              <span class="sub-route-tag" style="background: #ECFDF5; color: #065F46; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 3px; font-family: var(--font-mono);">${b.route || ""}</span>
-              <span class="sub-reg">${b.vehicle}</span>
-              <span class="vehicle-type-tag" style="font-size: 9.5px; padding: 1px 4px;">${b.type}</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="sub-eta">~${b.eta_mins}m</span>
-              <span class="sub-dist">${b.dist_km} km</span>
-            </div>
-          </div>
-        `
+          (s) => `
+        <div style="padding:6px 8px;border-bottom:1px solid #eee;cursor:pointer;font-size:12px;" data-name="${s.stop_name}" data-lat="${s.lat}" data-lon="${s.lon}">
+          <b>${s.stop_name}</b> <span style="color:#666;font-size:11px;">(${s.stop_desc || 'BMTC Stop'})</span>
+        </div>
+      `
         )
         .join("");
-    } else {
-      approachingBusesList.classList.add("hidden");
-      approachingBusesList.innerHTML = "";
+      modalOriginSuggestions.style.display = "block";
+
+      modalOriginSuggestions.querySelectorAll("div").forEach((item) => {
+        item.addEventListener("click", () => {
+          const name = item.getAttribute("data-name");
+          const lat = parseFloat(item.getAttribute("data-lat"));
+          const lon = parseFloat(item.getAttribute("data-lon"));
+
+          setFallbackOrigin(name, lat, lon);
+          originModal.style.display = "none";
+
+          if (appState.destination.lat && appState.destination.lon) {
+            fetchRecommendation();
+          }
+        });
+      });
+    } catch (err) {
+      console.warn("Modal origin search error:", err);
     }
+  }, 220);
+});
 
-    // Update markers on Leaflet map
-    updateLiveBusMapMarkers(data.approaching_buses || [], data.all_active_buses || []);
-
-  } else {
-    // Graceful offline fallback
-    liveTelemetryBox.classList.add("is-offline");
-    if (telemetryStatusTitle) {
-      telemetryStatusTitle.textContent = `SCHEDULED SERVICE ACTIVE • ROUTE ${data.route || ""}`;
-    }
-    if (telemetryLastSync) {
-      telemetryLastSync.textContent = "GTFS Timetable";
-    }
-    nearestBusBanner.innerHTML = `
-      <div class="telemetry-offline-card">
-        <span>📡</span>
-        <span><b>Official GTFS Frequency:</b> Regular high-frequency service. Live GPS satellite telemetry is currently quiet for this line. Next trip running per timetable.</span>
-      </div>
-    `;
-    approachingBusesList.classList.add("hidden");
-    clearLiveBusMarkers();
+modalSaveBtn.addEventListener("click", () => {
+  const val = modalOriginInput.value.trim();
+  if (val) {
+    setFallbackOrigin(val, appState.origin.lat, appState.origin.lon);
   }
-}
-
-function clearLiveBusMarkers() {
-  if (mapInstance && liveBusMarkers.length > 0) {
-    liveBusMarkers.forEach((m) => mapInstance.removeLayer(m));
-    liveBusMarkers = [];
+  originModal.style.display = "none";
+  if (appState.destination.lat && appState.destination.lon) {
+    fetchRecommendation();
   }
-}
+});
 
-function updateLiveBusMapMarkers(approachingBuses, allBuses) {
-  if (!mapInstance || typeof L === "undefined") return;
-
-  clearLiveBusMarkers();
-
-  const hasApproaching = approachingBuses && approachingBuses.length > 0;
-  const hasAll = allBuses && allBuses.length > 0;
-
-  let busesToPlot = [];
-  if (showLiveBusesOnMap) {
-    busesToPlot = hasAll ? allBuses : (hasApproaching ? approachingBuses : []);
-  } else {
-    busesToPlot = hasApproaching ? approachingBuses : (hasAll ? allBuses : []);
-  }
-
-  const mapBusCountEl = document.getElementById("map-bus-count");
-  if (mapBusCountEl) {
-    const totalCount = hasAll ? allBuses.length : (hasApproaching ? approachingBuses.length : 0);
-    mapBusCountEl.textContent = totalCount;
-  }
-
-  if (!busesToPlot || busesToPlot.length === 0) return;
-
-  busesToPlot.forEach((b, idx) => {
-    if (!b.lat || !b.lon) return;
-
-    const isNearest = (hasApproaching && b.vehicle === approachingBuses[0].vehicle) || idx === 0;
-    const etaText = b.eta_mins ? `~${b.eta_mins}m` : "";
-    const routeTag = b.route ? `<span style="background: rgba(0,0,0,0.25); padding: 1px 4px; border-radius: 3px; margin-right: 3px; font-weight: 800;">${b.route}</span>` : "";
-
-    const markerHtml = `
-      <div class="bus-marker-pin ${isNearest ? 'is-nearest' : ''}">
-        <span style="font-size: 12px;">🚍</span>
-        ${routeTag}
-        <span style="font-family: var(--font-mono); font-weight: 800;">${b.vehicle}</span>
-        ${etaText ? `<span style="font-size: 10px; background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 3px;">${etaText}</span>` : ""}
-      </div>
-    `;
-
-    const icon = L.divIcon({
-      className: "custom-bus-marker",
-      html: markerHtml,
-      iconSize: [120, 26],
-      iconAnchor: [60, 13],
-    });
-
-    const marker = L.marker([b.lat, b.lon], { icon, zIndexOffset: isNearest ? 1000 : 500 }).addTo(mapInstance);
-    marker.bindPopup(`
-      <div style="font-family: var(--font-sans); font-size: 12px; line-height: 1.4; padding: 2px;">
-        <div style="font-weight: 800; color: #065F46; font-size: 13px; font-family: var(--font-mono);">
-          🚍 BMTC ${b.route ? `Route ${b.route} • ` : ""}${b.vehicle}
-        </div>
-        <div style="margin-top: 3px;"><b>Service:</b> ${b.type || "Ordinary"}</div>
-        <div><b>Distance to stop:</b> ${b.dist_km} km</div>
-        <div><b>Live Arrival:</b> <span style="font-weight: 800; color: #059669;">~${b.eta_mins} min</span></div>
-        ${b.is_terminal_inbound ? '<div style="color: #0284C7; font-size: 11px; font-weight: 600; margin-top: 2px;">🔄 Inbound / Turnaround at terminal</div>' : ''}
-        ${b.last_updated ? `<div style="color: #64748B; font-size: 10.5px; margin-top: 4px;">🛰️ Satellite Sync: ${b.last_updated}</div>` : ""}
-      </div>
-    `);
-
-    liveBusMarkers.push(marker);
+// Window Minimise / Close buttons (aesthetic micro-interactions)
+document.querySelectorAll(".win-btn-close, .win-btn-min").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    navToastMsg.textContent = "NammaBMTC Navigator is running in your browser.";
+    navToast.classList.add("active");
+    setTimeout(() => navToast.classList.remove("active"), 2500);
   });
+});
 
-  if (showLiveBusesOnMap && liveBusMarkers.length > 0 && userMarker && stopMarker) {
-    const group = new L.featureGroup([userMarker, stopMarker, ...liveBusMarkers]);
-    mapInstance.fitBounds(group.getBounds(), { padding: [45, 45], maxZoom: 15 });
-  }
-}
-
-function toggleShowLiveBusesOnMap() {
-  showLiveBusesOnMap = !showLiveBusesOnMap;
-
-  if (toggleBusMapBtn) {
-    toggleBusMapBtn.classList.toggle("active", showLiveBusesOnMap);
-    toggleBusMapBtn.querySelector("span").textContent = showLiveBusesOnMap
-      ? "🗺️ Focus on Walking Route"
-      : "🚍 Show Live Buses on Map";
-  }
-
-  const mapBusQuickBtn = document.getElementById("map-live-buses-btn");
-  if (mapBusQuickBtn) {
-    mapBusQuickBtn.classList.toggle("active", showLiveBusesOnMap);
-  }
-
-  const mapContainer = document.getElementById("walking-map-container");
-  if (mapContainer) {
-    if (showLiveBusesOnMap) {
-      mapContainer.classList.add("expanded");
-    } else {
-      mapContainer.classList.remove("expanded");
-    }
-  }
-
-  setTimeout(() => {
-    if (mapInstance) {
-      mapInstance.invalidateSize();
-    }
-  }, 150);
-
-  if (latestTelemetryData) {
-    updateLiveBusMapMarkers(
-      latestTelemetryData.approaching_buses || [],
-      latestTelemetryData.all_active_buses || []
-    );
-  } else if (currentTelemetryParams) {
-    pollLiveBusTelemetry();
-  }
-
-  if (showLiveBusesOnMap) {
-    if (mapContainer) {
-      mapContainer.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-    setTimeout(() => {
-      if (mapInstance && liveBusMarkers.length > 0 && userMarker && stopMarker) {
-        const group = new L.featureGroup([userMarker, stopMarker, ...liveBusMarkers]);
-        mapInstance.fitBounds(group.getBounds(), { padding: [45, 45], maxZoom: 15 });
-        if (liveBusMarkers[0]) {
-          liveBusMarkers[0].openPopup();
-        }
-      }
-    }, 250);
-  } else {
-    if (mapInstance && userMarker && stopMarker) {
-      const group = new L.featureGroup([userMarker, stopMarker]);
-      mapInstance.fitBounds(group.getBounds(), { padding: [35, 35], maxZoom: 17 });
-    }
-  }
-}
-
-// Wire Telemetry Controls
-if (telemetryRefreshBtn) {
-  telemetryRefreshBtn.addEventListener("click", () => {
-    pollLiveBusTelemetry();
-  });
-}
-
-if (toggleBusMapBtn) {
-  toggleBusMapBtn.addEventListener("click", toggleShowLiveBusesOnMap);
-}
-
-const mapLiveBusesBtn = document.getElementById("map-live-buses-btn");
-if (mapLiveBusesBtn) {
-  mapLiveBusesBtn.addEventListener("click", toggleShowLiveBusesOnMap);
-}
+// ==========================================
+// 8. Initialization on Page Load
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+  loadRecentSearches();
+  initGeolocation();
+});
