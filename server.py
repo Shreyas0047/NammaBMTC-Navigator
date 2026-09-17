@@ -45,8 +45,8 @@ class RecommendRequest(BaseModel):
     dest_name: Optional[str] = "Destination"
 
 
-@app.get("/health")
-@app.get("/api/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
+@app.api_route("/api/health", methods=["GET", "HEAD"])
 def health():
     try:
         conn = get_db_connection()
