@@ -5,7 +5,7 @@
 
 const state = {
   origin: {
-    name: "Detecting GPS location...",
+    name: null,
     lat: null,
     lon: null,
     isLive: false,
@@ -112,12 +112,14 @@ function haversineMeters(lat1, lon1, lat2, lon2) {
 
 function requestLiveLocation(silent = false) {
   if (!navigator.geolocation) {
-    fallbackLocation("GPS not supported by your browser");
+    fallbackLocation(silent ? null : "GPS not supported by your browser");
     return;
   }
 
-  currentLocDisplay.textContent = "Acquiring live GPS satellite lock...";
-  gpsStatusText.textContent = "Acquiring...";
+  if (!silent) {
+    currentLocDisplay.textContent = "Acquiring live GPS satellite lock...";
+    gpsStatusText.textContent = "Acquiring...";
+  }
 
   navigator.geolocation.getCurrentPosition(
     (pos) => {
@@ -127,27 +129,29 @@ function requestLiveLocation(silent = false) {
       state.origin.isLive = true;
 
       currentLocDisplay.textContent = "📍 Live GPS Location";
+      editOriginBtn.textContent = "Change";
       gpsStatusText.textContent = "Live GPS Active";
       gpsStatusPill.classList.add("active");
       hideStatus();
     },
     (err) => {
       console.warn("GPS Error / Denied:", err);
-      fallbackLocation("Location denied. Defaulted to Corporation Circle.");
+      fallbackLocation(silent ? null : "GPS permission denied or unavailable. Please pick a starting stop.");
     },
     { enableHighAccuracy: true, timeout: 9000 }
   );
 }
 
 function fallbackLocation(msg) {
-  // Default: Corporation Circle
-  state.origin.lat = 12.9680;
-  state.origin.lon = 77.5880;
-  state.origin.name = "Corporation Circle (Default)";
+  // STRICTLY NO DEFAULT LOCATION - user must select or enable GPS
+  state.origin.lat = null;
+  state.origin.lon = null;
+  state.origin.name = null;
   state.origin.isLive = false;
 
-  currentLocDisplay.textContent = "Corporation Circle (Tap 'Change' to pick)";
-  gpsStatusText.textContent = "Set Location";
+  currentLocDisplay.textContent = "Tap 'Set Origin' or use GPS";
+  editOriginBtn.textContent = "Set Origin";
+  gpsStatusText.textContent = "Use GPS";
   gpsStatusPill.classList.remove("active");
   if (msg) showStatus(msg, "info");
 }
@@ -168,6 +172,34 @@ editOriginBtn.addEventListener("click", () => {
 
 closeDrawerBtn.addEventListener("click", () => {
   originDrawer.classList.add("hidden");
+});
+
+// Handle Enter key in origin search input
+originSearchInput.addEventListener("keydown", async (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    const typed = originSearchInput.value.trim();
+    if (typed.length >= 2) {
+      try {
+        const res = await fetch(`/api/stops/search?q=${encodeURIComponent(typed)}`);
+        const items = await res.json();
+        if (items && items.length > 0) {
+          const s = items[0];
+          state.origin.name = s.stop_name;
+          state.origin.lat = s.lat;
+          state.origin.lon = s.lon;
+          state.origin.isLive = false;
+          currentLocDisplay.textContent = s.stop_name;
+          editOriginBtn.textContent = "Change";
+          gpsStatusText.textContent = "Custom Origin";
+          gpsStatusPill.classList.remove("active");
+          originDrawer.classList.add("hidden");
+          originSuggestions.classList.add("hidden");
+          hideStatus();
+        }
+      } catch (err) {}
+    }
+  }
 });
 
 // ================= Enhanced Autocomplete & Recent Searches =================
@@ -393,9 +425,11 @@ setupAutocomplete(originSearchInput, originSuggestions, (stop) => {
   state.origin.isLive = false;
 
   currentLocDisplay.textContent = stop.name;
+  editOriginBtn.textContent = "Change";
   gpsStatusText.textContent = "Custom Origin";
   gpsStatusPill.classList.remove("active");
   originDrawer.classList.add("hidden");
+  hideStatus();
 });
 
 // Wire Destination Autocomplete
@@ -495,7 +529,9 @@ destSearchInput.addEventListener("keydown", (e) => {
 if (swapJourneyBtn) {
   swapJourneyBtn.addEventListener("click", async () => {
     if (!state.origin.lat) {
-      showStatus("Acquiring your location first...", "info");
+      showStatus("Please set your starting location or enable GPS first.", "info");
+      originDrawer.classList.remove("hidden");
+      originSearchInput.focus();
       return;
     }
     
@@ -540,6 +576,7 @@ if (swapJourneyBtn) {
     state.destination.lon = oldOrigLon;
 
     currentLocDisplay.textContent = state.origin.name;
+    editOriginBtn.textContent = "Change";
     destSearchInput.value = state.destination.name;
     clearDestBtn.classList.remove("hidden");
     gpsStatusPill.classList.remove("active");
@@ -571,7 +608,9 @@ findActionBtn.addEventListener("click", () => {
 
 async function triggerRecommendation() {
   if (!state.origin.lat || !state.origin.lon) {
-    showStatus("Please allow GPS location or pick a starting stop.", "error");
+    showStatus("Please set your starting location or enable GPS.", "error");
+    originDrawer.classList.remove("hidden");
+    originSearchInput.focus();
     return;
   }
 

@@ -279,13 +279,18 @@ body {
 .radar-dot {
   width: 8px;
   height: 8px;
-  background-color: #34D399;
+  background-color: #94A3B8;
   border-radius: 50%;
   position: relative;
+  transition: all 0.2s ease;
+}
+
+.location-pill.active .radar-dot {
+  background-color: #34D399;
   box-shadow: 0 0 6px #34D399;
 }
 
-.radar-dot::after {
+.location-pill.active .radar-dot::after {
   content: '';
   position: absolute;
   inset: -4px;
