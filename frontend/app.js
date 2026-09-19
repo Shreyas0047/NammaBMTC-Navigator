@@ -594,8 +594,12 @@ filterTabBtns.forEach((btn) => {
     btn.classList.add("active");
     state.serviceFilter = btn.dataset.filter || "ALL";
 
-    // Auto-refresh recommendation if user has a destination set
-    if (state.destination.lat && state.destination.lon) {
+    // Only auto-refresh recommendation if results are currently visible and both points are valid
+    const hasOrigin = Boolean(state.origin.lat && state.origin.lon);
+    const hasDest = Boolean(state.destination.lat && state.destination.lon);
+    const isResultOpen = !resultView.classList.contains("hidden");
+
+    if (hasOrigin && hasDest && isResultOpen) {
       triggerRecommendation();
     }
   });
@@ -706,8 +710,10 @@ async function triggerRecommendation() {
 
 // Helper to format consistent route rows with AC status, fare tags, Shakti scheme, and milestones
 function formatRouteRow(r, customBg = null) {
-  const isAc = r.is_ac || (r.service_type && r.service_type !== "ORDINARY");
-  const prefix = isAc ? (r.route.startsWith("KIA") ? "✈️ " : "❄️ ") : "";
+  if (!r) return "";
+  const routeName = (r.route ? String(r.route).trim() : "");
+  const isAc = Boolean(r.is_ac || (r.service_type && r.service_type !== "ORDINARY"));
+  const prefix = isAc ? (routeName.startsWith("KIA") ? "✈️ " : "❄️ ") : "";
   const bgStyle = customBg ? `style="background-color: ${customBg};"` : (isAc ? 'style="background: linear-gradient(180deg, #0284C7 0%, #0369A1 100%);"' : '');
   const fareTag = r.fare_text ? `<span class="route-fare-tag ${isAc ? 'is-ac' : ''}">${r.fare_text}</span>` : '';
   const shaktiTag = r.shakti_eligible ? `<span class="route-shakti-tag" title="Shakti Scheme: Free travel for Karnataka women">🌸 Shakti</span>` : '';
@@ -719,13 +725,13 @@ function formatRouteRow(r, customBg = null) {
     <div class="route-row">
       <div class="route-row-main">
         <div class="route-ident">
-          <span class="route-pill ${isAc ? 'is-ac' : ''}" ${bgStyle}>${prefix}${r.route}</span>
-          <span class="route-headsign">Towards ${r.towards}</span>
+          <span class="route-pill ${isAc ? 'is-ac' : ''}" ${bgStyle}>${prefix}${routeName}</span>
+          <span class="route-headsign">Towards ${r.towards || "Destination"}</span>
         </div>
         <div class="route-meta-group" style="display:flex; align-items:center; gap:6px;">
           ${shaktiTag}
           ${fareTag}
-          <span class="route-frequency">${r.trips_per_day} buses/day</span>
+          <span class="route-frequency">${r.trips_per_day || 0} buses/day</span>
         </div>
       </div>
       ${milestonesHtml}
@@ -773,13 +779,22 @@ function renderJourney(data) {
   }
 
   // Service Category & Fare Indicator Badge
+  const sf = state.serviceFilter || "ALL";
+  const isCorridorNoAc = sf === "AC" && !p.has_ac;
+
   if (serviceFareBadge) {
-    if (p.has_ac && !p.has_non_ac) {
+    if (sf === "AC" && !isCorridorNoAc) {
+      serviceFareBadge.className = "service-fare-badge ac";
+      serviceFareBadge.innerHTML = `❄️ Est. ${p.fare_range_str} • AC Vajra Only`;
+    } else if (sf === "NON_AC") {
+      serviceFareBadge.className = "service-fare-badge";
+      serviceFareBadge.innerHTML = `🪙 Est. ${p.fare_range_str || "₹15 - ₹25"} • Non-AC Only`;
+    } else if (p.has_ac && !p.has_non_ac) {
       serviceFareBadge.className = "service-fare-badge ac";
       serviceFareBadge.innerHTML = `❄️ Est. ${p.fare_range_str} • AC Vajra`;
     } else if (p.has_ac && p.has_non_ac) {
       serviceFareBadge.className = "service-fare-badge";
-      serviceFareBadge.innerHTML = `🪙 Est. ${p.fare_range_str} • Mixed`;
+      serviceFareBadge.innerHTML = `🪙 Est. ${p.fare_range_str} • Mixed (AC & Non-AC)`;
     } else {
       serviceFareBadge.className = "service-fare-badge";
       serviceFareBadge.innerHTML = `🪙 Est. ${p.fare_range_str || "₹15 - ₹25"} • Non-AC`;
@@ -889,6 +904,53 @@ function renderJourney(data) {
   // Start live walking radar tracker
   startWalkingTracker(p.lat, p.lon);
 
+  // In-Card Active Filter Confirmation Indicator Strip
+  const activeFilterStrip = document.getElementById("active-filter-strip");
+  if (activeFilterStrip) {
+    if (sf === "AC") {
+      if (isCorridorNoAc) {
+        activeFilterStrip.className = "active-filter-strip is-warning";
+        activeFilterStrip.innerHTML = `
+          <span class="filter-strip-icon">⚠️</span>
+          <span class="filter-strip-msg"><b>No direct AC Vajra routes on this corridor.</b> Displaying standard BMTC Ordinary services.</span>
+        `;
+      } else {
+        activeFilterStrip.className = "active-filter-strip is-ac";
+        activeFilterStrip.innerHTML = `
+          <span class="filter-strip-icon">❄️</span>
+          <span class="filter-strip-msg"><b>AC Vajra Filter Active:</b> Showing ONLY air-conditioned Volvo & Airport Vayu Vajra buses.</span>
+        `;
+      }
+    } else if (sf === "NON_AC") {
+      activeFilterStrip.className = "active-filter-strip is-non-ac";
+      activeFilterStrip.innerHTML = `
+        <span class="filter-strip-icon">🟢</span>
+        <span class="filter-strip-msg"><b>Non-AC Ordinary Filter Active:</b> Showing regular buses only (Free for women under Karnataka Shakti Scheme).</span>
+      `;
+    } else {
+      activeFilterStrip.className = "active-filter-strip is-all";
+      activeFilterStrip.innerHTML = `
+        <span class="filter-strip-icon">🚌</span>
+        <span class="filter-strip-msg"><b>All Services Active:</b> Showing all available BMTC buses (Ordinary & AC Vajra).</span>
+      `;
+    }
+  }
+
+  // Refine leg1-box-caption based on active filter
+  if (leg1BoxCaption) {
+    if (p.transfers_count === 2) {
+      leg1BoxCaption.textContent = "LEG 1: CATCH ANY TO 1ST INTERCHANGE";
+    } else if (p.transfers_count === 1) {
+      leg1BoxCaption.textContent = "LEG 1: CATCH ANY TO INTERCHANGE";
+    } else if (sf === "AC" && !isCorridorNoAc) {
+      leg1BoxCaption.textContent = "CATCH ANY OF THESE AC VAJRA (VOLVO) SERVICES";
+    } else if (sf === "NON_AC") {
+      leg1BoxCaption.textContent = "CATCH ANY OF THESE NON-AC (ORDINARY) SERVICES";
+    } else {
+      leg1BoxCaption.textContent = "CATCH ANY OF THESE SERVICES";
+    }
+  }
+
   // Routes (Leg 1 or Direct)
   const routesToDisplay = p.leg1_routes && p.leg1_routes.length > 0 ? p.leg1_routes : p.routes;
   recRoutesList.innerHTML = routesToDisplay
@@ -950,7 +1012,7 @@ function renderJourney(data) {
 
           <!-- Leg 1 Routes -->
           <div class="alt-buses-section">
-            <span class="box-caption">${alt.transfers_count > 0 ? 'LEG 1: CATCH ANY TO INTERCHANGE' : 'CATCH ANY OF THESE SERVICES'}</span>
+            <span class="box-caption">${alt.transfers_count > 0 ? 'LEG 1: CATCH ANY TO INTERCHANGE' : (sf === 'AC' ? 'CATCH ANY OF THESE AC VAJRA (VOLVO) SERVICES' : (sf === 'NON_AC' ? 'CATCH ANY OF THESE NON-AC (ORDINARY) SERVICES' : 'CATCH ANY OF THESE SERVICES'))}</span>
             <div class="buses-list">
               ${leg1Routes.slice(0, 3).map(r => formatRouteRow(r)).join('')}
             </div>

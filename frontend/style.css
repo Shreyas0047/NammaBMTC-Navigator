@@ -2612,7 +2612,7 @@ body {
   background: #ECE9D8;
   border: 1px solid #99B4D1;
   border-radius: 6px;
-  padding: 4px;
+  padding: 5px;
   margin-top: 10px;
   box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.12);
 }
@@ -2622,43 +2622,95 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 6px 4px;
-  background: linear-gradient(180deg, #FFFFFF 0%, #ECE9D8 100%);
-  border: 1px solid #B0C4DE;
-  border-radius: 4px;
+  padding: 7px 4px 6px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #EDEBE5 100%);
+  border: 1.5px solid #B0C4DE;
+  border-radius: 5px;
   cursor: pointer;
   font-family: inherit;
   font-size: 11px;
   font-weight: 700;
   color: #333333;
-  transition: all 0.15s ease;
+  transition: all 0.16s ease-in-out;
   position: relative;
   text-align: center;
   gap: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .filter-tab-btn:hover {
   background: linear-gradient(180deg, #FFFFFF 0%, #DCE8F8 100%);
   border-color: #316AC5;
   color: #0C3C88;
+  transform: translateY(-1px);
 }
 
-.filter-tab-btn.active {
-  background: linear-gradient(180deg, #245DDA 0%, #1545A8 100%);
-  border-color: #0C3C88;
+/* Active Status Pill inside Button */
+.filter-tab-btn .tab-status-tag {
+  display: none;
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-bottom: 2px;
+  line-height: 1.1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.filter-tab-btn.active .tab-status-tag {
+  display: inline-block;
+}
+
+/* Highlighted Mode: ALL SERVICES */
+.filter-tab-btn[data-filter="ALL"].active {
+  background: linear-gradient(180deg, #1D4ED8 0%, #0A246A 100%);
+  border-color: #061B48;
   color: #FFFFFF;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.45), 0 2px 5px rgba(0, 0, 0, 0.25);
+  transform: translateY(-1px);
+}
+.filter-tab-btn[data-filter="ALL"].active .tab-status-tag {
+  background: #FEF08A;
+  color: #713F12;
+}
+
+/* Highlighted Mode: AC VAJRA / VOLVO */
+.filter-tab-btn[data-filter="AC"].active {
+  background: linear-gradient(180deg, #0284C7 0%, #0369A1 100%);
+  border-color: #075985;
+  color: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.55), 0 2px 6px rgba(2, 132, 199, 0.35);
+  transform: translateY(-1px);
+}
+.filter-tab-btn[data-filter="AC"].active .tab-status-tag {
+  background: #E0F2FE;
+  color: #0369A1;
+}
+
+/* Highlighted Mode: NON-AC ORDINARY */
+.filter-tab-btn[data-filter="NON_AC"].active {
+  background: linear-gradient(180deg, #15803D 0%, #064E3B 100%);
+  border-color: #064E3B;
+  color: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.5), 0 2px 5px rgba(0, 0, 0, 0.25);
+  transform: translateY(-1px);
+}
+.filter-tab-btn[data-filter="NON_AC"].active .tab-status-tag {
+  background: #DCFCE7;
+  color: #14532D;
 }
 
 .filter-tab-btn .tab-icon {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1;
 }
 
 .filter-tab-btn .tab-text {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.15;
   white-space: nowrap;
 }
 
@@ -2680,6 +2732,55 @@ body {
 .filter-tab-btn.active .tab-fare-hint {
   background: rgba(255, 255, 255, 0.25);
   color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+/* In-Card Active Filter Confirmation Strip */
+.active-filter-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+  margin-bottom: 8px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.active-filter-strip .filter-strip-icon {
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.active-filter-strip .filter-strip-msg {
+  flex: 1;
+}
+
+.active-filter-strip.is-all {
+  background: #EFF6FF;
+  border: 1.5px solid #93C5FD;
+  color: #1E40AF;
+}
+
+.active-filter-strip.is-ac {
+  background: #E0F2FE;
+  border: 1.5px solid #38BDF8;
+  color: #0369A1;
+}
+
+.active-filter-strip.is-non-ac {
+  background: #DCFCE7;
+  border: 1.5px solid #86EFAC;
+  color: #15803D;
+}
+
+.active-filter-strip.is-warning {
+  background: #FFFBEB;
+  border: 1.5px solid #FCD34D;
+  color: #92400E;
 }
 
 /* Service Fare Badge in Boarding Header */

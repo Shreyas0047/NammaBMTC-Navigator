@@ -151,15 +151,19 @@
         <!-- AC vs Non-AC Bus Service Filter -->
         <div class="service-filter-strip" role="group" aria-label="Bus Service Category Filter">
           <button type="button" class="filter-tab-btn active" data-filter="ALL" id="filter-all-btn">
+            <span class="tab-status-tag">✓ Active</span>
             <span class="tab-icon">🚌</span>
             <span class="tab-text">All Services</span>
+            <span class="tab-fare-hint">All Buses</span>
           </button>
           <button type="button" class="filter-tab-btn" data-filter="NON_AC" id="filter-nonac-btn">
+            <span class="tab-status-tag">✓ Non-AC</span>
             <span class="tab-icon">🟢</span>
             <span class="tab-text">Non-AC Ordinary</span>
             <span class="tab-fare-hint">Budget</span>
           </button>
           <button type="button" class="filter-tab-btn" data-filter="AC" id="filter-ac-btn">
+            <span class="tab-status-tag">❄️ AC Only</span>
             <span class="tab-icon">❄️</span>
             <span class="tab-text">AC Vajra / Volvo</span>
             <span class="tab-fare-hint ac">AC Comfort</span>
@@ -418,6 +422,10 @@
               <!-- Route Options Box (Leg 1) -->
               <div class="buses-box">
                 <span id="leg1-box-caption" class="box-caption">CATCH ANY OF THESE SERVICES</span>
+                <div id="active-filter-strip" class="active-filter-strip is-all">
+                  <span class="filter-strip-icon">🚌</span>
+                  <span class="filter-strip-msg">Showing all available BMTC buses (Ordinary & AC Vajra)</span>
+                </div>
                 <div id="rec-routes-list" class="buses-list">
                   <!-- Injected dynamically -->
                 </div>
