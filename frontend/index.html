@@ -148,6 +148,24 @@
           <div id="dest-suggestions" class="suggestions-dropdown hidden"></div>
         </div>
 
+        <!-- AC vs Non-AC Bus Service Filter -->
+        <div class="service-filter-strip" role="group" aria-label="Bus Service Category Filter">
+          <button type="button" class="filter-tab-btn active" data-filter="ALL" id="filter-all-btn">
+            <span class="tab-icon">🚌</span>
+            <span class="tab-text">All Services</span>
+          </button>
+          <button type="button" class="filter-tab-btn" data-filter="NON_AC" id="filter-nonac-btn">
+            <span class="tab-icon">🟢</span>
+            <span class="tab-text">Non-AC Ordinary</span>
+            <span class="tab-fare-hint">Budget</span>
+          </button>
+          <button type="button" class="filter-tab-btn" data-filter="AC" id="filter-ac-btn">
+            <span class="tab-icon">❄️</span>
+            <span class="tab-text">AC Vajra / Volvo</span>
+            <span class="tab-fare-hint ac">AC Comfort</span>
+          </button>
+        </div>
+
         <!-- Big Primary Action Button -->
         <button id="find-action-btn" class="main-action-btn" type="button">
           <span>Recommend My Boarding Point</span>
@@ -312,6 +330,7 @@
             <div class="step-details">
               <div class="boarding-header">
                 <span id="boarding-tag-label" class="boarding-tag">BOARD YOUR BUS HERE</span>
+                <span id="service-fare-badge" class="service-fare-badge">🪙 Est. ₹15 - ₹25</span>
               </div>
               <h3 class="boarding-title" id="rec-stop-name">Corporation Circle</h3>
               <div class="direction-callout" id="rec-stop-desc">

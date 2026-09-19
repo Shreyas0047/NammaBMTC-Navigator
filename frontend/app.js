@@ -15,6 +15,7 @@ const state = {
     lat: null,
     lon: null,
   },
+  serviceFilter: "ALL",
 };
 
 // Map & Navigation State
@@ -72,6 +73,10 @@ const metroFareVal = document.getElementById("metro-fare-val");
 const metroTotalTime = document.getElementById("metro-total-time");
 const metroStepsList = document.getElementById("metro-steps-list");
 const toggleMetroMapBtn = document.getElementById("toggle-metro-map-btn");
+
+// AC vs Non-AC Service Filter & Fare Elements
+const filterTabBtns = document.querySelectorAll(".filter-tab-btn");
+const serviceFareBadge = document.getElementById("service-fare-badge");
 
 let currentMetroOption = null;
 let metroPolyline = null;
@@ -534,6 +539,20 @@ if (swapJourneyBtn) {
   });
 }
 
+// ================= AC vs Non-AC Bus Service Filter =================
+filterTabBtns.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    filterTabBtns.forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.serviceFilter = btn.dataset.filter || "ALL";
+
+    // Auto-refresh recommendation if user has a destination set
+    if (state.destination.lat && state.destination.lon) {
+      triggerRecommendation();
+    }
+  });
+});
+
 // ================= Find Action Handler =================
 findActionBtn.addEventListener("click", () => {
   triggerRecommendation();
@@ -591,6 +610,7 @@ async function triggerRecommendation() {
       dest_lon: state.destination.lon,
       origin_name: state.origin.name,
       dest_name: state.destination.name,
+      service_filter: state.serviceFilter || "ALL",
     };
 
     const fetchPromise = fetch("/api/recommend", {
@@ -634,6 +654,27 @@ async function triggerRecommendation() {
   }
 }
 
+// Helper to format consistent route rows with AC status and fare tags
+function formatRouteRow(r, customBg = null) {
+  const isAc = r.is_ac || (r.service_type && r.service_type !== "ORDINARY");
+  const prefix = isAc ? (r.route.startsWith("KIA") ? "✈️ " : "❄️ ") : "";
+  const bgStyle = customBg ? `style="background-color: ${customBg};"` : (isAc ? 'style="background: linear-gradient(180deg, #0284C7 0%, #0369A1 100%);"' : '');
+  const fareTag = r.fare_text ? `<span class="route-fare-tag ${isAc ? 'is-ac' : ''}">${r.fare_text}</span>` : '';
+
+  return `
+    <div class="route-row">
+      <div class="route-ident">
+        <span class="route-pill ${isAc ? 'is-ac' : ''}" ${bgStyle}>${prefix}${r.route}</span>
+        <span class="route-headsign">Towards ${r.towards}</span>
+      </div>
+      <div class="route-meta-group" style="display:flex; align-items:center; gap:6px;">
+        ${fareTag}
+        <span class="route-frequency">${r.trips_per_day} buses/day</span>
+      </div>
+    </div>
+  `;
+}
+
 // ================= Render Journey Stepper & Map =================
 function renderJourney(data) {
   skeletonView.classList.add("hidden");
@@ -673,6 +714,20 @@ function renderJourney(data) {
     recStopDesc.classList.add("hidden");
   }
 
+  // Service Category & Fare Indicator Badge
+  if (serviceFareBadge) {
+    if (p.has_ac && !p.has_non_ac) {
+      serviceFareBadge.className = "service-fare-badge ac";
+      serviceFareBadge.innerHTML = `❄️ Est. ${p.fare_range_str} • AC Vajra`;
+    } else if (p.has_ac && p.has_non_ac) {
+      serviceFareBadge.className = "service-fare-badge";
+      serviceFareBadge.innerHTML = `🪙 Est. ${p.fare_range_str} • Mixed`;
+    } else {
+      serviceFareBadge.className = "service-fare-badge";
+      serviceFareBadge.innerHTML = `🪙 Est. ${p.fare_range_str || "₹15 - ₹25"} • Non-AC`;
+    }
+  }
+
   // Handle Direct vs 1-Transfer vs 2-Transfer Journey
   if (p.transfers_count === 2) {
     resultBadgeText.textContent = "2 BUS CHANGES • 3-LEG JOURNEY";
@@ -687,17 +742,7 @@ function renderJourney(data) {
     const leg2Routes = p.leg2_routes || [];
     recLeg2RoutesList.innerHTML = leg2Routes
       .slice(0, 4)
-      .map(
-        (r) => `
-        <div class="route-row">
-          <div class="route-ident">
-            <span class="route-pill" style="background-color: #B45309;">${r.route}</span>
-            <span class="route-headsign">Towards ${r.towards}</span>
-          </div>
-          <span class="route-frequency">${r.trips_per_day} buses/day</span>
-        </div>
-      `
-      )
+      .map((r) => formatRouteRow(r, "#B45309"))
       .join("");
 
     // 2nd Transfer Step
@@ -707,17 +752,7 @@ function renderJourney(data) {
     const leg3Routes = p.leg3_routes || [];
     recLeg3RoutesList.innerHTML = leg3Routes
       .slice(0, 4)
-      .map(
-        (r) => `
-        <div class="route-row">
-          <div class="route-ident">
-            <span class="route-pill" style="background-color: #C2410C;">${r.route}</span>
-            <span class="route-headsign">Towards ${r.towards}</span>
-          </div>
-          <span class="route-frequency">${r.trips_per_day} buses/day</span>
-        </div>
-      `
-      )
+      .map((r) => formatRouteRow(r, "#C2410C"))
       .join("");
 
     timelineTransitText.textContent = `Via ${p.transfer_stop_name} & ${p.transfer2_stop_name}`;
@@ -736,17 +771,7 @@ function renderJourney(data) {
     const leg2Routes = p.leg2_routes || [];
     recLeg2RoutesList.innerHTML = leg2Routes
       .slice(0, 4)
-      .map(
-        (r) => `
-        <div class="route-row">
-          <div class="route-ident">
-            <span class="route-pill" style="background-color: #B45309;">${r.route}</span>
-            <span class="route-headsign">Towards ${r.towards}</span>
-          </div>
-          <span class="route-frequency">${r.trips_per_day} buses/day</span>
-        </div>
-      `
-      )
+      .map((r) => formatRouteRow(r, "#B45309"))
       .join("");
 
     timelineTransitText.textContent = `Change at ${p.transfer_stop_name}`;
@@ -774,17 +799,7 @@ function renderJourney(data) {
   const routesToDisplay = p.leg1_routes && p.leg1_routes.length > 0 ? p.leg1_routes : p.routes;
   recRoutesList.innerHTML = routesToDisplay
     .slice(0, 4)
-    .map(
-      (r) => `
-      <div class="route-row">
-        <div class="route-ident">
-          <span class="route-pill">${r.route}</span>
-          <span class="route-headsign">Towards ${r.towards}</span>
-        </div>
-        <span class="route-frequency">${r.trips_per_day} buses/day</span>
-      </div>
-    `
-    )
+    .map((r) => formatRouteRow(r))
     .join("");
 
   // Destination
@@ -837,21 +852,13 @@ function renderJourney(data) {
             </div>
           ` : ''}
 
-          <div class="alt-service-tag ${tagClass}">${tagText}</div>
+          <div class="alt-service-tag ${tagClass}">${tagText} • ${alt.fare_range_str || "₹15 - ₹25"}</div>
 
           <!-- Leg 1 Routes -->
           <div class="alt-buses-section">
             <span class="box-caption">${alt.transfers_count > 0 ? 'LEG 1: CATCH ANY TO INTERCHANGE' : 'CATCH ANY OF THESE SERVICES'}</span>
             <div class="buses-list">
-              ${leg1Routes.slice(0, 3).map(r => `
-                <div class="route-row">
-                  <div class="route-ident">
-                    <span class="route-pill">${r.route}</span>
-                    <span class="route-headsign">Towards ${r.towards}</span>
-                  </div>
-                  <span class="route-frequency">${r.trips_per_day} buses/day</span>
-                </div>
-              `).join('')}
+              ${leg1Routes.slice(0, 3).map(r => formatRouteRow(r)).join('')}
             </div>
           </div>
 

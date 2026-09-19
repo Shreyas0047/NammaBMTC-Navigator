@@ -2599,4 +2599,135 @@ body {
   white-space: nowrap;
 }
 
+/* ================= AC vs Non-AC Service Filter Strip ================= */
+.service-filter-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: #ECE9D8;
+  border: 1px solid #99B4D1;
+  border-radius: 6px;
+  padding: 4px;
+  margin-top: 10px;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.filter-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #ECE9D8 100%);
+  border: 1px solid #B0C4DE;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  color: #333333;
+  transition: all 0.15s ease;
+  position: relative;
+  text-align: center;
+  gap: 2px;
+}
+
+.filter-tab-btn:hover {
+  background: linear-gradient(180deg, #FFFFFF 0%, #DCE8F8 100%);
+  border-color: #316AC5;
+  color: #0C3C88;
+}
+
+.filter-tab-btn.active {
+  background: linear-gradient(180deg, #245DDA 0%, #1545A8 100%);
+  border-color: #0C3C88;
+  color: #FFFFFF;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.filter-tab-btn .tab-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.filter-tab-btn .tab-text {
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.filter-tab-btn .tab-fare-hint {
+  font-size: 9px;
+  font-weight: 800;
+  color: #15803D;
+  background: #DCFCE7;
+  padding: 1px 5px;
+  border-radius: 8px;
+  margin-top: 1px;
+}
+
+.filter-tab-btn .tab-fare-hint.ac {
+  color: #0369A1;
+  background: #E0F2FE;
+}
+
+.filter-tab-btn.active .tab-fare-hint {
+  background: rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+}
+
+/* Service Fare Badge in Boarding Header */
+.boarding-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.service-fare-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #DCFCE7;
+  border: 1px solid #86EFAC;
+  color: #15803D;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  letter-spacing: 0.3px;
+}
+
+.service-fare-badge.ac {
+  background: #E0F2FE;
+  border-color: #7DD3FC;
+  color: #0369A1;
+}
+
+/* Individual Route Fare Badge */
+.route-fare-tag {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #15803D;
+  background: #DCFCE7;
+  border: 1px solid #BBF7D0;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+.route-fare-tag.is-ac {
+  color: #0369A1;
+  background: #E0F2FE;
+  border-color: #BAE6FD;
+}
+
+.route-pill.is-ac {
+  background: linear-gradient(180deg, #0284C7 0%, #0369A1 100%) !important;
+  box-shadow: 0 1px 3px rgba(3, 105, 161, 0.3);
+}
+
 

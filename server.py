@@ -45,6 +45,7 @@ class RecommendRequest(BaseModel):
     dest_lon: float
     origin_name: Optional[str] = "Current Location"
     dest_name: Optional[str] = "Destination"
+    service_filter: Optional[str] = "ALL"
 
 
 @app.api_route("/health", methods=["GET", "HEAD"])
@@ -190,6 +191,7 @@ def recommend(req: RecommendRequest):
             dest_lon=req.dest_lon,
             origin_name=req.origin_name or "Current Location",
             dest_name=req.dest_name or "Destination",
+            service_filter=req.service_filter or "ALL",
         )
 
         # Calculate estimated bus travel time for intermodal comparison

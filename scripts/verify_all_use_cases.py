@@ -281,6 +281,62 @@ def main():
         except Exception as e:
             assert_test(f"Intermodal: {mc['label']}", False, str(e))
 
+    # 7. AC vs Non-AC Bus Service Filtering & Fare Indicators
+    print("\n--- 7. AC vs Non-AC Bus Service Filter & Fare Indicators ---")
+    filter_tests = [
+        {
+            "name": "Non-AC Ordinary Filter (ITPL -> Majestic)",
+            "req": {"origin_lat": 12.9863, "origin_lon": 77.7378, "dest_lat": 12.9774, "dest_lon": 77.5708, "service_filter": "NON_AC"},
+            "check": lambda p: (
+                p.get("service_tag") == "Non-AC Ordinary"
+                and p.get("has_ac") is False
+                and all(not r.get("is_ac") for r in (p.get("routes") or []))
+                and "₹" in p.get("fare_range_str", "")
+            ),
+        },
+        {
+            "name": "AC Vajra Volvo Filter (ITPL -> Majestic)",
+            "req": {"origin_lat": 12.9863, "origin_lon": 77.7378, "dest_lat": 12.9774, "dest_lon": 77.5708, "service_filter": "AC"},
+            "check": lambda p: (
+                p.get("service_tag") == "AC Vajra / Vayu Vajra"
+                and p.get("has_ac") is True
+                and any(r.get("is_ac") for r in (p.get("routes") or []))
+                and p.get("min_fare", 0) >= 50
+            ),
+        },
+        {
+            "name": "Airport Vayu Vajra AC (Majestic -> Airport)",
+            "req": {"origin_lat": 12.9774, "origin_lon": 77.5708, "dest_lat": 13.1986, "dest_lon": 77.7066, "service_filter": "AC"},
+            "check": lambda p: (
+                p.get("has_ac") is True
+                and any(r.get("route", "").startswith("KIA-") for r in (p.get("routes") or []))
+                and p.get("min_fare", 0) >= 150
+            ),
+        },
+        {
+            "name": "Unfiltered All Services with Fare Range (Majestic -> Silk Board)",
+            "req": {"origin_lat": 12.9774, "origin_lon": 77.5708, "dest_lat": 12.9176, "dest_lon": 77.6238, "service_filter": "ALL"},
+            "check": lambda p: (
+                "fare_range_str" in p
+                and "min_fare" in p
+                and "max_fare" in p
+                and len(p.get("routes", [])) > 0
+                and "fare_text" in p.get("routes", [])[0]
+            ),
+        },
+    ]
+
+    for ft in filter_tests:
+        try:
+            status, res = post_json("/api/recommend", ft["req"])
+            primary = res.get("primary")
+            is_valid = primary is not None and ft["check"](primary)
+            routes = [r.get("route") for r in (primary.get("routes", []) if primary else [])]
+            detail = f"Fare: {primary.get('fare_range_str')}, Tag: {primary.get('service_tag')}, Routes: {routes[:2]}" if primary else "No primary"
+            assert_test(ft["name"], is_valid, detail)
+        except Exception as e:
+            assert_test(ft["name"], False, str(e))
+
     print("\n" + "=" * 70)
     print(f"📊 VERIFICATION SUMMARY: {passed_tests}/{total_tests} tests passed ({round(passed_tests/total_tests*100, 1)}%)")
     print("=" * 70)

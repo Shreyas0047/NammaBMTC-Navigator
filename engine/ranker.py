@@ -588,6 +588,97 @@ def find_two_transfer_candidates(
     return candidates
 
 
+def apply_service_filter(
+    candidates: List[CandidateBoardingPoint],
+    service_filter: str = "ALL"
+) -> tuple[List[CandidateBoardingPoint], str]:
+    """
+    Filters candidates and their routes based on bus service category:
+    - 'ALL': Unfiltered (both Ordinary and AC Vajra/Airport).
+    - 'NON_AC': Strictly Non-AC Ordinary (Sarige/Suvarna/Feeder).
+    - 'AC': Strictly AC Vajra (Volvo) or Vayu Vajra (Airport).
+    """
+    if not service_filter or service_filter.upper() == "ALL" or not candidates:
+        return candidates, ""
+
+    sf = service_filter.upper()
+    filtered = []
+
+    for c in candidates:
+        if c.is_direct:
+            if sf == "NON_AC":
+                matching = [r for r in c.viable_routes if r.service_type == "ORDINARY"]
+            elif sf == "AC":
+                matching = [r for r in c.viable_routes if r.service_type in ("VAJRA_AC", "AIRPORT_AC")]
+            else:
+                matching = c.viable_routes
+
+            if matching:
+                filtered.append(
+                    CandidateBoardingPoint(
+                        stop_id=c.stop_id,
+                        stop_name=c.stop_name,
+                        stop_desc=c.stop_desc,
+                        lat=c.lat,
+                        lon=c.lon,
+                        walk_distance_m=c.walk_distance_m,
+                        walk_duration_min=c.walk_duration_min,
+                        viable_routes=matching,
+                        score=c.score,
+                        score_breakdown=c.score_breakdown,
+                        is_direct=True,
+                        transfers_count=0,
+                    )
+                )
+        else:
+            if sf == "NON_AC":
+                l1 = [r for r in c.leg1_routes if r.service_type == "ORDINARY"]
+                l2 = [r for r in c.leg2_routes if r.service_type == "ORDINARY"]
+                l3 = [r for r in c.leg3_routes if r.service_type == "ORDINARY"]
+            elif sf == "AC":
+                l1 = [r for r in c.leg1_routes if r.service_type in ("VAJRA_AC", "AIRPORT_AC")]
+                l2 = [r for r in c.leg2_routes if r.service_type in ("VAJRA_AC", "AIRPORT_AC")]
+                l3 = [r for r in c.leg3_routes if r.service_type in ("VAJRA_AC", "AIRPORT_AC")]
+            else:
+                l1, l2, l3 = c.leg1_routes, c.leg2_routes, c.leg3_routes
+
+            has_valid_transfer = bool(l1 and l2)
+            if c.transfers_count == 2:
+                has_valid_transfer = has_valid_transfer and bool(l3)
+
+            if has_valid_transfer:
+                filtered.append(
+                    CandidateBoardingPoint(
+                        stop_id=c.stop_id,
+                        stop_name=c.stop_name,
+                        stop_desc=c.stop_desc,
+                        lat=c.lat,
+                        lon=c.lon,
+                        walk_distance_m=c.walk_distance_m,
+                        walk_duration_min=c.walk_duration_min,
+                        viable_routes=[],
+                        score=c.score,
+                        score_breakdown=c.score_breakdown,
+                        is_direct=False,
+                        transfers_count=c.transfers_count,
+                        transfer_stop_name=c.transfer_stop_name,
+                        transfer_stop_desc=c.transfer_stop_desc,
+                        transfer2_stop_name=c.transfer2_stop_name,
+                        transfer2_stop_desc=c.transfer2_stop_desc,
+                        leg1_routes=l1,
+                        leg2_routes=l2,
+                        leg3_routes=l3,
+                    )
+                )
+
+    if filtered:
+        tag = "Non-AC Ordinary" if sf == "NON_AC" else "AC Vajra / Volvo"
+        return filtered, f"Filtered to {tag} services."
+    else:
+        tag = "Non-AC Ordinary" if sf == "NON_AC" else "AC Vajra"
+        return candidates, f"No direct {tag} routes available for this trip. Showing all options."
+
+
 def rank_boarding_points(
     origin_lat: float,
     origin_lon: float,
@@ -597,6 +688,7 @@ def rank_boarding_points(
     dest_name: str = "Destination",
     walk_radius_m: float = 800.0,
     dest_radius_m: float = 1200.0,
+    service_filter: str = "ALL",
 ) -> JourneyRecommendation:
     """
     Finds and ranks all viable BMTC boarding points from origin to destination.
@@ -784,6 +876,10 @@ def rank_boarding_points(
 
         candidates.sort(key=lambda c: c.score, reverse=True)
         if candidates:
+            final_cands, f_msg = apply_service_filter(candidates, service_filter)
+            msg = "Found viable direct boarding points."
+            if f_msg:
+                msg = f"{msg} {f_msg}"
             return JourneyRecommendation(
                 origin_name=origin_name,
                 origin_lat=origin_lat,
@@ -791,16 +887,20 @@ def rank_boarding_points(
                 dest_name=dest_name,
                 dest_lat=dest_lat,
                 dest_lon=dest_lon,
-                primary_candidate=candidates[0],
-                ranked_candidates=candidates,
+                primary_candidate=final_cands[0] if final_cands else candidates[0],
+                ranked_candidates=final_cands if final_cands else candidates,
                 status="OK",
-                message="Found viable direct boarding points.",
+                message=msg,
             )
 
     # 5. Fallback A: 1-Transfer Graph Search
     transfer_candidates = find_transfer_candidates(origin_stops, dest_stops, orig_stop_map, dest_lat, dest_lon)
     if transfer_candidates:
-        primary = transfer_candidates[0]
+        final_cands, f_msg = apply_service_filter(transfer_candidates, service_filter)
+        primary = final_cands[0] if final_cands else transfer_candidates[0]
+        msg = f"Found 1-transfer journey via {primary.transfer_stop_name}."
+        if f_msg:
+            msg = f"{msg} {f_msg}"
         return JourneyRecommendation(
             origin_name=origin_name,
             origin_lat=origin_lat,
@@ -809,15 +909,19 @@ def rank_boarding_points(
             dest_lat=dest_lat,
             dest_lon=dest_lon,
             primary_candidate=primary,
-            ranked_candidates=transfer_candidates,
+            ranked_candidates=final_cands if final_cands else transfer_candidates,
             status="OK",
-            message=f"Found 1-transfer journey via {primary.transfer_stop_name}.",
+            message=msg,
         )
 
     # 6. Fallback B: 2-Transfer Graph Search
     two_transfer_candidates = find_two_transfer_candidates(origin_stops, dest_stops, orig_stop_map, dest_lat, dest_lon)
     if two_transfer_candidates:
-        primary = two_transfer_candidates[0]
+        final_cands, f_msg = apply_service_filter(two_transfer_candidates, service_filter)
+        primary = final_cands[0] if final_cands else two_transfer_candidates[0]
+        msg = f"Found 2-transfer journey via {primary.transfer_stop_name} and {primary.transfer2_stop_name}."
+        if f_msg:
+            msg = f"{msg} {f_msg}"
         return JourneyRecommendation(
             origin_name=origin_name,
             origin_lat=origin_lat,
@@ -826,9 +930,9 @@ def rank_boarding_points(
             dest_lat=dest_lat,
             dest_lon=dest_lon,
             primary_candidate=primary,
-            ranked_candidates=two_transfer_candidates,
+            ranked_candidates=final_cands if final_cands else two_transfer_candidates,
             status="OK",
-            message=f"Found 2-transfer journey via {primary.transfer_stop_name} and {primary.transfer2_stop_name}.",
+            message=msg,
         )
 
     # 7. Fallback C: Progressive radius expansion for deep rural / outer suburban origins
@@ -840,8 +944,12 @@ def rank_boarding_points(
             if not cands:
                 cands = find_two_transfer_candidates(exp_origin, dest_stops, exp_map, dest_lat, dest_lon)
             if cands:
-                primary = cands[0]
+                final_cands, f_msg = apply_service_filter(cands, service_filter)
+                primary = final_cands[0] if final_cands else cands[0]
                 t_desc = f"via {primary.transfer_stop_name}" if primary.transfers_count == 1 else f"via {primary.transfer_stop_name} and {primary.transfer2_stop_name}"
+                msg = f"Found journey {t_desc}."
+                if f_msg:
+                    msg = f"{msg} {f_msg}"
                 return JourneyRecommendation(
                     origin_name=origin_name,
                     origin_lat=origin_lat,
@@ -850,9 +958,9 @@ def rank_boarding_points(
                     dest_lat=dest_lat,
                     dest_lon=dest_lon,
                     primary_candidate=primary,
-                    ranked_candidates=cands,
+                    ranked_candidates=final_cands if final_cands else cands,
                     status="OK",
-                    message=f"Found journey {t_desc}.",
+                    message=msg,
                 )
 
     return JourneyRecommendation(
