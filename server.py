@@ -19,6 +19,8 @@ from engine.db import get_db_connection
 from engine.ranker import rank_boarding_points
 from engine.spatial_index import haversine
 from engine.live_tracker import get_live_route_telemetry
+from engine.intermodal import find_intermodal_route
+from data.metro_network import METRO_LINES, get_all_lines_polylines
 
 app = FastAPI(
     title="NammaBMTC Navigator API",
@@ -190,6 +192,27 @@ def recommend(req: RecommendRequest):
             dest_name=req.dest_name or "Destination",
         )
 
+        # Calculate estimated bus travel time for intermodal comparison
+        bus_mins = None
+        if rec.primary_candidate:
+            walk_min = rec.primary_candidate.walk_duration_min
+            stops_count = 15
+            if rec.primary_candidate.viable_routes:
+                stops_count = rec.primary_candidate.viable_routes[0].transit_stops_count
+            elif rec.primary_candidate.leg1_routes and rec.primary_candidate.leg2_routes:
+                stops_count = rec.primary_candidate.leg1_routes[0].transit_stops_count + rec.primary_candidate.leg2_routes[0].transit_stops_count
+            transfer_penalty = 12 if not rec.primary_candidate.is_direct else 0
+            bus_mins = walk_min + int(stops_count * 2.8) + transfer_penalty
+
+        # Check for Namma Metro (BMRCL) intermodal transit option
+        metro_opt = find_intermodal_route(
+            origin_lat=req.origin_lat,
+            origin_lon=req.origin_lon,
+            dest_lat=req.dest_lat,
+            dest_lon=req.dest_lon,
+            bus_travel_time_mins=bus_mins,
+        )
+
         return {
             "status": rec.status,
             "message": rec.message,
@@ -206,9 +229,19 @@ def recommend(req: RecommendRequest):
             "primary": rec.primary_candidate.to_dict() if rec.primary_candidate else None,
             "alternatives": [c.to_dict() for c in rec.ranked_candidates[1:5]],
             "total_viable_stops": len(rec.ranked_candidates),
+            "metro_option": metro_opt,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/metro/network")
+def metro_network():
+    """Returns metadata and polyline coordinates for all Namma Metro lines."""
+    return {
+        "lines": METRO_LINES,
+        "polylines": get_all_lines_polylines(),
+    }
 
 
 @app.get("/api/live-bus")

@@ -59,6 +59,24 @@ const toggleAltsBtn = document.getElementById("toggle-alts-btn");
 const altsCountLabel = document.getElementById("alts-count-label");
 const alternativesContainer = document.getElementById("alternatives-container");
 
+// Return Journey Swap & Metro Intermodal Elements
+const swapJourneyBtn = document.getElementById("swap-journey-btn");
+const metroIntermodalCard = document.getElementById("metro-intermodal-card");
+const metroSpeedBadge = document.getElementById("metro-speed-badge");
+const metroLinePill = document.getElementById("metro-line-pill");
+const metroRouteTitle = document.getElementById("metro-route-title");
+const metroSavingsMins = document.getElementById("metro-savings-mins");
+const metroRideTime = document.getElementById("metro-ride-time");
+const metroStationsCount = document.getElementById("metro-stations-count");
+const metroFareVal = document.getElementById("metro-fare-val");
+const metroTotalTime = document.getElementById("metro-total-time");
+const metroStepsList = document.getElementById("metro-steps-list");
+const toggleMetroMapBtn = document.getElementById("toggle-metro-map-btn");
+
+let currentMetroOption = null;
+let metroPolyline = null;
+let metroMarkers = [];
+
 // Live Bus Telemetry State & DOM Elements
 let telemetryIntervalId = null;
 let liveBusMarkers = [];
@@ -457,6 +475,65 @@ destSearchInput.addEventListener("keydown", (e) => {
   }
 });
 
+// ================= Return Journey Swap Handler =================
+if (swapJourneyBtn) {
+  swapJourneyBtn.addEventListener("click", async () => {
+    if (!state.origin.lat) {
+      showStatus("Acquiring your location first...", "info");
+      return;
+    }
+    
+    // Resolve destination if user typed it
+    let targetDestName = state.destination.name;
+    let targetDestLat = state.destination.lat;
+    let targetDestLon = state.destination.lon;
+
+    if (!targetDestLat || !targetDestLon) {
+      const typed = destSearchInput.value.trim();
+      if (typed.length >= 2) {
+        try {
+          const res = await fetch(`/api/stops/search?q=${encodeURIComponent(typed)}`);
+          const items = await res.json();
+          if (items && items.length > 0) {
+            targetDestName = items[0].stop_name;
+            targetDestLat = items[0].lat;
+            targetDestLon = items[0].lon;
+          }
+        } catch (e) {}
+      }
+    }
+
+    if (!targetDestLat || !targetDestLon) {
+      showStatus("Please pick or type a valid destination to swap.", "info");
+      destSearchInput.focus();
+      return;
+    }
+
+    // Perform the swap
+    const oldOrigName = state.origin.name;
+    const oldOrigLat = state.origin.lat;
+    const oldOrigLon = state.origin.lon;
+
+    state.origin.name = targetDestName;
+    state.origin.lat = targetDestLat;
+    state.origin.lon = targetDestLon;
+    state.origin.isLive = false;
+
+    state.destination.name = oldOrigName;
+    state.destination.lat = oldOrigLat;
+    state.destination.lon = oldOrigLon;
+
+    currentLocDisplay.textContent = state.origin.name;
+    destSearchInput.value = state.destination.name;
+    clearDestBtn.classList.remove("hidden");
+    gpsStatusPill.classList.remove("active");
+    gpsStatusText.textContent = "Custom Origin";
+
+    showStatus(`Swapped: ${state.origin.name} ➔ ${state.destination.name}`, "info");
+    triggerRecommendation();
+  });
+}
+
 // ================= Find Action Handler =================
 findActionBtn.addEventListener("click", () => {
   triggerRecommendation();
@@ -562,6 +639,18 @@ function renderJourney(data) {
   skeletonView.classList.add("hidden");
   const p = data.primary;
   currentPrimaryStop = p;
+
+  // Clear any existing metro map overlay
+  if (mapInstance && metroPolyline) {
+    mapInstance.removeLayer(metroPolyline);
+    metroMarkers.forEach((m) => mapInstance.removeLayer(m));
+    metroPolyline = null;
+    metroMarkers = [];
+    if (toggleMetroMapBtn) toggleMetroMapBtn.innerHTML = "<span>🗺️ Highlight Metro Track on Map</span>";
+  }
+
+  // Render Namma Metro Intermodal Option
+  renderMetroIntermodalCard(data.metro_option);
 
   // Origin step
   journeyOriginTitle.textContent = state.origin.name || "Your Current Location";
@@ -831,6 +920,148 @@ function renderJourney(data) {
       mapInstance.invalidateSize();
     }
   }, 350);
+}
+
+// ================= Namma Metro (BMRCL) Intermodal Rendering =================
+function renderMetroIntermodalCard(metro) {
+  if (!metroIntermodalCard) return;
+
+  if (!metro || !metro.available) {
+    metroIntermodalCard.classList.add("hidden");
+    currentMetroOption = null;
+    return;
+  }
+
+  currentMetroOption = metro;
+  metroIntermodalCard.classList.remove("hidden");
+
+  // Speed Badge & Savings
+  const savingsPill = document.getElementById("metro-time-savings-pill");
+  if (metro.is_substantially_faster) {
+    metroSpeedBadge.textContent = "⚡ FASTEST: NAMMA METRO HYBRID";
+    metroSpeedBadge.className = "metro-speed-badge";
+    if (metroSavingsMins) metroSavingsMins.textContent = `~${metro.time_saved_mins} min`;
+    if (savingsPill) savingsPill.style.display = "flex";
+  } else if (metro.is_faster) {
+    metroSpeedBadge.textContent = "🚇 TRAFFIC-IMMUNE METRO ROUTE";
+    metroSpeedBadge.className = "metro-speed-badge normal";
+    if (metroSavingsMins) metroSavingsMins.textContent = `~${metro.time_saved_mins} min`;
+    if (savingsPill) savingsPill.style.display = "flex";
+  } else {
+    metroSpeedBadge.textContent = "🚇 METRO TRANSIT ALTERNATIVE";
+    metroSpeedBadge.className = "metro-speed-badge normal";
+    if (savingsPill) savingsPill.style.display = "none";
+  }
+
+  // Line pill
+  const lineName = metro.primary_line || "PURPLE";
+  if (metroLinePill) {
+    metroLinePill.textContent = `${lineName} LINE`;
+    metroLinePill.style.backgroundColor = metro.primary_color || "#7C3AED";
+  }
+  metroIntermodalCard.style.borderColor = metro.primary_color || "#7C3AED";
+
+  // Route Title
+  if (metroRouteTitle) {
+    if (metro.has_interchange) {
+      const lines = (metro.lines_used || []).join(" + ");
+      metroRouteTitle.textContent = `${metro.origin_station.name} ➔ ${metro.dest_station.name} (${lines} Line)`;
+    } else {
+      metroRouteTitle.textContent = `${metro.primary_line} Line: ${metro.origin_station.name} ➔ ${metro.dest_station.name}`;
+    }
+  }
+
+  // Metrics
+  if (metroRideTime) metroRideTime.textContent = `${metro.metro_ride_time_mins} min`;
+  if (metroStationsCount) metroStationsCount.textContent = `${metro.total_stations} stops`;
+  if (metroFareVal) metroFareVal.textContent = `₹${metro.fare}`;
+  if (metroTotalTime) metroTotalTime.textContent = `${metro.total_travel_time_mins} min`;
+
+  // Step-by-step itinerary list
+  if (metroStepsList) {
+    metroStepsList.innerHTML = (metro.steps || []).map((s) => {
+      const isMetro = s.type === "metro";
+      const isInterchange = s.type === "interchange";
+      const itemClass = isMetro
+        ? "metro-step-item is-metro-leg"
+        : isInterchange
+        ? "metro-step-item is-interchange"
+        : "metro-step-item";
+
+      return `
+        <div class="${itemClass}">
+          <span class="metro-step-icon">${s.icon || "📍"}</span>
+          <div class="metro-step-body">
+            <div class="metro-step-title">${s.title}</div>
+            <div class="metro-step-desc">${s.subtitle || ""}</div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+}
+
+function toggleMetroOnMap() {
+  if (!mapInstance || !currentMetroOption || !currentMetroOption.polyline) return;
+
+  if (metroPolyline) {
+    // Hide Metro Track
+    mapInstance.removeLayer(metroPolyline);
+    metroMarkers.forEach((m) => mapInstance.removeLayer(m));
+    metroPolyline = null;
+    metroMarkers = [];
+    if (toggleMetroMapBtn) {
+      toggleMetroMapBtn.innerHTML = "<span>🗺️ Highlight Metro Track on Map</span>";
+    }
+
+    // Re-center on bus/walking route
+    if (currentPrimaryStop && state.origin.lat) {
+      mapInstance.fitBounds(
+        [
+          [state.origin.lat, state.origin.lon],
+          [currentPrimaryStop.lat, currentPrimaryStop.lon],
+        ],
+        { padding: [35, 35], maxZoom: 17 }
+      );
+    }
+  } else {
+    // Show Metro Track
+    metroPolyline = L.polyline(currentMetroOption.polyline, {
+      color: currentMetroOption.primary_color || "#7C3AED",
+      weight: 5,
+      opacity: 0.95,
+    }).addTo(mapInstance);
+
+    const origStn = currentMetroOption.origin_station;
+    const destStn = currentMetroOption.dest_station;
+
+    const metroIconOrig = L.divIcon({
+      className: "custom-metro-icon",
+      html: `<div class="metro-marker-pin" style="background:${currentMetroOption.primary_color || "#7C3AED"}">🚇 ${origStn.name}</div>`,
+      iconSize: [120, 24],
+      iconAnchor: [60, 12],
+    });
+    const m1 = L.marker([origStn.lat, origStn.lon], { icon: metroIconOrig }).addTo(mapInstance);
+    metroMarkers.push(m1);
+
+    const metroIconDest = L.divIcon({
+      className: "custom-metro-icon",
+      html: `<div class="metro-marker-pin" style="background:${currentMetroOption.primary_color || "#7C3AED"}">🚇 ${destStn.name}</div>`,
+      iconSize: [120, 24],
+      iconAnchor: [60, 12],
+    });
+    const m2 = L.marker([destStn.lat, destStn.lon], { icon: metroIconDest }).addTo(mapInstance);
+    metroMarkers.push(m2);
+
+    mapInstance.fitBounds(currentMetroOption.polyline, { padding: [40, 40], maxZoom: 15 });
+    if (toggleMetroMapBtn) {
+      toggleMetroMapBtn.innerHTML = "<span>🗺️ Hide Metro Track</span>";
+    }
+  }
+}
+
+if (toggleMetroMapBtn) {
+  toggleMetroMapBtn.addEventListener("click", toggleMetroOnMap);
 }
 
 // ================= Interactive Walking Map =================

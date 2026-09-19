@@ -89,6 +89,10 @@
           <button id="edit-origin-btn" class="edit-btn" type="button">Change</button>
         </div>
       </div>
+      <button id="swap-journey-btn" class="swap-journey-btn" type="button" title="Swap Origin and Destination (Return Journey)">
+        <span class="swap-icon">⇄</span>
+        <span class="swap-label">Return</span>
+      </button>
     </div>
 
     <!-- Hidden Origin Edit Drawer/Modal -->
@@ -212,6 +216,69 @@
         <div class="result-header">
           <span id="result-badge-text" class="result-badge">PRIMARY RECOMMENDATION</span>
           <span id="result-time-stamp" class="result-timestamp">Destination-Aware Match</span>
+        </div>
+
+        <!-- Metro Intermodal Option Card (Namma Metro BMRCL) -->
+        <div id="metro-intermodal-card" class="metro-intermodal-card hidden">
+          <div class="metro-card-header">
+            <div class="metro-header-left">
+              <div class="metro-badges-row">
+                <span id="metro-speed-badge" class="metro-speed-badge">⚡ FASTEST: NAMMA METRO HYBRID</span>
+                <span id="metro-line-pill" class="metro-line-pill">PURPLE LINE</span>
+              </div>
+              <h3 class="metro-route-title" id="metro-route-title">Purple Line Direct</h3>
+            </div>
+            <div class="metro-time-savings-pill" id="metro-time-savings-pill">
+              <span class="savings-prefix">⚡ SAVES</span>
+              <span class="savings-val" id="metro-savings-mins">~35 min</span>
+            </div>
+          </div>
+
+          <div class="metro-metrics-strip">
+            <div class="metro-metric">
+              <span class="metric-icon">🚇</span>
+              <div class="metric-text">
+                <span class="metric-label">METRO RIDE</span>
+                <span class="metric-val" id="metro-ride-time">49 min</span>
+              </div>
+            </div>
+            <div class="metro-metric">
+              <span class="metric-icon">🚉</span>
+              <div class="metric-text">
+                <span class="metric-label">STATIONS</span>
+                <span class="metric-val" id="metro-stations-count">19 stops</span>
+              </div>
+            </div>
+            <div class="metro-metric">
+              <span class="metric-icon">🪙</span>
+              <div class="metric-text">
+                <span class="metric-label">EST. FARE</span>
+                <span class="metric-val" id="metro-fare-val">₹50</span>
+              </div>
+            </div>
+            <div class="metro-metric">
+              <span class="metric-icon">🚶</span>
+              <div class="metric-text">
+                <span class="metric-label">TOTAL TIME</span>
+                <span class="metric-val" id="metro-total-time">51 min</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step Metro Itinerary -->
+          <div class="metro-steps-container">
+            <span class="metro-steps-caption">HYBRID METRO TRANSIT ITINERARY</span>
+            <div id="metro-steps-list" class="metro-steps-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Metro Map Action Button -->
+          <div class="metro-actions-bar">
+            <button id="toggle-metro-map-btn" class="metro-map-btn" type="button">
+              <span>🗺️ Highlight Metro Track on Map</span>
+            </button>
+          </div>
         </div>
 
         <!-- Visual Journey Stepper Card -->

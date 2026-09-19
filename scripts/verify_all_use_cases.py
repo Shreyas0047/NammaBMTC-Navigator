@@ -227,6 +227,60 @@ def main():
     except Exception as e:
         assert_test("Popular Hubs completely removed from DOM", False, str(e))
 
+    # 6. Namma Metro (BMRCL) Intermodal Routing & API
+    print("\n--- 6. Namma Metro (BMRCL) Intermodal Transit ---")
+    try:
+        status, body = get("/api/metro/network")
+        data = json.loads(body)
+        has_lines = all(k in data.get("lines", {}) for k in ["PURPLE", "GREEN", "YELLOW"])
+        has_poly = len(data.get("polylines", {}).get("PURPLE", [])) == 37
+        assert_test("Metro Network API (/api/metro/network)", status == 200 and has_lines and has_poly, f"Purple: {len(data.get('polylines', {}).get('PURPLE', []))} stations, Green: {len(data.get('polylines', {}).get('GREEN', []))}, Yellow: {len(data.get('polylines', {}).get('YELLOW', []))}")
+    except Exception as e:
+        assert_test("Metro Network API (/api/metro/network)", False, str(e))
+
+    metro_corridors = [
+        {
+            "label": "Purple Line East-West: Majestic to ITPL",
+            "req": {"origin_lat": 12.9757, "origin_lon": 77.5728, "dest_lat": 12.9863, "dest_lon": 77.7479, "origin_name": "Majestic", "dest_name": "ITPL"},
+            "expected_line": "PURPLE",
+            "min_stations": 15,
+        },
+        {
+            "label": "Green Line South-North: Banashankari to Yeshwanthpur",
+            "req": {"origin_lat": 12.9152, "origin_lon": 77.5736, "dest_lat": 13.0231, "dest_lon": 77.5501, "origin_name": "Banashankari", "dest_name": "Yeshwanthpur"},
+            "expected_line": "GREEN",
+            "min_stations": 12,
+        },
+        {
+            "label": "Yellow Line South Tech: Silk Board to Electronic City",
+            "req": {"origin_lat": 12.9176, "origin_lon": 77.6227, "dest_lat": 12.8468, "dest_lon": 77.6758, "origin_name": "Central Silk Board", "dest_name": "Electronic City"},
+            "expected_line": "YELLOW",
+            "min_stations": 6,
+        },
+        {
+            "label": "West to East Full Corridor: Kengeri to ITPL",
+            "req": {"origin_lat": 12.9079, "origin_lon": 77.4787, "dest_lat": 12.9863, "dest_lon": 77.7479, "origin_name": "Kengeri", "dest_name": "ITPL"},
+            "expected_line": "PURPLE",
+            "min_stations": 30,
+        },
+    ]
+
+    for mc in metro_corridors:
+        try:
+            status, res = post_json("/api/recommend", mc["req"])
+            mo = res.get("metro_option")
+            is_valid = (
+                mo is not None
+                and mo.get("available") is True
+                and mo.get("primary_line") == mc["expected_line"]
+                and mo.get("total_stations", 0) >= mc["min_stations"]
+                and len(mo.get("steps", [])) >= 3
+            )
+            detail = f"{mo.get('primary_line')} Line, {mo.get('total_stations')} stations, saves ~{mo.get('time_saved_mins')}m, fare ₹{mo.get('fare')}" if mo else "No metro option"
+            assert_test(f"Intermodal: {mc['label']}", is_valid, detail)
+        except Exception as e:
+            assert_test(f"Intermodal: {mc['label']}", False, str(e))
+
     print("\n" + "=" * 70)
     print(f"📊 VERIFICATION SUMMARY: {passed_tests}/{total_tests} tests passed ({round(passed_tests/total_tests*100, 1)}%)")
     print("=" * 70)
