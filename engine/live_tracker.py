@@ -81,7 +81,7 @@ def clean_route_candidates(route_str: str) -> List[str]:
     return res
 
 
-def resolve_route_parent_id(route_no: str, timeout: float = 3.5) -> Optional[int]:
+def resolve_route_parent_id(route_no: str, timeout: float = 2.0) -> Optional[int]:
     """
     Resolves route string (e.g. '365-P', '356-M', 'O EXP-356KA') to BMTC's internal routeparentid.
     Results are cached in memory.
@@ -92,7 +92,7 @@ def resolve_route_parent_id(route_no: str, timeout: float = 3.5) -> Optional[int
 
     candidates = clean_route_candidates(clean_no)
 
-    for term in candidates:
+    for term in candidates[:2]:
         try:
             url = "https://bmtcmobileapi.karnataka.gov.in/WebAPI/SearchRoute_v2"
             payload = json.dumps({"routetext": term}).encode("utf-8")
@@ -119,7 +119,7 @@ def resolve_route_parent_id(route_no: str, timeout: float = 3.5) -> Optional[int
     return None
 
 
-def fetch_route_telemetry_raw(route_id: int, timeout: float = 4.0) -> Optional[Dict[str, Any]]:
+def fetch_route_telemetry_raw(route_id: int, timeout: float = 2.5) -> Optional[Dict[str, Any]]:
     """
     Fetches raw route details & live vehicle mapData from BMTC API.
     Caches responses with a short TTL (15s).

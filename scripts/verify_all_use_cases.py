@@ -16,7 +16,7 @@ BASE_URL = "http://localhost:8000"
 def get(path):
     url = f"{BASE_URL}{path}"
     req = urllib.request.Request(url, headers={"User-Agent": "NammaBMTC-Verifier/1.0"})
-    with urllib.request.urlopen(req, timeout=15) as resp:
+    with urllib.request.urlopen(req, timeout=25) as resp:
         content_type = resp.headers.get("Content-Type", "")
         raw = resp.read()
         if "text" in content_type or "json" in content_type or "xml" in content_type or "javascript" in content_type:
@@ -31,7 +31,7 @@ def post_json(path, data):
         data=body,
         headers={"Content-Type": "application/json", "User-Agent": "NammaBMTC-Verifier/1.0"}
     )
-    with urllib.request.urlopen(req, timeout=20) as resp:
+    with urllib.request.urlopen(req, timeout=25) as resp:
         return resp.status, json.loads(resp.read().decode("utf-8"))
 
 def main():
@@ -67,7 +67,7 @@ def main():
     except Exception as e:
         assert_test("GET /api/health", False, str(e))
 
-    # 2. Search & Aliases
+    # 2. Search & Aliases (including previously problematic colloquially named stops)
     print("\n--- 2. Stop Search & Smart Aliases ---")
     alias_queries = [
         ("majestic", ["KEMPEGOWDA", "KBS", "MAJESTIC"]),
@@ -77,16 +77,25 @@ def main():
         ("itpl", ["ITPL"]),
         ("ecity", ["ELECTRONIC CITY"]),
         ("whitefield", ["WHITE FIELD", "WHITEFIELD"]),
-        ("kr market", ["MARKET", "KR MARKET"])
+        ("kr market", ["MARKET", "KR MARKET"]),
+        # Previously failing landmark and transliteration stops
+        ("manyata", ["MANYATHA", "MANYATA"]),
+        ("malleswaram", ["MALLESHWARA", "MALLESWARA"]),
+        ("brookefield", ["KUNDALAHALLI"]),
+        ("ecospace", ["ECO SPACE", "ECOSPACE"]),
+        ("rmz ecoworld", ["DEVARABISANAHALLI", "KADABISANAHALLI"]),
+        ("phoenix marketcity", ["SINGAIANAPALYA", "PHOENIX"]),
+        ("jayadeva", ["JAYANAGARA", "JAYADEVA", "EAST END"]),
+        ("christ university", ["DAIRY CIRCLE", "CHRIST"]),
     ]
     for q, expected_keywords in alias_queries:
         try:
             status, body = get(f"/api/stops/search?q={urllib.parse.quote(q)}")
             data = json.loads(body)
             has_match = any(any(kw in s["stop_name"].upper() for kw in expected_keywords) for s in data)
-            assert_test(f"Alias search '{q}'", status == 200 and has_match, f"{len(data)} results, top: {data[0]['stop_name'] if data else 'none'}")
+            assert_test(f"Smart Stop Search '{q}'", status == 200 and has_match, f"{len(data)} results, top: {data[0]['stop_name'] if data else 'none'}")
         except Exception as e:
-            assert_test(f"Alias search '{q}'", False, str(e))
+            assert_test(f"Smart Stop Search '{q}'", False, str(e))
 
     # Distance relative to user lat/lon
     try:
@@ -336,6 +345,45 @@ def main():
             assert_test(ft["name"], is_valid, detail)
         except Exception as e:
             assert_test(ft["name"], False, str(e))
+
+    # 8. Commute Breakdown, ETA, Milestones, and Shakti Scheme Pass
+    print("\n--- 8. Commute Breakdown, Milestones & Scheme Eligibility ---")
+    commute_tests = [
+        {
+            "name": "Commute Breakdown & Milestones (Majestic -> Silk Board)",
+            "req": {"origin_lat": 12.9774, "origin_lon": 77.5708, "dest_lat": 12.9176, "dest_lon": 77.6238, "origin_name": "Majestic", "dest_name": "Silk Board"},
+            "check": lambda p: (
+                "journey_breakdown" in p
+                and p["journey_breakdown"].get("total_journey_min", 0) > 0
+                and p["journey_breakdown"].get("walk_time_min") is not None
+                and p["journey_breakdown"].get("ride_time_min") is not None
+                and p["journey_breakdown"].get("shakti_scheme_eligible") is True
+                and len(p["journey_breakdown"].get("key_milestones", [])) >= 2
+                and "Shakti" in p.get("pass_info", "")
+            ),
+        },
+        {
+            "name": "Tech Corridor Commute to Manyata (Majestic -> Manyata)",
+            "req": {"origin_lat": 12.9767, "origin_lon": 77.5713, "dest_lat": 13.0458, "dest_lon": 77.6200, "origin_name": "Majestic", "dest_name": "Manyata Tech Park"},
+            "check": lambda p: (
+                "journey_breakdown" in p
+                and p["journey_breakdown"].get("total_journey_min", 0) > 0
+                and "CS-" not in p.get("stop_name", "")
+                and len(p["journey_breakdown"].get("key_milestones", [])) >= 1
+            ),
+        },
+    ]
+
+    for ct in commute_tests:
+        try:
+            status, res = post_json("/api/recommend", ct["req"])
+            primary = res.get("primary")
+            is_valid = primary is not None and ct["check"](primary)
+            jb = primary.get("journey_breakdown", {}) if primary else {}
+            detail = f"Total: ~{jb.get('total_journey_min')}m, Milestones: {jb.get('key_milestones')}, Shakti: {jb.get('shakti_scheme_eligible')}" if jb else "No breakdown"
+            assert_test(ct["name"], is_valid, detail)
+        except Exception as e:
+            assert_test(ct["name"], False, str(e))
 
     print("\n" + "=" * 70)
     print(f"📊 VERIFICATION SUMMARY: {passed_tests}/{total_tests} tests passed ({round(passed_tests/total_tests*100, 1)}%)")

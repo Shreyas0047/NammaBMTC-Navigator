@@ -2730,4 +2730,176 @@ body {
   box-shadow: 0 1px 3px rgba(3, 105, 161, 0.3);
 }
 
+/* ================= Commute Duration & Breakdown Card ================= */
+.commute-breakdown-card {
+  background: linear-gradient(180deg, #F8FAFC 0%, #EDF2F7 100%);
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 8px 0 10px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.breakdown-primary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.total-time-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0F172A;
+  background: #FFFFFF;
+  border: 1px solid #94A3B8;
+  padding: 3px 8px;
+  border-radius: 4px;
+  box-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.total-time-pill .pill-val {
+  color: #0A246A;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.breakdown-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.commute-chip {
+  font-size: 10px;
+  font-weight: 700;
+  color: #334155;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.breakdown-pass-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.shakti-pill {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #BE185D;
+  background: #FCE7F3;
+  border: 1px solid #F472B6;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.pass-pill {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #1E3A8A;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  padding: 2px 7px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* ================= Key En-Route Milestones Reassurance Strip ================= */
+.enroute-milestones-box {
+  margin: 6px 0 10px 0;
+  padding: 6px 10px;
+  background: #F8FAFC;
+  border-left: 3px solid #0284C7;
+  border-radius: 0 5px 5px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.milestones-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  color: #64748B;
+  letter-spacing: 0.5px;
+}
+
+.milestones-pills {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.milestone-chip {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #1E293B;
+}
+
+.milestone-sep {
+  color: #0284C7;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+/* Route row layout adjustments */
+.route-row {
+  display: flex;
+  flex-direction: column !important;
+  gap: 2px;
+}
+
+.route-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.route-shakti-tag {
+  font-size: 9px;
+  font-weight: 800;
+  color: #BE185D;
+  background: #FCE7F3;
+  border: 1px solid #F472B6;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.route-enroute-milestones {
+  font-size: 10px;
+  font-weight: 600;
+  color: #475569;
+  padding-left: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: normal;
+  line-height: 1.3;
+}
+
 

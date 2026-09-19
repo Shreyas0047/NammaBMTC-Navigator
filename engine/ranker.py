@@ -52,6 +52,51 @@ def get_hub_bonus(stop_name: str) -> float:
     return 0.0
 
 
+def extract_key_milestones(conn, sample_trip_id: str, start_seq: int, end_seq: int) -> List[str]:
+    """
+    Extracts 2-3 prominent intermediate landmark/milestone stops along a trip sequence
+    to provide riders with key reassurance waypoints.
+    """
+    if not sample_trip_id or end_seq <= start_seq + 1:
+        return []
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT s.stop_name
+            FROM stop_times st
+            JOIN stops s ON st.stop_id = s.stop_id
+            WHERE st.trip_id = ? AND st.stop_sequence > ? AND st.stop_sequence < ?
+            ORDER BY st.stop_sequence ASC
+        """, (sample_trip_id, start_seq, end_seq))
+        rows = cur.fetchall()
+        if not rows:
+            return []
+        from engine.stop_resolver import clean_stop_display_name
+        stops = [clean_stop_display_name(r[0]) for r in rows]
+        unique_stops = []
+        seen = set()
+        for s in stops:
+            if s and s not in seen:
+                seen.add(s)
+                unique_stops.append(s)
+
+        n = len(unique_stops)
+        if n <= 3:
+            return unique_stops
+        # Sample waypoints at 25%, 50%, and 75% along the journey
+        idx1 = max(0, int(round(n * 0.25)))
+        idx2 = max(idx1 + 1, min(n - 1, int(round(n * 0.50))))
+        idx3 = max(idx2 + 1, min(n - 1, int(round(n * 0.75))))
+        chosen = [unique_stops[idx1]]
+        if idx2 < n and unique_stops[idx2] not in chosen:
+            chosen.append(unique_stops[idx2])
+        if idx3 < n and unique_stops[idx3] not in chosen:
+            chosen.append(unique_stops[idx3])
+        return chosen
+    except Exception:
+        return []
+
+
 def get_destination_stops(dest_lat: float, dest_lon: float) -> List[Any]:
     """
     Finds stops near destination. If doorstep stops (<= 550m) exist, strictly returns
@@ -746,7 +791,10 @@ def rank_boarding_points(
             t.trip_headsign,
             t.direction_id,
             COUNT(DISTINCT t.trip_id) as trip_count,
-            AVG(st2.stop_sequence - st1.stop_sequence) as avg_stops_away
+            AVG(st2.stop_sequence - st1.stop_sequence) as avg_stops_away,
+            MIN(st1.trip_id) as sample_trip_id,
+            MIN(st1.stop_sequence) as start_seq,
+            MIN(st2.stop_sequence) as end_seq
         FROM stop_times st1
         JOIN stop_times st2 
           ON st1.trip_id = st2.trip_id 
@@ -782,7 +830,10 @@ def rank_boarding_points(
                     t.trip_headsign,
                     t.direction_id,
                     COUNT(DISTINCT t.trip_id) as trip_count,
-                    AVG(st2.stop_sequence - st1.stop_sequence) as avg_stops_away
+                    AVG(st2.stop_sequence - st1.stop_sequence) as avg_stops_away,
+                    MIN(st1.trip_id) as sample_trip_id,
+                    MIN(st1.stop_sequence) as start_seq,
+                    MIN(st2.stop_sequence) as end_seq
                 FROM stop_times st1
                 JOIN stop_times st2 
                   ON st1.trip_id = st2.trip_id 
@@ -801,13 +852,17 @@ def rank_boarding_points(
                 rows = exp_rows
                 orig_stop_map = exp_stop_map
 
-    conn.close()
-
     s_routes: Dict[str, List[ViableRouteOption]] = {}
     stop_dest_dists: Dict[str, float] = {}
 
     for r in rows:
         sid = r["orig_stop_id"]
+        milestones = []
+        try:
+            milestones = extract_key_milestones(conn, r["sample_trip_id"], r["start_seq"], r["end_seq"])
+        except Exception:
+            pass
+
         v = ViableRouteOption(
             route_short_name=r["route_short_name"],
             route_long_name=r["route_long_name"],
@@ -816,12 +871,15 @@ def rank_boarding_points(
             destination_stop_name=r["dest_stop_name"],
             trip_count=r["trip_count"],
             transit_stops_count=int(round(r["avg_stops_away"])),
+            enroute_milestones=milestones,
         )
         s_routes.setdefault(sid, []).append(v)
         # Distance from drop-off stop to destination coordinates
         d_dist = haversine(r["dest_lat"], r["dest_lon"], dest_lat, dest_lon)
         if sid not in stop_dest_dists or d_dist < stop_dest_dists[sid]:
             stop_dest_dists[sid] = d_dist
+
+    conn.close()
 
     # 4. If direct routes exist, score them
     if s_routes:

@@ -471,6 +471,17 @@ const transfer2HubDesc = document.getElementById("transfer2-hub-desc");
 const recLeg3RoutesList = document.getElementById("rec-leg3-routes-list");
 const timelineTransitText = document.getElementById("timeline-transit-text");
 
+// Commute Breakdown & En-Route Milestones DOM Elements
+const commuteBreakdownCard = document.getElementById("commute-breakdown-card");
+const commuteTotalMins = document.getElementById("commute-total-mins");
+const breakdownWalkChip = document.getElementById("breakdown-walk-chip");
+const breakdownWaitChip = document.getElementById("breakdown-wait-chip");
+const breakdownRideChip = document.getElementById("breakdown-ride-chip");
+const breakdownShaktiPill = document.getElementById("breakdown-shakti-pill");
+const breakdownPassPill = document.getElementById("breakdown-pass-pill");
+const enrouteMilestonesBox = document.getElementById("enroute-milestones-box");
+const milestonesPillsList = document.getElementById("milestones-pills-list");
+
 // Handle Enter key in destination input
 destSearchInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
@@ -654,23 +665,31 @@ async function triggerRecommendation() {
   }
 }
 
-// Helper to format consistent route rows with AC status and fare tags
+// Helper to format consistent route rows with AC status, fare tags, Shakti scheme, and milestones
 function formatRouteRow(r, customBg = null) {
   const isAc = r.is_ac || (r.service_type && r.service_type !== "ORDINARY");
   const prefix = isAc ? (r.route.startsWith("KIA") ? "✈️ " : "❄️ ") : "";
   const bgStyle = customBg ? `style="background-color: ${customBg};"` : (isAc ? 'style="background: linear-gradient(180deg, #0284C7 0%, #0369A1 100%);"' : '');
   const fareTag = r.fare_text ? `<span class="route-fare-tag ${isAc ? 'is-ac' : ''}">${r.fare_text}</span>` : '';
+  const shaktiTag = r.shakti_eligible ? `<span class="route-shakti-tag" title="Shakti Scheme: Free travel for Karnataka women">🌸 Shakti</span>` : '';
+  const milestonesHtml = (r.enroute_milestones && r.enroute_milestones.length > 0)
+    ? `<div class="route-enroute-milestones"><span class="milestone-pin">🚏</span> Passes: ${r.enroute_milestones.join(" ➔ ")}</div>`
+    : '';
 
   return `
     <div class="route-row">
-      <div class="route-ident">
-        <span class="route-pill ${isAc ? 'is-ac' : ''}" ${bgStyle}>${prefix}${r.route}</span>
-        <span class="route-headsign">Towards ${r.towards}</span>
+      <div class="route-row-main">
+        <div class="route-ident">
+          <span class="route-pill ${isAc ? 'is-ac' : ''}" ${bgStyle}>${prefix}${r.route}</span>
+          <span class="route-headsign">Towards ${r.towards}</span>
+        </div>
+        <div class="route-meta-group" style="display:flex; align-items:center; gap:6px;">
+          ${shaktiTag}
+          ${fareTag}
+          <span class="route-frequency">${r.trips_per_day} buses/day</span>
+        </div>
       </div>
-      <div class="route-meta-group" style="display:flex; align-items:center; gap:6px;">
-        ${fareTag}
-        <span class="route-frequency">${r.trips_per_day} buses/day</span>
-      </div>
+      ${milestonesHtml}
     </div>
   `;
 }
@@ -726,6 +745,42 @@ function renderJourney(data) {
       serviceFareBadge.className = "service-fare-badge";
       serviceFareBadge.innerHTML = `🪙 Est. ${p.fare_range_str || "₹15 - ₹25"} • Non-AC`;
     }
+  }
+
+  // Render Commute Duration & Travel Breakdown Strip
+  const jb = p.journey_breakdown;
+  if (jb && commuteTotalMins) {
+    commuteTotalMins.textContent = `~${jb.total_journey_min} min`;
+    if (breakdownWalkChip) breakdownWalkChip.textContent = `🚶 ${jb.walk_time_min}m walk`;
+    if (breakdownWaitChip) breakdownWaitChip.textContent = `⏳ ~${jb.wait_headway_min}m wait`;
+    if (breakdownRideChip) breakdownRideChip.textContent = `🚍 ~${jb.ride_time_min}m ride`;
+
+    if (breakdownShaktiPill) {
+      if (jb.shakti_scheme_eligible) {
+        breakdownShaktiPill.classList.remove("hidden");
+        breakdownShaktiPill.innerHTML = `🌸 Shakti Scheme: Free for Women`;
+      } else {
+        breakdownShaktiPill.classList.add("hidden");
+      }
+    }
+    if (breakdownPassPill) {
+      breakdownPassPill.innerHTML = `🎫 ${jb.pass_info || "BMTC Daily Pass Valid"}`;
+    }
+  }
+
+  // Render Key En-Route Waypoints / Milestones
+  if (jb && jb.key_milestones && jb.key_milestones.length > 0 && milestonesPillsList && enrouteMilestonesBox) {
+    enrouteMilestonesBox.classList.remove("hidden");
+    milestonesPillsList.innerHTML = jb.key_milestones
+      .map(
+        (m, idx) => `
+        <span class="milestone-chip">${m}</span>
+        ${idx < jb.key_milestones.length - 1 ? '<span class="milestone-sep">➔</span>' : ''}
+      `
+      )
+      .join("");
+  } else if (enrouteMilestonesBox) {
+    enrouteMilestonesBox.classList.add("hidden");
   }
 
   // Handle Direct vs 1-Transfer vs 2-Transfer Journey

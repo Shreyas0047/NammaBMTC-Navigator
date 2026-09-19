@@ -67,36 +67,11 @@ def health():
         return {"status": "error", "error": str(e)}
 
 
-SEARCH_ALIASES = {
-    "majestic": "Kempegowda Bus Station",
-    "kbs": "Kempegowda Bus Station",
-    "silk board": "Central Silk Board",
-    "silkboard": "Central Silk Board",
-    "csb": "Central Silk Board",
-    "airport": "Kempegowda International Airport",
-    "kia": "Kempegowda International Airport",
-    "bial": "Kempegowda International Airport",
-    "whitefield": "White Field",
-    "itpl": "ITPL",
-    "ecity": "Electronic City",
-    "e-city": "Electronic City",
-    "kr market": "Krishna Rajendra Market",
-    "krmarket": "Krishna Rajendra Market",
-    "market": "Krishna Rajendra Market",
-    "kalasipalya": "Krishna Rajendra Market (Kalasipalya)",
-    "tin factory": "Tin Factory",
-    "tinfactory": "Tin Factory",
-    "marathahalli": "Marathahalli",
-    "marathalli": "Marathahalli",
-    "mekhri": "Mehkri Circle",
-    "mekhri circle": "Mehkri Circle",
-    "btm": "BTM Layout",
-    "hsr": "HSR Layout",
-    "hebbal": "Hebbala",
-    "jayanagar": "Jayanagara",
-    "vijaynagar": "Vijayanagar",
-    "rajajinagar": "Rajajinagara",
-}
+from engine.stop_resolver import (
+    resolve_search_term,
+    clean_stop_display_name,
+    LANDMARK_ALIASES,
+)
 
 
 @app.get("/api/stops/search")
@@ -107,74 +82,84 @@ def search_stops(
     limit: int = 8,
 ):
     """
-    Fast, alias-aware search for stops across Bengaluru Urban and Rural.
-    Resolves popular nicknames (Majestic -> KBS, Silk Board, Airport, ITPL, E-City)
-    and provides real-time distance from user.
+    Fast, landmark-aware & phonetic search for stops across Bengaluru Urban and Rural.
+    Resolves popular tech parks, colloquial landmarks, hospitals, malls, and Kannada/English variants.
+    Provides clean display names and real-time distance from user.
     """
     term = q.strip()
     if not term:
         return []
 
     norm = term.lower()
-    expanded = SEARCH_ALIASES.get(norm, term)
+    primary, candidates = resolve_search_term(norm)
+
+    # Build SQL search patterns for verbatim query, landmark resolution, and phonetic candidates
+    patterns = []
+    for c in candidates:
+        patterns.append(f"%{c}%")
+    if f"%{norm}%" not in patterns:
+        patterns.append(f"%{norm}%")
+
+    where_clauses = " OR ".join(["stop_name LIKE ?" for _ in patterns])
 
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
-        """
+        f"""
         SELECT stop_id, stop_name, stop_desc, stop_lat, stop_lon
         FROM stops
-        WHERE stop_name LIKE ? OR stop_name LIKE ? OR stop_desc LIKE ?
-           OR stop_name LIKE ? OR stop_name LIKE ?
-        ORDER BY 
-            CASE 
-                WHEN lower(stop_name) = ? THEN 1
-                WHEN lower(stop_name) = ? THEN 2
-                WHEN lower(stop_name) LIKE ? THEN 3
-                WHEN lower(stop_name) LIKE ? THEN 4
-                WHEN lower(stop_name) LIKE ? THEN 5
-                WHEN lower(stop_name) LIKE ? THEN 6
-                WHEN lower(stop_desc) LIKE ? THEN 7
-                ELSE 8
-            END,
-            length(stop_name) ASC
-        LIMIT 30
+        WHERE {where_clauses}
+        LIMIT 45
         """,
-        (
-            f"%{term}%", f"%{expanded}%", f"%{term}%",
-            f"{term}%", f"{expanded}%",
-            norm, expanded.lower(),
-            f"{norm}%", f"{expanded.lower()}%",
-            f"%{norm}%", f"%{expanded.lower()}%",
-            f"%{norm}%",
-        ),
+        patterns,
     )
     rows = cur.fetchall()
     conn.close()
 
     results = []
     seen = set()
+    ranked = []
+
     for r in rows:
-        name = r["stop_name"].strip()
-        if name in seen:
+        raw_name = r["stop_name"].strip()
+        clean_name = clean_stop_display_name(raw_name)
+        if clean_name in seen:
             continue
-        seen.add(name)
+        seen.add(clean_name)
 
         dist_km = None
-        if user_lat is not None and user_lon is not None:
+        if isinstance(user_lat, (int, float)) and isinstance(user_lon, (int, float)):
             dist_km = round(haversine(user_lat, user_lon, r["stop_lat"], r["stop_lon"]) / 1000.0, 1)
 
-        results.append({
+        # Relevance scoring
+        c_lower = clean_name.lower()
+        p_lower = primary.lower()
+        if c_lower == p_lower:
+            priority = 0
+        elif c_lower.startswith(p_lower):
+            priority = 1
+        elif p_lower in c_lower:
+            priority = 2
+        elif c_lower.startswith(norm):
+            priority = 3
+        elif norm in c_lower:
+            priority = 4
+        else:
+            priority = 5
+
+        dist_tiebreaker = dist_km if dist_km is not None else 999.0
+        ranked.append((priority, dist_tiebreaker, len(clean_name), {
             "stop_id": r["stop_id"],
-            "stop_name": name,
-            "stop_desc": r["stop_desc"] or "",
+            "stop_name": clean_name,
+            "raw_stop_name": raw_name,
+            "stop_desc": clean_stop_display_name(r["stop_desc"] or ""),
             "lat": r["stop_lat"],
             "lon": r["stop_lon"],
             "dist_km": dist_km,
-        })
-        if len(results) >= limit:
-            break
-    return results
+        }))
+
+    ranked.sort(key=lambda x: (x[0], x[1], x[2]))
+    return [item[3] for item in ranked[:limit]]
 
 
 @app.post("/api/recommend")

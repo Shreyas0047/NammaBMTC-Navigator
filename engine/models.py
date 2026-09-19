@@ -72,6 +72,9 @@ def classify_route_service(route_short_name: str, stops_count: int = 10) -> tupl
         return "ORDINARY", fare
 
 
+from engine.stop_resolver import clean_stop_display_name
+
+
 @dataclass(frozen=True)
 class ViableRouteOption:
     route_short_name: str
@@ -83,12 +86,17 @@ class ViableRouteOption:
     transit_stops_count: int
     service_type: str = ""
     estimated_fare: int = 0
+    enroute_milestones: List[str] = field(default_factory=list)
+    estimated_ride_min: int = 0
 
     def __post_init__(self):
         if not self.service_type or self.estimated_fare == 0:
             stype, fare = classify_route_service(self.route_short_name, self.transit_stops_count)
             object.__setattr__(self, "service_type", stype)
             object.__setattr__(self, "estimated_fare", fare)
+        if self.estimated_ride_min == 0:
+            r_min = max(5, int(round(self.transit_stops_count * 2.2))) if self.transit_stops_count > 0 else 10
+            object.__setattr__(self, "estimated_ride_min", r_min)
 
 
 @dataclass
@@ -124,30 +132,73 @@ class CandidateBoardingPoint:
         if has_ac and has_non_ac:
             fare_range_str = f"₹{min_fare} - ₹{max_fare}"
             service_tag = "Mixed (AC & Non-AC)"
+            pass_info = "₹70 BMTC Ordinary (Shakti Scheme) / ₹140 Vajra Pass Valid"
         elif has_ac:
             fare_range_str = f"₹{min_fare} - ₹{max_fare}"
             service_tag = "AC Vajra / Vayu Vajra"
+            pass_info = "₹140 Vajra Gold Day Pass Valid"
         else:
             fare_range_str = f"₹{min_fare} - ₹{max_fare}"
             service_tag = "Non-AC Ordinary"
+            pass_info = "₹70 BMTC Day Pass Valid • Shakti Scheme Eligible"
+
+        # Calculate ETA and commute duration breakdown
+        if self.is_direct:
+            primary_route = self.viable_routes[0] if self.viable_routes else None
+            ride_time_min = primary_route.estimated_ride_min if primary_route else 20
+            total_trips = sum(r.trip_count for r in self.viable_routes)
+            transfer_wait_min = 0
+        else:
+            r1 = self.leg1_routes[0] if self.leg1_routes else None
+            r2 = self.leg2_routes[0] if self.leg2_routes else None
+            r3 = self.leg3_routes[0] if (self.transfers_count == 2 and self.leg3_routes) else None
+            ride_time_min = (r1.estimated_ride_min if r1 else 15) + (r2.estimated_ride_min if r2 else 15) + (r3.estimated_ride_min if r3 else 0)
+            total_trips = sum(r.trip_count for r in self.leg1_routes)
+            transfer_wait_min = 8 if self.transfers_count == 1 else 16
+
+        # Headway estimation based on daily frequency
+        if total_trips >= 70:
+            wait_headway_min = 4
+            headway_desc = "Every ~4–7 mins (High Frequency)"
+        elif total_trips >= 30:
+            wait_headway_min = 7
+            headway_desc = "Every ~8–12 mins (Good Frequency)"
+        elif total_trips >= 15:
+            wait_headway_min = 12
+            headway_desc = "Every ~15–20 mins (Moderate Frequency)"
+        else:
+            wait_headway_min = 20
+            headway_desc = "Every ~25–35 mins (Standard Schedule)"
+
+        total_journey_min = self.walk_duration_min + wait_headway_min + ride_time_min + transfer_wait_min
+
+        # Aggregate key milestones from primary route
+        key_milestones = []
+        if self.viable_routes and self.viable_routes[0].enroute_milestones:
+            key_milestones = self.viable_routes[0].enroute_milestones
+        elif self.leg1_routes and self.leg1_routes[0].enroute_milestones:
+            key_milestones = self.leg1_routes[0].enroute_milestones
 
         def _format_route(r: ViableRouteOption) -> Dict[str, Any]:
             return {
                 "route": r.route_short_name,
                 "towards": r.trip_headsign,
-                "destination_stop": r.destination_stop_name,
+                "destination_stop": clean_stop_display_name(r.destination_stop_name),
                 "trips_per_day": r.trip_count,
                 "stops_away": r.transit_stops_count,
                 "service_type": r.service_type,
                 "estimated_fare": r.estimated_fare,
                 "fare_text": f"₹{r.estimated_fare}",
                 "is_ac": r.service_type in ("VAJRA_AC", "AIRPORT_AC"),
+                "estimated_ride_min": r.estimated_ride_min,
+                "enroute_milestones": r.enroute_milestones,
+                "shakti_eligible": r.service_type == "ORDINARY",
             }
 
         return {
             "stop_id": self.stop_id,
-            "stop_name": self.stop_name,
-            "stop_desc": self.stop_desc,
+            "stop_name": clean_stop_display_name(self.stop_name),
+            "stop_desc": clean_stop_display_name(self.stop_desc),
             "lat": self.lat,
             "lon": self.lon,
             "walk_distance_m": round(self.walk_distance_m),
@@ -156,9 +207,9 @@ class CandidateBoardingPoint:
             "score_breakdown": self.score_breakdown,
             "is_direct": self.is_direct,
             "transfers_count": self.transfers_count,
-            "transfer_stop_name": self.transfer_stop_name,
+            "transfer_stop_name": clean_stop_display_name(self.transfer_stop_name),
             "transfer_stop_desc": self.transfer_stop_desc,
-            "transfer2_stop_name": self.transfer2_stop_name,
+            "transfer2_stop_name": clean_stop_display_name(self.transfer2_stop_name),
             "transfer2_stop_desc": self.transfer2_stop_desc,
             "fare_range_str": fare_range_str,
             "min_fare": min_fare,
@@ -166,6 +217,18 @@ class CandidateBoardingPoint:
             "has_ac": has_ac,
             "has_non_ac": has_non_ac,
             "service_tag": service_tag,
+            "pass_info": pass_info,
+            "journey_breakdown": {
+                "walk_time_min": self.walk_duration_min,
+                "ride_time_min": ride_time_min,
+                "wait_headway_min": wait_headway_min,
+                "transfer_wait_min": transfer_wait_min,
+                "total_journey_min": total_journey_min,
+                "headway_desc": headway_desc,
+                "shakti_scheme_eligible": has_non_ac,
+                "pass_info": pass_info,
+                "key_milestones": key_milestones,
+            },
             "routes": [_format_route(r) for r in self.viable_routes],
             "leg1_routes": [_format_route(r) for r in self.leg1_routes],
             "leg2_routes": [_format_route(r) for r in self.leg2_routes],
