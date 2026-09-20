@@ -20,6 +20,7 @@ from engine.ranker import rank_boarding_points
 from engine.spatial_index import haversine
 from engine.live_tracker import get_live_route_telemetry
 from engine.intermodal import find_intermodal_route
+from engine.route_details import get_route_details
 from data.metro_network import METRO_LINES, get_all_lines_polylines
 
 app = FastAPI(
@@ -262,6 +263,30 @@ def live_bus_telemetry(
             "approaching_buses": [],
             "all_active_buses": [],
         }
+
+
+@app.get("/api/route-details")
+def route_details(
+    route: str = Query(..., description="BMTC route number e.g. 378-P, 500-D, KIA-9"),
+    orig_lat: Optional[float] = Query(None, description="Passenger origin latitude"),
+    orig_lon: Optional[float] = Query(None, description="Passenger origin longitude"),
+    dest_lat: Optional[float] = Query(None, description="Passenger destination latitude"),
+    dest_lon: Optional[float] = Query(None, description="Passenger destination longitude"),
+):
+    """
+    Returns complete route metadata, ordered stop sequence, staged fare,
+    and schedule information for route details popup window.
+    """
+    details = get_route_details(
+        route_name=route,
+        orig_lat=orig_lat,
+        orig_lon=orig_lon,
+        dest_lat=dest_lat,
+        dest_lon=dest_lon,
+    )
+    if not details:
+        raise HTTPException(status_code=404, detail=f"Route '{route}' not found.")
+    return details
 
 
 # Mount static frontend

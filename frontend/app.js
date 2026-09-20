@@ -16,6 +16,7 @@ const state = {
     lon: null,
   },
   serviceFilter: "ALL",
+  selectedBusRoute: null,
 };
 
 // Map & Navigation State
@@ -96,6 +97,18 @@ const telemetryRefreshBtn = document.getElementById("telemetry-refresh-btn");
 const nearestBusBanner = document.getElementById("nearest-bus-banner");
 const approachingBusesList = document.getElementById("approaching-buses-list");
 const toggleBusMapBtn = document.getElementById("toggle-bus-map-btn");
+
+// Route Selection & Route Details Modal Elements
+let currentJourneyData = null;
+const selectedRouteBanner = document.getElementById("selected-route-banner");
+const selectedRouteName = document.getElementById("selected-route-name");
+const clearSelectedRouteBtn = document.getElementById("clear-selected-route-btn");
+
+const routeDetailsModal = document.getElementById("route-details-modal");
+const closeRouteModalBtn = document.getElementById("close-route-modal-btn");
+const routeModalBackdrop = document.getElementById("route-modal-backdrop");
+const routeModalTitle = document.getElementById("route-modal-title");
+const routeModalBody = document.getElementById("route-modal-body");
 
 // ================= Geolocation Helpers =================
 function haversineMeters(lat1, lon1, lat2, lon2) {
@@ -708,30 +721,41 @@ async function triggerRecommendation() {
   }
 }
 
-// Helper to format consistent route rows with AC status, fare tags, Shakti scheme, and milestones
-function formatRouteRow(r, customBg = null) {
+// Helper to format consistent route rows with AC status, fare tags, Shakti scheme, and milestones (without emojis)
+function formatRouteRow(r, customBg = null, isSelected = false) {
   if (!r) return "";
   const routeName = (r.route ? String(r.route).trim() : "");
   const isAc = Boolean(r.is_ac || (r.service_type && r.service_type !== "ORDINARY"));
-  const prefix = isAc ? (routeName.startsWith("KIA") ? "✈️ " : "❄️ ") : "";
   const bgStyle = customBg ? `style="background-color: ${customBg};"` : (isAc ? 'style="background: linear-gradient(180deg, #0284C7 0%, #0369A1 100%);"' : '');
   const fareTag = r.fare_text ? `<span class="route-fare-tag ${isAc ? 'is-ac' : ''}">${r.fare_text}</span>` : '';
-  const shaktiTag = r.shakti_eligible ? `<span class="route-shakti-tag" title="Shakti Scheme: Free travel for Karnataka women">🌸 Shakti</span>` : '';
+  const shaktiTag = r.shakti_eligible ? `<span class="route-shakti-tag" title="Shakti Scheme: Free travel for Karnataka women">Shakti Scheme</span>` : '';
   const milestonesHtml = (r.enroute_milestones && r.enroute_milestones.length > 0)
-    ? `<div class="route-enroute-milestones"><span class="milestone-pin">🚏</span> Passes: ${r.enroute_milestones.join(" ➔ ")}</div>`
+    ? `<div class="route-enroute-milestones">Passes: ${r.enroute_milestones.join(" -> ")}</div>`
     : '';
 
   return `
-    <div class="route-row">
+    <div class="route-row ${isSelected ? 'is-selected' : ''}" data-route="${routeName}">
       <div class="route-row-main">
         <div class="route-ident">
-          <span class="route-pill ${isAc ? 'is-ac' : ''}" ${bgStyle}>${prefix}${routeName}</span>
-          <span class="route-headsign">Towards ${r.towards || "Destination"}</span>
+          <button type="button" class="route-pill ${isAc ? 'is-ac' : ''} route-pill-btn" ${bgStyle} data-route="${routeName}" title="Click to view details for ${routeName}">
+            ${routeName}
+          </button>
+          <div class="route-title-meta">
+            <span class="route-headsign">Towards ${r.towards || "Destination"}</span>
+            <div class="route-sub-meta">
+              <span class="route-frequency">${r.trips_per_day || 0} buses/day</span>
+              ${fareTag}
+              ${shaktiTag}
+            </div>
+          </div>
         </div>
-        <div class="route-meta-group" style="display:flex; align-items:center; gap:6px;">
-          ${shaktiTag}
-          ${fareTag}
-          <span class="route-frequency">${r.trips_per_day || 0} buses/day</span>
+        <div class="route-actions-group">
+          <button type="button" class="route-select-pill ${isSelected ? 'is-active' : ''}" data-route="${routeName}" title="Filter to show only ${routeName}">
+            ${isSelected ? 'Selected' : 'Select'}
+          </button>
+          <button type="button" class="route-details-pill" data-route="${routeName}" title="View route schedule and stop sequence">
+            Details
+          </button>
         </div>
       </div>
       ${milestonesHtml}
@@ -742,6 +766,7 @@ function formatRouteRow(r, customBg = null) {
 // ================= Render Journey Stepper & Map =================
 function renderJourney(data) {
   skeletonView.classList.add("hidden");
+  currentJourneyData = data;
   const p = data.primary;
   currentPrimaryStop = p;
 
@@ -751,7 +776,7 @@ function renderJourney(data) {
     metroMarkers.forEach((m) => mapInstance.removeLayer(m));
     metroPolyline = null;
     metroMarkers = [];
-    if (toggleMetroMapBtn) toggleMetroMapBtn.innerHTML = "<span>🗺️ Highlight Metro Track on Map</span>";
+    if (toggleMetroMapBtn) toggleMetroMapBtn.innerHTML = "<span>Highlight Metro Track on Map</span>";
   }
 
   // Render Namma Metro Intermodal Option
@@ -772,53 +797,53 @@ function renderJourney(data) {
   // Boarding Stop
   recStopName.textContent = p.stop_name;
   if (p.stop_desc) {
-    recStopDesc.innerHTML = `<span class="dir-icon">📍</span> <span class="dir-text">${p.stop_desc}</span>`;
+    recStopDesc.innerHTML = `<span class="dir-icon">•</span> <span class="dir-text">${p.stop_desc}</span>`;
     recStopDesc.classList.remove("hidden");
   } else {
     recStopDesc.classList.add("hidden");
   }
 
-  // Service Category & Fare Indicator Badge
+  // Service Category & Fare Indicator Badge (Clean, without emojis)
   const sf = state.serviceFilter || "ALL";
   const isCorridorNoAc = sf === "AC" && !p.has_ac;
 
   if (serviceFareBadge) {
     if (sf === "AC" && !isCorridorNoAc) {
       serviceFareBadge.className = "service-fare-badge ac";
-      serviceFareBadge.innerHTML = `❄️ Est. ${p.fare_range_str} • AC Vajra Only`;
+      serviceFareBadge.innerHTML = `Est. ${p.fare_range_str} • AC Vajra Only`;
     } else if (sf === "NON_AC") {
       serviceFareBadge.className = "service-fare-badge";
-      serviceFareBadge.innerHTML = `🪙 Est. ${p.fare_range_str || "₹15 - ₹25"} • Non-AC Only`;
+      serviceFareBadge.innerHTML = `Est. ${p.fare_range_str || "₹15 - ₹25"} • Non-AC Only`;
     } else if (p.has_ac && !p.has_non_ac) {
       serviceFareBadge.className = "service-fare-badge ac";
-      serviceFareBadge.innerHTML = `❄️ Est. ${p.fare_range_str} • AC Vajra`;
+      serviceFareBadge.innerHTML = `Est. ${p.fare_range_str} • AC Vajra`;
     } else if (p.has_ac && p.has_non_ac) {
       serviceFareBadge.className = "service-fare-badge";
-      serviceFareBadge.innerHTML = `🪙 Est. ${p.fare_range_str} • Mixed (AC & Non-AC)`;
+      serviceFareBadge.innerHTML = `Est. ${p.fare_range_str} • Mixed (AC & Non-AC)`;
     } else {
       serviceFareBadge.className = "service-fare-badge";
-      serviceFareBadge.innerHTML = `🪙 Est. ${p.fare_range_str || "₹15 - ₹25"} • Non-AC`;
+      serviceFareBadge.innerHTML = `Est. ${p.fare_range_str || "₹15 - ₹25"} • Non-AC`;
     }
   }
 
-  // Render Commute Duration & Travel Breakdown Strip
+  // Render Commute Duration & Travel Breakdown Strip (Without emojis)
   const jb = p.journey_breakdown;
   if (jb && commuteTotalMins) {
     commuteTotalMins.textContent = `~${jb.total_journey_min} min`;
-    if (breakdownWalkChip) breakdownWalkChip.textContent = `🚶 ${jb.walk_time_min}m walk`;
-    if (breakdownWaitChip) breakdownWaitChip.textContent = `⏳ ~${jb.wait_headway_min}m wait`;
-    if (breakdownRideChip) breakdownRideChip.textContent = `🚍 ~${jb.ride_time_min}m ride`;
+    if (breakdownWalkChip) breakdownWalkChip.textContent = `${jb.walk_time_min}m walk`;
+    if (breakdownWaitChip) breakdownWaitChip.textContent = `~${jb.wait_headway_min}m wait`;
+    if (breakdownRideChip) breakdownRideChip.textContent = `~${jb.ride_time_min}m ride`;
 
     if (breakdownShaktiPill) {
       if (jb.shakti_scheme_eligible) {
         breakdownShaktiPill.classList.remove("hidden");
-        breakdownShaktiPill.innerHTML = `🌸 Shakti Scheme: Free for Women`;
+        breakdownShaktiPill.innerHTML = `Shakti Scheme: Free for Women`;
       } else {
         breakdownShaktiPill.classList.add("hidden");
       }
     }
     if (breakdownPassPill) {
-      breakdownPassPill.innerHTML = `🎫 ${jb.pass_info || "BMTC Daily Pass Valid"}`;
+      breakdownPassPill.innerHTML = `${jb.pass_info || "BMTC Daily Pass Valid"}`;
     }
   }
 
@@ -829,7 +854,7 @@ function renderJourney(data) {
       .map(
         (m, idx) => `
         <span class="milestone-chip">${m}</span>
-        ${idx < jb.key_milestones.length - 1 ? '<span class="milestone-sep">➔</span>' : ''}
+        ${idx < jb.key_milestones.length - 1 ? '<span class="milestone-sep">-></span>' : ''}
       `
       )
       .join("");
@@ -904,34 +929,30 @@ function renderJourney(data) {
   // Start live walking radar tracker
   startWalkingTracker(p.lat, p.lon);
 
-  // In-Card Active Filter Confirmation Indicator Strip
+  // In-Card Active Filter Confirmation Indicator Strip (Without emojis)
   const activeFilterStrip = document.getElementById("active-filter-strip");
   if (activeFilterStrip) {
     if (sf === "AC") {
       if (isCorridorNoAc) {
         activeFilterStrip.className = "active-filter-strip is-warning";
         activeFilterStrip.innerHTML = `
-          <span class="filter-strip-icon">⚠️</span>
-          <span class="filter-strip-msg"><b>No direct AC Vajra routes on this corridor.</b> Displaying standard BMTC Ordinary services.</span>
+          <span class="filter-strip-msg"><b>[Notice] No direct AC Vajra routes on this corridor.</b> Displaying standard BMTC Ordinary services.</span>
         `;
       } else {
         activeFilterStrip.className = "active-filter-strip is-ac";
         activeFilterStrip.innerHTML = `
-          <span class="filter-strip-icon">❄️</span>
-          <span class="filter-strip-msg"><b>AC Vajra Filter Active:</b> Showing ONLY air-conditioned Volvo & Airport Vayu Vajra buses.</span>
+          <span class="filter-strip-msg"><b>[AC Vajra Filter]</b> Showing air-conditioned Volvo and Airport Vayu Vajra buses only.</span>
         `;
       }
     } else if (sf === "NON_AC") {
       activeFilterStrip.className = "active-filter-strip is-non-ac";
       activeFilterStrip.innerHTML = `
-        <span class="filter-strip-icon">🟢</span>
-        <span class="filter-strip-msg"><b>Non-AC Ordinary Filter Active:</b> Showing regular buses only (Free for women under Karnataka Shakti Scheme).</span>
+        <span class="filter-strip-msg"><b>[Non-AC Ordinary Filter]</b> Showing regular buses only (Free for women under Karnataka Shakti Scheme).</span>
       `;
     } else {
       activeFilterStrip.className = "active-filter-strip is-all";
       activeFilterStrip.innerHTML = `
-        <span class="filter-strip-icon">🚌</span>
-        <span class="filter-strip-msg"><b>All Services Active:</b> Showing all available BMTC buses (Ordinary & AC Vajra).</span>
+        <span class="filter-strip-msg"><b>[All Services Active]</b> Showing all available BMTC buses (Ordinary & AC Vajra).</span>
       `;
     }
   }
@@ -951,12 +972,84 @@ function renderJourney(data) {
     }
   }
 
-  // Routes (Leg 1 or Direct)
-  const routesToDisplay = p.leg1_routes && p.leg1_routes.length > 0 ? p.leg1_routes : p.routes;
+  // Handle Route Filtering by User Selection
+  const allCandidateRoutes = p.leg1_routes && p.leg1_routes.length > 0 ? p.leg1_routes : p.routes;
+  let routesToDisplay = allCandidateRoutes;
+
+  if (state.selectedBusRoute) {
+    const matched = allCandidateRoutes.filter(
+      (r) => (r.route || "").trim().toUpperCase() === state.selectedBusRoute.toUpperCase()
+    );
+    if (matched.length > 0) {
+      routesToDisplay = matched;
+      if (selectedRouteBanner && selectedRouteName) {
+        selectedRouteName.textContent = state.selectedBusRoute;
+        selectedRouteBanner.classList.remove("hidden");
+      }
+    } else {
+      state.selectedBusRoute = null;
+      if (selectedRouteBanner) selectedRouteBanner.classList.add("hidden");
+    }
+  } else {
+    if (selectedRouteBanner) selectedRouteBanner.classList.add("hidden");
+  }
+
+  // Render Routes
   recRoutesList.innerHTML = routesToDisplay
     .slice(0, 4)
-    .map((r) => formatRouteRow(r))
+    .map((r) =>
+      formatRouteRow(
+        r,
+        null,
+        Boolean(state.selectedBusRoute && (r.route || "").trim().toUpperCase() === state.selectedBusRoute.toUpperCase())
+      )
+    )
     .join("");
+
+  // Wire interactive route row selection & details popups
+  recRoutesList.querySelectorAll(".route-select-pill").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const rname = btn.dataset.route;
+      if (state.selectedBusRoute === rname) {
+        state.selectedBusRoute = null; // Toggle off
+      } else {
+        state.selectedBusRoute = rname;
+      }
+      renderJourney(currentJourneyData);
+    });
+  });
+
+  recRoutesList.querySelectorAll(".route-details-pill, .route-pill-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const rname = btn.dataset.route;
+      openRouteDetailsModal(rname);
+    });
+  });
+
+  // Wire clear selected route button
+  if (clearSelectedRouteBtn) {
+    clearSelectedRouteBtn.onclick = () => {
+      state.selectedBusRoute = null;
+      renderJourney(currentJourneyData);
+    };
+  }
+
+  // Destination
+  const destName = p.routes.length > 0 ? p.routes[0].destination_stop : state.destination.name;
+  recDestStop.textContent = destName;
+
+  // Trigger Real-Time Live Bus VTMS Telemetry Tracking
+  if (routesToDisplay && routesToDisplay.length > 0) {
+    const candidateRoutes = state.selectedBusRoute
+      ? [state.selectedBusRoute]
+      : [...new Set(routesToDisplay.map((r) => (r.route || "").trim()).filter(Boolean))].slice(0, 4);
+    const routesParam = candidateRoutes.length > 0 ? candidateRoutes.join(",") : routesToDisplay[0].route;
+    startLiveBusTelemetry(routesParam, p.lat, p.lon, state.destination.lat, state.destination.lon);
+  } else {
+    stopLiveBusTelemetry();
+  }
 
   // Destination
   const destName = p.routes.length > 0 ? p.routes[0].destination_stop : state.destination.name;
@@ -995,7 +1088,6 @@ function renderJourney(data) {
           <div class="alt-card-header">
             <span class="alt-rank-tag">OPTION #${i + 2}</span>
             <div class="alt-walk-badge">
-              <span>🚶</span>
               <span>Walk ${alt.walk_distance_m} m (~${alt.walk_duration_min} min)</span>
             </div>
           </div>
@@ -1003,7 +1095,6 @@ function renderJourney(data) {
           <h4 class="alt-stop-name">${alt.stop_name}</h4>
           ${alt.stop_desc ? `
             <div class="alt-dir-callout">
-              <span class="dir-icon">📍</span>
               <span class="dir-text">${alt.stop_desc}</span>
             </div>
           ` : ''}
@@ -1022,7 +1113,7 @@ function renderJourney(data) {
           ${alt.transfers_count >= 1 ? `
             <div class="alt-transfer-summary">
               <div class="alt-transfer-step">
-                <span class="hub-pill">⇄ Interchange 1</span>
+                <span class="hub-pill">Interchange 1</span>
                 <span class="hub-title">${alt.transfer_stop_name}</span>
                 ${(alt.leg2_routes && alt.leg2_routes.length > 0) ? `
                   <div class="alt-sub-routes">Connecting buses: ${alt.leg2_routes.slice(0, 3).map(r => `<b>${r.route}</b> (${r.trips_per_day}/day)`).join(', ')}</div>
@@ -1030,7 +1121,7 @@ function renderJourney(data) {
               </div>
               ${alt.transfers_count === 2 ? `
                 <div class="alt-transfer-step" style="margin-top: 8px; border-top: 1px dashed #FDE68A; padding-top: 6px;">
-                  <span class="hub-pill" style="background-color: #FFEDD5; color: #C2410C;">⇄ Interchange 2</span>
+                  <span class="hub-pill" style="background-color: #FFEDD5; color: #C2410C;">Interchange 2</span>
                   <span class="hub-title" style="color: #9A3412;">${alt.transfer2_stop_name}</span>
                   ${(alt.leg3_routes && alt.leg3_routes.length > 0) ? `
                     <div class="alt-sub-routes" style="color: #7C2D12;">Final connecting buses: ${alt.leg3_routes.slice(0, 3).map(r => `<b>${r.route}</b> (${r.trips_per_day}/day)`).join(', ')}</div>
@@ -1043,10 +1134,10 @@ function renderJourney(data) {
           <!-- Action Buttons -->
           <div class="alt-action-row">
             <button class="select-alt-btn" type="button" data-idx="${i}">
-              <span>🎯 Make This My Boarding Stop</span>
+              <span>Make This My Boarding Stop</span>
             </button>
             <a class="alt-maps-btn" href="${altMapsUrl}" target="_blank" rel="noopener" title="Open Google Maps Walking Navigation">
-              <span>🧭 Walk GPS</span>
+              <span>Walk GPS</span>
             </a>
           </div>
         </div>
@@ -1256,7 +1347,7 @@ function initOrUpdateWalkingMap(userLat, userLon, stopLat, stopLon, stopName, st
 
   const stopIcon = L.divIcon({
     className: "custom-stop-icon",
-    html: `<div class="stop-marker-pin">🚏 ${stopName}</div>`,
+    html: `<div class="stop-marker-pin">${stopName}</div>`,
     iconSize: [120, 24],
     iconAnchor: [60, 12],
   });
@@ -1479,7 +1570,7 @@ function renderLiveBusTelemetry(data) {
       const b = data.nearest_bus;
       const isAtStop = b.is_at_stop || b.dist_km <= 0.25;
       const etaLabel = isAtStop
-        ? `<span class="arrived-badge">🟢 AT PLATFORM NOW</span>`
+        ? `<span class="arrived-badge">AT PLATFORM NOW</span>`
         : `<span class="eta-highlight">~${b.eta_mins} min</span> (${(b.dist_km * 1000).toFixed(0)}m away)`;
 
       let stopsLabel = "";
@@ -1504,7 +1595,7 @@ function renderLiveBusTelemetry(data) {
             </div>
           </div>
           <div class="nearest-bus-icon">
-            <span style="font-size: 26px;">🚍</span>
+            <span style="font-size: 12px; font-weight: 800; color: #059669; font-family: var(--font-mono);">LIVE</span>
           </div>
         </div>
       `;
@@ -1525,12 +1616,12 @@ function renderLiveBusTelemetry(data) {
             </div>
             <div style="margin-top: 6px;">
               <button onclick="toggleShowLiveBusesOnMap()" style="font-size: 11.5px; font-weight: 700; color: #0284C7; background: rgba(2,132,199,0.08); border: 1px solid rgba(2,132,199,0.25); border-radius: 4px; padding: 4px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                🗺️ Show All ${data.active_buses_total} Buses on Live Map
+                Show All ${data.active_buses_total} Buses on Live Map
               </button>
             </div>
           </div>
           <div class="nearest-bus-icon">
-            <span style="font-size: 26px;">🚍</span>
+            <span style="font-size: 12px; font-weight: 800; color: #0284C7; font-family: var(--font-mono);">FLEET</span>
           </div>
         </div>
       `;
@@ -1545,7 +1636,6 @@ function renderLiveBusTelemetry(data) {
           (b) => `
           <div class="sub-bus-row">
             <div class="sub-bus-ident">
-              <span style="color: #059669;">🚍</span>
               <span class="sub-route-tag" style="background: #ECFDF5; color: #065F46; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 3px; font-family: var(--font-mono);">${b.route || ""}</span>
               <span class="sub-reg">${b.vehicle}</span>
               <span class="vehicle-type-tag" style="font-size: 9.5px; padding: 1px 4px;">${b.type}</span>
@@ -1577,7 +1667,6 @@ function renderLiveBusTelemetry(data) {
     }
     nearestBusBanner.innerHTML = `
       <div class="telemetry-offline-card">
-        <span>📡</span>
         <span><b>Official GTFS Frequency:</b> Regular high-frequency service. Live GPS satellite telemetry is currently quiet for this line. Next trip running per timetable.</span>
       </div>
     `;
@@ -1625,7 +1714,6 @@ function updateLiveBusMapMarkers(approachingBuses, allBuses) {
 
     const markerHtml = `
       <div class="bus-marker-pin ${isNearest ? 'is-nearest' : ''}">
-        <span style="font-size: 12px;">🚍</span>
         ${routeTag}
         <span style="font-family: var(--font-mono); font-weight: 800;">${b.vehicle}</span>
         ${etaText ? `<span style="font-size: 10px; background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 3px;">${etaText}</span>` : ""}
@@ -1643,13 +1731,13 @@ function updateLiveBusMapMarkers(approachingBuses, allBuses) {
     marker.bindPopup(`
       <div style="font-family: var(--font-sans); font-size: 12px; line-height: 1.4; padding: 2px;">
         <div style="font-weight: 800; color: #065F46; font-size: 13px; font-family: var(--font-mono);">
-          🚍 BMTC ${b.route ? `Route ${b.route} • ` : ""}${b.vehicle}
+          BMTC ${b.route ? `Route ${b.route} • ` : ""}${b.vehicle}
         </div>
         <div style="margin-top: 3px;"><b>Service:</b> ${b.type || "Ordinary"}</div>
         <div><b>Distance to stop:</b> ${b.dist_km} km</div>
         <div><b>Live Arrival:</b> <span style="font-weight: 800; color: #059669;">~${b.eta_mins} min</span></div>
-        ${b.is_terminal_inbound ? '<div style="color: #0284C7; font-size: 11px; font-weight: 600; margin-top: 2px;">🔄 Inbound / Turnaround at terminal</div>' : ''}
-        ${b.last_updated ? `<div style="color: #64748B; font-size: 10.5px; margin-top: 4px;">🛰️ Satellite Sync: ${b.last_updated}</div>` : ""}
+        ${b.is_terminal_inbound ? '<div style="color: #0284C7; font-size: 11px; font-weight: 600; margin-top: 2px;">Inbound / Turnaround at terminal</div>' : ''}
+        ${b.last_updated ? `<div style="color: #64748B; font-size: 10.5px; margin-top: 4px;">VTMS Sync: ${b.last_updated}</div>` : ""}
       </div>
     `);
 
@@ -1668,8 +1756,8 @@ function toggleShowLiveBusesOnMap() {
   if (toggleBusMapBtn) {
     toggleBusMapBtn.classList.toggle("active", showLiveBusesOnMap);
     toggleBusMapBtn.querySelector("span").textContent = showLiveBusesOnMap
-      ? "🗺️ Focus on Walking Route"
-      : "🚍 Show Live Buses on Map";
+      ? "Focus on Walking Route"
+      : "Show Live Buses on Map";
   }
 
   const mapBusQuickBtn = document.getElementById("map-live-buses-btn");
@@ -1737,3 +1825,191 @@ const mapLiveBusesBtn = document.getElementById("map-live-buses-btn");
 if (mapLiveBusesBtn) {
   mapLiveBusesBtn.addEventListener("click", toggleShowLiveBusesOnMap);
 }
+
+// ================= Route Details Popup Modal =================
+const routeModal = document.getElementById("route-details-modal");
+const routeModalTitle = document.getElementById("route-modal-title");
+const routeModalBody = document.getElementById("route-modal-body");
+const closeRouteModalBtn = document.getElementById("close-route-modal-btn");
+
+function closeRouteDetailsModal() {
+  if (routeModal) {
+    routeModal.classList.add("hidden");
+    document.body.style.overflow = "";
+  }
+}
+
+if (closeRouteModalBtn) {
+  closeRouteModalBtn.addEventListener("click", closeRouteDetailsModal);
+}
+
+if (routeModal) {
+  routeModal.addEventListener("click", (e) => {
+    if (e.target === routeModal) {
+      closeRouteDetailsModal();
+    }
+  });
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && routeModal && !routeModal.classList.contains("hidden")) {
+    closeRouteDetailsModal();
+  }
+});
+
+async function openRouteDetailsModal(routeName) {
+  if (!routeModal || !routeModalBody) return;
+
+  const cleanRoute = (routeName || "").trim();
+  if (!cleanRoute) return;
+
+  if (routeModalTitle) {
+    routeModalTitle.textContent = `Route ${cleanRoute} - BMTC Timetable & Corridor Details`;
+  }
+  routeModalBody.innerHTML = `
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; gap: 12px;">
+      <span class="pulse-live-dot" style="width: 14px; height: 14px; background: #0284C7;"></span>
+      <div style="font-weight: 600; color: #1E293B; font-size: 13px;">Loading official timetable and stop sequence for Route ${cleanRoute}...</div>
+    </div>
+  `;
+  routeModal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+
+  try {
+    let url = `/api/route-details?route=${encodeURIComponent(cleanRoute)}`;
+    if (state.origin && state.origin.lat) {
+      url += `&orig_lat=${state.origin.lat}&orig_lon=${state.origin.lon}`;
+    }
+    if (state.destination && state.destination.lat) {
+      url += `&dest_lat=${state.destination.lat}&dest_lon=${state.destination.lon}`;
+    }
+
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    renderRouteDetailsContent(data);
+  } catch (err) {
+    console.error("Failed to fetch route details:", err);
+    routeModalBody.innerHTML = `
+      <div style="padding: 24px; text-align: center; color: #DC2626;">
+        <div style="font-weight: 700; font-size: 14px; margin-bottom: 6px;">Unable to load route details</div>
+        <div style="font-size: 12px; color: #64748B;">Please check your connection and try again.</div>
+      </div>
+    `;
+  }
+}
+
+function renderRouteDetailsContent(d) {
+  if (!routeModalBody) return;
+
+  const fareNonAc = d.fares?.non_ac ? `₹${d.fares.non_ac}` : "₹5 - ₹25";
+  const fareAc = d.fares?.ac_vajra ? `₹${d.fares.ac_vajra}` : "₹20 - ₹60";
+  const isAc = d.service_type === "AC Vajra (Volvo)";
+
+  const stopsHtml = (d.stops || []).map((s, idx) => {
+    let tag = "";
+    let itemClass = "";
+    if (s.is_boarding_stop) {
+      tag = `<span class="stop-badge-boarding">YOUR BOARDING STOP</span>`;
+      itemClass = "is-boarding";
+    } else if (s.is_alighting_stop) {
+      tag = `<span class="stop-badge-dest">DESTINATION ALIGHT</span>`;
+      itemClass = "is-dest";
+    } else if (idx === 0) {
+      tag = `<span class="stop-badge-dest" style="background:#E2E8F0; color:#334155;">ORIGIN TERMINUS</span>`;
+    } else if (idx === (d.stops.length - 1)) {
+      tag = `<span class="stop-badge-dest" style="background:#E2E8F0; color:#334155;">FINAL DESTINATION</span>`;
+    }
+
+    return `
+      <div class="route-stop-item ${itemClass}">
+        <div class="route-stop-idx">${s.seq}</div>
+        <div class="route-stop-name">${s.stop_name}</div>
+        ${tag}
+      </div>
+    `;
+  }).join("");
+
+  routeModalBody.innerHTML = `
+    <!-- Route Header Hero -->
+    <div class="route-hero-card">
+      <div class="route-hero-top">
+        <span class="route-hero-pill">${d.route}</span>
+        <span class="route-type-badge">${d.service_type || "BMTC Bus"}</span>
+      </div>
+      <div class="route-terminals">
+        <span class="terminal-stop">${d.origin || "Origin Terminus"}</span>
+        <span class="route-arrow">➔</span>
+        <span class="terminal-stop">${d.destination || "Destination Terminus"}</span>
+      </div>
+    </div>
+
+    <!-- Quick Metrics Grid -->
+    <div class="route-metrics-grid">
+      <div class="route-metric-box">
+        <span class="metric-val">${d.total_stops || 0}</span>
+        <span class="metric-label">Stops on Route</span>
+      </div>
+      <div class="route-metric-box">
+        <span class="metric-val">${d.distance_km || 0} km</span>
+        <span class="metric-label">Corridor Length</span>
+      </div>
+      <div class="route-metric-box">
+        <span class="metric-val">~${d.estimated_duration_min || 0}m</span>
+        <span class="metric-label">Typical Trip Time</span>
+      </div>
+      <div class="route-metric-box">
+        <span class="metric-val">${d.trips_per_day || 0} trips</span>
+        <span class="metric-label">Daily Frequency</span>
+      </div>
+    </div>
+
+    <!-- Fares & Concessions -->
+    <div class="route-pass-strip">
+      <div class="route-pass-item">
+        <span class="pass-lbl">Single Trip Fare:</span>
+        <span class="pass-val">${isAc ? fareAc : fareNonAc}</span>
+      </div>
+      <div class="route-pass-item">
+        <span class="pass-lbl">Operating Window:</span>
+        <span class="pass-val">${d.schedule?.first_bus || "05:30"} - ${d.schedule?.last_bus || "22:45"}</span>
+      </div>
+      <div class="route-pass-item">
+        <span class="pass-lbl">Shakti Scheme:</span>
+        <span class="pass-val" style="color: ${d.fares?.shakti_free ? '#059669' : '#D97706'}; font-weight: 700;">
+          ${d.fares?.shakti_free ? '100% Free for Karnataka Domiciled Women' : 'Not Applicable on AC Services'}
+        </span>
+      </div>
+      <div class="route-pass-item">
+        <span class="pass-lbl">BMTC Daily Bus Pass:</span>
+        <span class="pass-val">
+          ${d.fares?.daily_pass_accepted ? 'Accepted (₹70 Non-AC Ordinary Pass)' : 'Volvo Daily Pass Required (₹140)'}
+        </span>
+      </div>
+    </div>
+
+    <!-- Ordered Stop Sequence -->
+    <div class="route-stops-container">
+      <div class="route-stops-header">
+        <span>Complete Ordered Stop Sequence (${d.total_stops || 0} Stops)</span>
+        <span style="font-size: 11px; font-weight: 500; color: #64748B;">Official BMTC GTFS Sequence</span>
+      </div>
+      <div class="route-stops-list">
+        ${stopsHtml}
+      </div>
+    </div>
+  `;
+
+  // Auto scroll to boarding stop inside modal if present
+  setTimeout(() => {
+    const boardingEl = routeModalBody.querySelector(".route-stop-item.is-boarding");
+    if (boardingEl) {
+      boardingEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, 100);
+}
+
+// Global hooks for route details buttons
+window.openRouteDetailsModal = openRouteDetailsModal;
+window.closeRouteDetailsModal = closeRouteDetailsModal;

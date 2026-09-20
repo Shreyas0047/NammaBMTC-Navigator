@@ -163,8 +163,8 @@
             <span class="tab-fare-hint">Budget</span>
           </button>
           <button type="button" class="filter-tab-btn" data-filter="AC" id="filter-ac-btn">
-            <span class="tab-status-tag">❄️ AC Only</span>
-            <span class="tab-icon">❄️</span>
+            <span class="tab-status-tag">✓ AC Only</span>
+            <span class="tab-icon">AC</span>
             <span class="tab-text">AC Vajra / Volvo</span>
             <span class="tab-fare-hint ac">AC Comfort</span>
           </button>
@@ -320,7 +320,6 @@
           <!-- Walk Directive Banner in Timeline -->
           <div class="timeline-directive">
             <div class="walk-pill">
-              <span class="walk-ico">🚶</span>
               <span class="walk-label" id="timeline-walk-text">Walk 250 m (~3 min)</span>
             </div>
           </div>
@@ -334,11 +333,11 @@
             <div class="step-details">
               <div class="boarding-header">
                 <span id="boarding-tag-label" class="boarding-tag">BOARD YOUR BUS HERE</span>
-                <span id="service-fare-badge" class="service-fare-badge">🪙 Est. ₹15 - ₹25</span>
+                <span id="service-fare-badge" class="service-fare-badge">Est. ₹15 - ₹25</span>
               </div>
               <h3 class="boarding-title" id="rec-stop-name">Corporation Circle</h3>
               <div class="direction-callout" id="rec-stop-desc">
-                <span class="dir-icon">📍</span>
+                <span class="dir-icon">•</span>
                 <span class="dir-text">Towards Subbiah Circle</span>
               </div>
 
@@ -346,27 +345,25 @@
               <div class="commute-breakdown-card" id="commute-breakdown-card">
                 <div class="breakdown-primary-row">
                   <div class="total-time-pill" id="commute-total-time-pill">
-                    <span class="pill-icon">⏱️</span>
                     <span class="pill-label">EST. COMMUTE</span>
                     <strong class="pill-val" id="commute-total-mins">~38 min</strong>
                   </div>
                   <div class="breakdown-chips-row">
-                    <span class="commute-chip" id="breakdown-walk-chip">🚶 3m walk</span>
-                    <span class="commute-chip" id="breakdown-wait-chip">⏳ ~5m wait</span>
-                    <span class="commute-chip" id="breakdown-ride-chip">🚍 ~30m ride</span>
+                    <span class="commute-chip" id="breakdown-walk-chip">3m walk</span>
+                    <span class="commute-chip" id="breakdown-wait-chip">~5m wait</span>
+                    <span class="commute-chip" id="breakdown-ride-chip">~30m ride</span>
                   </div>
                 </div>
                 <!-- Pass & Shakti Scheme Eligibility -->
                 <div class="breakdown-pass-row" id="breakdown-pass-row">
-                  <span class="shakti-pill" id="breakdown-shakti-pill">🌸 Shakti Scheme Eligible (Free for Women)</span>
-                  <span class="pass-pill" id="breakdown-pass-pill">🎫 ₹70 BMTC Day Pass Valid</span>
+                  <span class="shakti-pill" id="breakdown-shakti-pill">Shakti Scheme Eligible (Free for Women)</span>
+                  <span class="pass-pill" id="breakdown-pass-pill">₹70 BMTC Day Pass Valid</span>
                 </div>
               </div>
 
               <!-- Key En-Route Milestone Stops Reassurance Strip -->
               <div class="enroute-milestones-box hidden" id="enroute-milestones-box">
                 <div class="milestones-header">
-                  <span class="milestone-icon">🚏</span>
                   <span class="milestones-caption">PASSES KEY WAYPOINTS:</span>
                 </div>
                 <div class="milestones-pills" id="milestones-pills-list"></div>
@@ -376,7 +373,6 @@
               <div class="walking-navigation-box">
                 <div class="nav-status-header">
                   <div class="distance-badge">
-                    <span class="pulse-icon">🚶</span>
                     <span id="live-distance-countdown">Walk 250 m (~3 min)</span>
                   </div>
                   <!-- Directional Compass Badge -->
@@ -397,15 +393,14 @@
                 <div id="walking-map-container" class="map-container">
                   <div id="walking-map"></div>
                   <div class="map-controls-row">
-                    <button id="recenter-map-btn" class="map-recenter-btn" type="button" title="Center on your route">🎯 Route</button>
-                    <button id="map-live-buses-btn" class="map-recenter-btn map-bus-btn" type="button" title="Toggle Live Buses on Map">🚍 Live Buses (<span id="map-bus-count">0</span>)</button>
+                    <button id="recenter-map-btn" class="map-recenter-btn" type="button" title="Center on your route">Route</button>
+                    <button id="map-live-buses-btn" class="map-recenter-btn map-bus-btn" type="button" title="Toggle Live Buses on Map">Live Buses (<span id="map-bus-count">0</span>)</button>
                   </div>
                 </div>
 
                 <!-- Native 1-Tap Walking Navigation Button -->
                 <a id="native-nav-btn" class="native-nav-btn" href="#" target="_blank" rel="noopener">
                   <div class="nav-btn-content">
-                    <span class="btn-icon">🧭</span>
                     <div class="btn-text-group">
                       <span class="btn-primary-text">Start Walking Navigation</span>
                       <span class="btn-sub-text">Opens Google Maps walking turn-by-turn</span>
@@ -423,8 +418,15 @@
               <div class="buses-box">
                 <span id="leg1-box-caption" class="box-caption">CATCH ANY OF THESE SERVICES</span>
                 <div id="active-filter-strip" class="active-filter-strip is-all">
-                  <span class="filter-strip-icon">🚌</span>
                   <span class="filter-strip-msg">Showing all available BMTC buses (Ordinary & AC Vajra)</span>
+                </div>
+                <!-- Selected Single Route Filter Bar -->
+                <div id="selected-route-banner" class="selected-route-banner hidden">
+                  <div class="selected-route-msg">
+                    <span class="selected-indicator-dot"></span>
+                    <span>Showing only selected service: <strong id="selected-route-name">378-P</strong></span>
+                  </div>
+                  <button id="clear-selected-route-btn" class="clear-selected-route-btn" type="button">Show All Buses</button>
                 </div>
                 <div id="rec-routes-list" class="buses-list">
                   <!-- Injected dynamically -->
@@ -464,7 +466,7 @@
                   <!-- Map View Toggle -->
                   <div class="telemetry-actions">
                     <button id="toggle-bus-map-btn" class="bus-map-toggle-btn" type="button">
-                      <span>🚍 Show Live Buses on Map</span>
+                      <span>Show Live Buses on Map</span>
                     </button>
                   </div>
                 </div>
@@ -509,7 +511,6 @@
           <!-- Transit Travel Line Banner -->
           <div class="timeline-directive transit-directive">
             <div class="transit-pill">
-              <span class="bus-ico">🚌</span>
               <span class="transit-label" id="timeline-transit-text">Direct BMTC Bus Route</span>
             </div>
           </div>
@@ -550,6 +551,25 @@
       <div class="footer-badge">BMTC TRANSIT RECOG ENGINE</div>
       <p>Official Bengaluru Urban & Rural GTFS • Open Database License (ODbL 1.0)</p>
     </footer>
+  </div>
+
+  <!-- Route Details Modal Window (Luna XP Style) -->
+  <div id="route-details-modal" class="route-modal hidden" role="dialog" aria-modal="true" aria-labelledby="route-modal-title">
+    <div class="route-modal-backdrop" id="route-modal-backdrop"></div>
+    <div class="route-modal-window">
+      <div class="route-modal-titlebar">
+        <div class="titlebar-left">
+          <span class="titlebar-icon">i</span>
+          <span class="route-modal-title" id="route-modal-title">BMTC Route Information</span>
+        </div>
+        <button id="close-route-modal-btn" class="route-modal-close-btn" type="button" title="Close Window">✕</button>
+      </div>
+      <div class="route-modal-body" id="route-modal-body">
+        <div class="modal-loading-state">
+          <span>Loading comprehensive route details...</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="vendor/leaflet.js"></script>

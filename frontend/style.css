@@ -3008,4 +3008,539 @@ body {
   line-height: 1.3;
 }
 
+/* ================= Selectable Route Rows & Action Buttons ================= */
+.route-row {
+  cursor: pointer;
+  position: relative;
+  transition: all 0.18s ease-in-out;
+}
+
+.route-row:hover {
+  border-color: #316AC5;
+  background: #F8FAFC;
+}
+
+.route-row.is-selected {
+  border-color: #1D4ED8 !important;
+  background: #EFF6FF !important;
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.35), 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.route-pill-btn {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.12s ease;
+}
+
+.route-pill-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.route-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.route-select-pill {
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #E2E8F0 100%);
+  border: 1px solid #94A3B8;
+  color: #1E293B;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.route-select-pill:hover {
+  background: linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%);
+  border-color: #2563EB;
+  color: #1D4ED8;
+}
+
+.route-select-pill.is-active {
+  background: linear-gradient(180deg, #1D4ED8 0%, #0A246A 100%);
+  border-color: #061B48;
+  color: #FFFFFF;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.route-details-pill {
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.route-details-pill:hover {
+  background: #E2E8F0;
+  border-color: #64748B;
+  color: #0F172A;
+}
+
+/* Selected Single Route Dashboard Banner */
+.selected-route-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  background: #EFF6FF;
+  border: 1.5px solid #60A5FA;
+  border-radius: 5px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.selected-route-msg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #1E40AF;
+  font-weight: 600;
+}
+
+.selected-indicator-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2563EB;
+  box-shadow: 0 0 6px #2563EB;
+}
+
+.clear-selected-route-btn {
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #DBEAFE 100%);
+  border: 1px solid #3B82F6;
+  color: #1D4ED8;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.clear-selected-route-btn:hover {
+  background: #2563EB;
+  color: #FFFFFF;
+}
+
+/* ================= Route Details Modal Window (Windows XP Luna) ================= */
+.route-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.route-modal.hidden {
+  display: none !important;
+}
+
+.route-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.route-modal-window {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 580px;
+  max-height: 88vh;
+  background: #ECE9D8;
+  border: 3px solid #0055EA;
+  border-radius: 8px 8px 4px 4px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 0 1px #FFFFFF inset;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: lunaModalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes lunaModalPop {
+  0% { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.route-modal-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 4px 10px;
+  background: linear-gradient(180deg, #0058E6 0%, #3786F7 12%, #2668E2 48%, #0042BC 100%);
+  color: #FFFFFF;
+  user-select: none;
+  min-height: 30px;
+}
+
+.titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.titlebar-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: #0042BC;
+  font-size: 11px;
+  font-weight: 900;
+  font-family: var(--font-sans);
+}
+
+.route-modal-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.route-modal-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 21px;
+  height: 21px;
+  background: linear-gradient(180deg, #F88A74 0%, #E34E35 48%, #C32812 100%);
+  border: 1px solid #FFFFFF;
+  border-radius: 3px;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  transition: all 0.12s ease;
+}
+
+.route-modal-close-btn:hover {
+  background: linear-gradient(180deg, #FF9E8A 0%, #ED5D45 48%, #D8311B 100%);
+}
+
+.route-modal-body {
+  padding: 12px;
+  overflow-y: auto;
+  max-height: calc(88vh - 40px);
+  background: #F4F4F0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Modal Content Components */
+.route-modal-header-card {
+  background: #FFFFFF;
+  border: 1px solid #B0C4DE;
+  border-radius: 6px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.modal-route-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.modal-route-badge-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-route-code {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 900;
+  padding: 2px 9px;
+  border-radius: 4px;
+  background: #0284C7;
+  color: #FFFFFF;
+  letter-spacing: 0.5px;
+}
+
+.modal-service-tag {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.modal-service-tag.badge-ordinary {
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #86EFAC;
+}
+
+.modal-service-tag.badge-ac {
+  background: #E0F2FE;
+  color: #0369A1;
+  border: 1px solid #7DD3FC;
+}
+
+.modal-service-tag.badge-airport {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FCD34D;
+}
+
+.modal-select-toggle-btn {
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #E2E8F0 100%);
+  border: 1.5px solid #3B82F6;
+  color: #1D4ED8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-select-toggle-btn.is-active {
+  background: linear-gradient(180deg, #1D4ED8 0%, #0A246A 100%);
+  border-color: #061B48;
+  color: #FFFFFF;
+}
+
+.modal-route-corridor {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1E293B;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.corridor-arrow {
+  color: #0284C7;
+  font-weight: 900;
+}
+
+/* Route Metrics Grid */
+.route-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.metric-box {
+  background: #FFFFFF;
+  border: 1px solid #B0C4DE;
+  border-radius: 5px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric-box .m-label {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.metric-box .m-val {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #0F172A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Modal Pass Strip */
+.modal-pass-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.modal-shakti-pill {
+  font-size: 10px;
+  font-weight: 800;
+  background: #FCE7F3;
+  border: 1px solid #F472B6;
+  color: #BE185D;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.modal-pass-pill {
+  font-size: 10px;
+  font-weight: 700;
+  background: #EFF6FF;
+  border: 1px solid #93C5FD;
+  color: #1E40AF;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.modal-headway-pill {
+  font-size: 10px;
+  font-weight: 700;
+  background: #DCFCE7;
+  border: 1px solid #86EFAC;
+  color: #15803D;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+/* Stops Sequence Area */
+.modal-stops-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.stops-section-title {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #334155;
+  letter-spacing: 0.4px;
+}
+
+.stops-section-hint {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #64748B;
+}
+
+.modal-stops-scroll-area {
+  background: #FFFFFF;
+  border: 1px solid #99B4D1;
+  border-radius: 5px;
+  max-height: 230px;
+  overflow-y: auto;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.route-stop-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #F1F5F9;
+  transition: background 0.12s ease;
+}
+
+.route-stop-row:nth-child(even) {
+  background: #F8FAFC;
+}
+
+.route-stop-row:hover {
+  background: #EDF4FE;
+}
+
+.route-stop-row.is-boarding {
+  background: #DCFCE7 !important;
+  border-left: 3px solid #16A34A;
+}
+
+.route-stop-row.is-alighting {
+  background: #EFF6FF !important;
+  border-left: 3px solid #2563EB;
+}
+
+.stop-seq-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  color: #64748B;
+  min-width: 20px;
+}
+
+.stop-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+}
+
+.stop-primary-name {
+  font-size: 11.5px;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.stop-sub-desc {
+  font-size: 9.5px;
+  color: #64748B;
+}
+
+.stop-passenger-badge {
+  font-size: 8.5px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #16A34A;
+  color: #FFFFFF;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.stop-passenger-badge.alighting {
+  background: #2563EB;
+}
+
+.modal-loading-state, .modal-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 16px;
+  gap: 10px;
+  text-align: center;
+  font-size: 12px;
+  color: #475569;
+}
+
 
