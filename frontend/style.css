@@ -583,115 +583,6 @@ body {
 }
 
 
-
-.nav-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-}
-
-.app-logo {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
-  transition: transform 0.25s var(--ease-bounce);
-  flex-shrink: 0;
-}
-
-.nav-brand:hover .app-logo,
-.nav-brand:active .app-logo {
-  transform: rotate(-4deg) scale(1.06);
-}
-
-.brand-text h1 {
-  font-size: 16px;
-  font-weight: 800;
-  line-height: 1.15;
-  color: #FFFFFF;
-  letter-spacing: -0.2px;
-  display: flex;
-  align-items: center;
-}
-
-.nav-badge {
-  background: linear-gradient(135deg, #F59E0B, #D97706);
-  color: #1E293B;
-  font-size: 9px;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: var(--radius-xs);
-  letter-spacing: 0.8px;
-  margin-left: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.city-tag {
-  font-size: 11px;
-  color: #A7F3D0;
-  font-weight: 600;
-  letter-spacing: 0.1px;
-  display: block;
-  margin-top: 1px;
-}
-
-/* Live GPS Radar Pill */
-.location-pill {
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #FFFFFF;
-  padding: 6px 12px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.location-pill:hover {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-.location-pill:active {
-  transform: scale(0.96);
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.radar-dot {
-  width: 8px;
-  height: 8px;
-  background-color: #94A3B8;
-  border-radius: 50%;
-  position: relative;
-  transition: all 0.2s ease;
-}
-
-.location-pill.active .radar-dot {
-  background-color: #34D399;
-  box-shadow: 0 0 6px #34D399;
-}
-
-.location-pill.active .radar-dot::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 1.5px solid #34D399;
-  animation: pulse-ring 1.8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
-}
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.7); opacity: 1; }
-  100% { transform: scale(2.4); opacity: 0; }
-}
-
 /* ================= Context Location Bar ================= */
 .location-bar {
   background: rgba(15, 23, 42, 0.55);
@@ -2275,44 +2166,50 @@ body {
 
 .select-alt-btn {
   flex: 1 1 180px;
-  background: #FFFFFF;
-  border: 1.5px solid var(--bmtc-green);
-  color: var(--bmtc-green-dark);
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34D399;
   font-size: 12px;
   font-weight: 800;
-  padding: 7px 12px;
+  padding: 8px 14px;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .select-alt-btn:hover {
-  background: var(--bmtc-green-tint);
+  background: rgba(16, 185, 129, 0.25);
+  border-color: #34D399;
+  color: #6EE7B7;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
 }
 
 .alt-maps-btn {
   flex: 0 0 auto;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-strong);
-  color: var(--text-secondary);
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #CBD5E1;
   font-size: 12px;
   font-weight: 700;
-  padding: 7px 12px;
+  padding: 8px 14px;
   border-radius: var(--radius-sm);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   transition: all 0.2s ease;
 }
 
 .alt-maps-btn:hover {
-  background: #FFFFFF;
-  color: var(--text-primary);
+  background: rgba(2, 132, 199, 0.2);
+  border-color: #00D2FF;
+  color: #FFFFFF;
+  transform: translateY(-1px);
 }
 
 /* ================= Leaflet User Marker Pulse ================= */
@@ -3122,41 +3019,44 @@ body {
 
 /* Highlighted Mode: ALL SERVICES */
 .filter-tab-btn[data-filter="ALL"].active {
-  background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.4) 0%, rgba(3, 105, 161, 0.4) 100%);
   border-color: #00D2FF;
   color: #FFFFFF;
-  box-shadow: 0 0 16px rgba(2, 132, 199, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 16px rgba(0, 210, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transform: translateY(-1px);
 }
 .filter-tab-btn[data-filter="ALL"].active .tab-status-tag {
-  background: #FEF08A;
-  color: #713F12;
+  background: rgba(0, 210, 255, 0.2);
+  border: 1px solid rgba(0, 210, 255, 0.5);
+  color: #38BDF8;
 }
 
 /* Highlighted Mode: AC VAJRA / VOLVO */
 .filter-tab-btn[data-filter="AC"].active {
-  background: linear-gradient(135deg, #0284C7 0%, #0284C7 100%);
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.45) 0%, rgba(14, 165, 233, 0.35) 100%);
   border-color: #38BDF8;
   color: #FFFFFF;
-  box-shadow: 0 0 16px rgba(2, 132, 199, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transform: translateY(-1px);
 }
 .filter-tab-btn[data-filter="AC"].active .tab-status-tag {
-  background: #E0F2FE;
-  color: #0369A1;
+  background: rgba(56, 189, 248, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  color: #7DD3FC;
 }
 
 /* Highlighted Mode: NON-AC ORDINARY */
 .filter-tab-btn[data-filter="NON_AC"].active {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.4) 0%, rgba(4, 120, 87, 0.4) 100%);
   border-color: #10B981;
   color: #FFFFFF;
-  box-shadow: 0 0 16px rgba(16, 185, 129, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transform: translateY(-1px);
 }
 .filter-tab-btn[data-filter="NON_AC"].active .tab-status-tag {
-  background: #DCFCE7;
-  color: #14532D;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  color: #34D399;
 }
 
 .filter-tab-btn .tab-icon {
@@ -3218,27 +3118,27 @@ body {
 }
 
 .active-filter-strip.is-all {
-  background: #EFF6FF;
-  border: 1.5px solid #93C5FD;
-  color: #1E40AF;
+  background: rgba(2, 132, 199, 0.12);
+  border: 1px solid rgba(0, 210, 255, 0.35);
+  color: #7DD3FC;
 }
 
 .active-filter-strip.is-ac {
-  background: #E0F2FE;
-  border: 1.5px solid #38BDF8;
-  color: #0369A1;
+  background: rgba(2, 132, 199, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38BDF8;
 }
 
 .active-filter-strip.is-non-ac {
-  background: #DCFCE7;
-  border: 1.5px solid #86EFAC;
-  color: #15803D;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34D399;
 }
 
 .active-filter-strip.is-warning {
-  background: #FFFBEB;
-  border: 1.5px solid #FCD34D;
-  color: #92400E;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #FCD34D;
 }
 
 /* Service Fare Badge in Boarding Header */
@@ -3253,40 +3153,40 @@ body {
 .service-fare-badge {
   font-size: 10px;
   font-weight: 800;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: #DCFCE7;
-  border: 1px solid #86EFAC;
-  color: #15803D;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34D399;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   letter-spacing: 0.3px;
 }
 
 .service-fare-badge.ac {
-  background: #E0F2FE;
-  border-color: #7DD3FC;
-  color: #0369A1;
+  background: rgba(2, 132, 199, 0.15);
+  border-color: rgba(0, 210, 255, 0.35);
+  color: #38BDF8;
 }
 
 /* Individual Route Fare Badge */
 .route-fare-tag {
   font-size: 10.5px;
   font-weight: 800;
-  color: #15803D;
-  background: #DCFCE7;
-  border: 1px solid #BBF7D0;
-  border-radius: 4px;
-  padding: 1px 6px;
+  color: #34D399;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 6px;
+  padding: 1px 7px;
   margin-left: 6px;
   white-space: nowrap;
 }
 
 .route-fare-tag.is-ac {
-  color: #0369A1;
-  background: #E0F2FE;
-  border-color: #BAE6FD;
+  color: #38BDF8;
+  background: rgba(2, 132, 199, 0.15);
+  border-color: rgba(0, 210, 255, 0.3);
 }
 
 .route-pill.is-ac {

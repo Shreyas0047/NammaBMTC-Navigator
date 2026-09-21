@@ -26,31 +26,35 @@
   let busRoot, layerSatellite, layerRoof, layerBody, layerInterior, layerChassis, layerMetro;
   let radarCone, solarPanelsLeft, solarPanelsRight;
   let isUserInteracting = false;
-  let targetRotationY = -0.42;
-  let targetRotationX = 0.20;
-  let currentRotationY = -0.42;
-  let currentRotationX = 0.20;
+  let targetRotationY = 0.55;
+  let targetRotationX = 0.16;
+  let currentRotationY = 0.55;
+  let currentRotationX = 0.16;
   let lastMouseX = 0, lastMouseY = 0;
   let explodeTarget = 0.0;
   let explodeCurrent = 0.0;
   let isVisible = false;
   let animFrameId = null;
 
-  // Modern EV Color Palette
+  // Authentic BMTC Color Palette
   const COLORS = {
-    evWhite: 0xF8FAFC,
-    evBlue: 0x0284C7,
-    evCyan: 0x00D2FF,
-    evGreen: 0x10B981,
-    metroPurple: 0x8B5CF6,
-    metalDark: 0x0F172A,
-    metalMid: 0x1E293B,
-    metalLight: 0xE2E8F0,
-    glassTint: 0x081326,
-    roadDark: 0x0B0F19,
-    solarGold: 0xF59E0B,
-    ledAmber: 0xFBBF24,
-    hvOrange: 0xF97316,
+    bmtcBlue: 0x0284C7,       // BMTC Primary Livery Blue
+    bmtcTeal: 0x00A896,       // BMTC Accent Teal / Aqua
+    bmtcWhite: 0xF8FAFC,      // BMTC Clean Upper White
+    bmtcGreen: 0x059669,      // BMTC Eco Green / Shakti
+    bmtcDarkBlue: 0x0C4A6E,   // Deep BMTC Navy Lower Skirt
+    metroPurple: 0x8B5CF6,    // BMRCL Purple Line
+    metroGreen: 0x10B981,     // BMRCL Green Line
+    metalDark: 0x0F172A,      // Chassis Steel
+    metalMid: 0x1E293B,       // Mechanical Cast Iron
+    metalLight: 0xE2E8F0,     // Stainless Steel Grab Poles & Panto
+    glassTint: 0x0C1929,      // Realistic Bus Window Tint
+    roadDark: 0x0B0F19,       // Asphalt
+    solarGold: 0xF59E0B,      // Satellite MLI Foil
+    ledAmber: 0xF59E0B,       // BMTC LED Destination Display
+    hvOrange: 0xEA580C,       // High Voltage EV Cables
+    taillightRed: 0xEF4444,   // Rear Stop Lights
+    headlightWarm: 0xFFFBEB,  // Dual Halogen/LED Matrix
   };
 
   function initThree() {
@@ -131,11 +135,11 @@
     layerChassis = createElectricChassisLayer();
     busRoot.add(layerChassis);
 
-    // Layer 3: Low-Floor Interior & Shakti Validator
+    // Layer 3: Low-Floor Interior, Grab Poles & Shakti Validator
     layerInterior = createLowFloorInteriorLayer();
     busRoot.add(layerInterior);
 
-    // Layer 4: Aerodynamic EV Body & Horizon LED Lightbar
+    // Layer 4: Authentic BMTC Electric Body Shell with Livery & Doors
     layerBody = createElectricBodyShellLayer();
     busRoot.add(layerBody);
 
@@ -154,6 +158,48 @@
   }
 
   // ==================== 3D PROCEDURAL BUILDERS ====================
+
+  /** Helper: Procedural Canvas Texture for Destination Display */
+  function createLedBoardTexture(text) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 80;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#0F172A';
+    ctx.fillRect(0, 0, 512, 80);
+    // LED Dot Matrix styling
+    ctx.fillStyle = '#F59E0B';
+    ctx.font = 'bold 36px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 256, 42);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    return texture;
+  }
+
+  /** Helper: BMTC Emblem / Crest Texture */
+  function createBmtcEmblemTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#0284C7';
+    ctx.beginPath();
+    ctx.arc(64, 64, 56, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.stroke();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 26px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('BMTC', 64, 64);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    return texture;
+  }
 
   /** Layer 1: Subterranean Namma Metro Rails & Ground Highway */
   function createSubterraneanMetroLayer() {
@@ -181,9 +227,9 @@
       group.add(line);
     }
 
-    // Bus Lane Cyan Line
+    // Bus Lane Yellow/Cyan Line
     const stripGeo = new THREE.BoxGeometry(16, 0.02, 0.25);
-    const stripMat = new THREE.MeshBasicMaterial({ color: COLORS.evCyan });
+    const stripMat = new THREE.MeshBasicMaterial({ color: 0xF59E0B });
     const strip = new THREE.Mesh(stripGeo, stripMat);
     strip.position.set(0, 0.02, 2.5);
     group.add(strip);
@@ -205,7 +251,7 @@
 
     // Dual Metro Tracks (Purple Line & Green Line)
     const railMatPurple = new THREE.MeshStandardMaterial({ color: COLORS.metroPurple, roughness: 0.25, metalness: 0.85 });
-    const railMatGreen = new THREE.MeshStandardMaterial({ color: COLORS.evGreen, roughness: 0.25, metalness: 0.85 });
+    const railMatGreen = new THREE.MeshStandardMaterial({ color: COLORS.metroGreen, roughness: 0.25, metalness: 0.85 });
     const railGeo = new THREE.CylinderGeometry(0.045, 0.045, 18, 8);
 
     [-0.8, -0.3].forEach((z) => {
@@ -251,7 +297,7 @@
 
     // Underfloor Lithium Battery Tray with Liquid Cooling Ribs
     const trayGeo = new THREE.BoxGeometry(5.2, 0.26, 1.9);
-    const trayMat = new THREE.MeshStandardMaterial({ color: 0x0284C7, roughness: 0.3, metalness: 0.7 });
+    const trayMat = new THREE.MeshStandardMaterial({ color: COLORS.bmtcDarkBlue, roughness: 0.3, metalness: 0.7 });
     const tray = new THREE.Mesh(trayGeo, trayMat);
     tray.position.set(0, 0.38, 0);
     group.add(tray);
@@ -272,7 +318,7 @@
     motor.position.set(-2.4, 0.44, 0);
     group.add(motor);
 
-    // 6 EV Aero-Cover Wheels with Cyan Accents
+    // 6 EV Aero-Cover Wheels with BMTC Hub
     const wheelPositions = [
       [2.7, 0.42, 1.28],   // Front Right
       [2.7, 0.42, -1.28],  // Front Left
@@ -282,12 +328,12 @@
       [-2.4, 0.42, -1.14], // Rear Left Inner
     ];
 
-    const tireGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.26, 22);
+    const tireGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.26, 24);
     const tireMat = new THREE.MeshStandardMaterial({ color: 0x0F172A, roughness: 0.95 });
-    const aeroCoverGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.27, 16);
-    const aeroCoverMat = new THREE.MeshStandardMaterial({ color: COLORS.evWhite, roughness: 0.25, metalness: 0.6 });
-    const cyanTrimGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.28, 12);
-    const cyanTrimMat = new THREE.MeshBasicMaterial({ color: COLORS.evCyan });
+    const rimGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.27, 16);
+    const rimMat = new THREE.MeshStandardMaterial({ color: COLORS.metalLight, roughness: 0.2, metalness: 0.8 });
+    const hubGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.28, 12);
+    const hubMat = new THREE.MeshStandardMaterial({ color: COLORS.bmtcBlue, roughness: 0.3 });
 
     wheelPositions.forEach(([wx, wy, wz]) => {
       const tire = new THREE.Mesh(tireGeo, tireMat);
@@ -295,11 +341,11 @@
       tire.position.set(wx, wy, wz);
       tire.castShadow = true;
 
-      const aeroCover = new THREE.Mesh(aeroCoverGeo, aeroCoverMat);
-      tire.add(aeroCover);
+      const rim = new THREE.Mesh(rimGeo, rimMat);
+      tire.add(rim);
 
-      const cyanTrim = new THREE.Mesh(cyanTrimGeo, cyanTrimMat);
-      tire.add(cyanTrim);
+      const hub = new THREE.Mesh(hubGeo, hubMat);
+      tire.add(hub);
 
       group.add(tire);
     });
@@ -307,7 +353,7 @@
     return group;
   }
 
-  /** Layer 3: Modern Low-Floor Interior, Ergonomic Seats & Shakti Tap Validator */
+  /** Layer 3: Modern Low-Floor Interior, BMTC Grab Poles & Shakti Tap Validator */
   function createLowFloorInteriorLayer() {
     const group = new THREE.Group();
 
@@ -319,38 +365,64 @@
     floor.receiveShadow = true;
     group.add(floor);
 
-    // Ergonomic Passenger Seats (Fresh Emerald / Cyan EV Upholstery)
+    // Passenger Seats (BMTC Blue & Women Shakti Green Seats)
     const seatGeo = new THREE.BoxGeometry(0.48, 0.48, 0.45);
-    const seatMatCyan = new THREE.MeshStandardMaterial({ color: COLORS.evBlue, roughness: 0.6 });
-    const seatMatGreen = new THREE.MeshStandardMaterial({ color: COLORS.evGreen, roughness: 0.6 });
+    const seatMatBlue = new THREE.MeshStandardMaterial({ color: COLORS.bmtcBlue, roughness: 0.6 });
+    const seatMatShakti = new THREE.MeshStandardMaterial({ color: COLORS.bmtcGreen, roughness: 0.6 });
 
     for (let x = -3.4; x <= 2.2; x += 0.9) {
-      const sLeft = new THREE.Mesh(seatGeo, (Math.abs(x) < 1.2) ? seatMatGreen : seatMatCyan);
+      // Priority/Shakti seats in middle/front
+      const isShakti = (x > -0.5 && x < 1.8);
+      const sLeft = new THREE.Mesh(seatGeo, isShakti ? seatMatShakti : seatMatBlue);
       sLeft.position.set(x, 0.88, -0.86);
       sLeft.castShadow = true;
       group.add(sLeft);
 
-      const sRight = new THREE.Mesh(seatGeo, seatMatCyan);
+      const sRight = new THREE.Mesh(seatGeo, seatMatBlue);
       sRight.position.set(x, 0.88, 0.86);
       sRight.castShadow = true;
       group.add(sRight);
     }
 
-    // Driver Glass Cockpit & Digital Multi-Function Display
+    // Yellow / Stainless Steel Handrail Overhead Pipes (Typical BMTC Interior)
+    const pipeMat = new THREE.MeshStandardMaterial({ color: 0xFBBF24, roughness: 0.3, metalness: 0.6 });
+    const pipeGeo = new THREE.CylinderGeometry(0.02, 0.02, 7.8, 8);
+    [-0.5, 0.5].forEach((pz) => {
+      const pipe = new THREE.Mesh(pipeGeo, pipeMat);
+      pipe.rotation.z = Math.PI / 2;
+      pipe.position.set(-0.5, 2.15, pz);
+      group.add(pipe);
+    });
+
+    // Vertical Grab Stanchion Poles
+    const stanchionGeo = new THREE.CylinderGeometry(0.02, 0.02, 1.6, 8);
+    [-2.2, 0.0, 2.0].forEach((sx) => {
+      const stLeft = new THREE.Mesh(stanchionGeo, pipeMat);
+      stLeft.position.set(sx, 1.4, -0.5);
+      group.add(stLeft);
+
+      const stRight = new THREE.Mesh(stanchionGeo, pipeMat);
+      stRight.position.set(sx, 1.4, 0.5);
+      group.add(stRight);
+    });
+
+    // Driver Glass Cockpit & Steering Console
     const consoleGeo = new THREE.BoxGeometry(0.65, 0.75, 0.85);
     const consoleMat = new THREE.MeshStandardMaterial({ color: 0x0B0F19, roughness: 0.4 });
     const consoleMesh = new THREE.Mesh(consoleGeo, consoleMat);
     consoleMesh.position.set(3.9, 0.96, -0.6);
     group.add(consoleMesh);
 
-    // Digital Cluster Screen
-    const screenGeo = new THREE.BoxGeometry(0.04, 0.22, 0.35);
-    const screenMat = new THREE.MeshBasicMaterial({ color: COLORS.evCyan });
-    const screen = new THREE.Mesh(screenGeo, screenMat);
-    screen.position.set(3.8, 1.22, -0.6);
-    group.add(screen);
+    // Driver Steering Wheel
+    const wheelTorusGeo = new THREE.TorusGeometry(0.18, 0.025, 8, 16);
+    const wheelTorusMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.5 });
+    const wheelMesh = new THREE.Mesh(wheelTorusGeo, wheelTorusMat);
+    wheelMesh.rotation.y = Math.PI / 2;
+    wheelMesh.rotation.z = 0.5;
+    wheelMesh.position.set(3.7, 1.25, -0.6);
+    group.add(wheelMesh);
 
-    // Shakti Scheme Illuminated Contactless Validator near Front Entrance
+    // Shakti Scheme Illuminated Contactless Smart Card Validator
     const standGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.15, 8);
     const standMat = new THREE.MeshStandardMaterial({ color: COLORS.metalLight, metalness: 0.9 });
     const stand = new THREE.Mesh(standGeo, standMat);
@@ -358,7 +430,7 @@
     group.add(stand);
 
     const valHeadGeo = new THREE.BoxGeometry(0.2, 0.28, 0.14);
-    const valHeadMat = new THREE.MeshBasicMaterial({ color: COLORS.evGreen });
+    const valHeadMat = new THREE.MeshBasicMaterial({ color: COLORS.bmtcGreen });
     const valHead = new THREE.Mesh(valHeadGeo, valHeadMat);
     valHead.position.set(2.6, 1.72, 1.05);
     group.add(valHead);
@@ -366,100 +438,187 @@
     return group;
   }
 
-  /** Layer 4: Aerodynamic EV Body, Horizon LED Lightbar & Panoramic Glazing */
+  /** Layer 4: Authentic BMTC Electric Bus Body Shell & Signature Livery */
   function createElectricBodyShellLayer() {
     const group = new THREE.Group();
 
-    // Sculpted EV Lower Body Skirt (Pearl White with Electric Teal / Green Ribbon)
+    // 1. Lower Body Skirt in Authentic BMTC Royal Blue
     const lowerBodyGeo = new THREE.BoxGeometry(9.1, 0.82, 2.55);
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color: COLORS.evWhite,
-      roughness: 0.18,
-      metalness: 0.2,
+    const lowerBodyMat = new THREE.MeshStandardMaterial({
+      color: COLORS.bmtcBlue,
+      roughness: 0.2,
+      metalness: 0.25,
     });
-    const lowerBody = new THREE.Mesh(lowerBodyGeo, bodyMat);
+    const lowerBody = new THREE.Mesh(lowerBodyGeo, lowerBodyMat);
     lowerBody.position.set(0, 1.05, 0);
     lowerBody.castShadow = true;
     group.add(lowerBody);
 
-    // Electric Teal Livery Accent Ribbon
-    const tealRibbonGeo = new THREE.BoxGeometry(9.12, 0.16, 2.57);
-    const tealRibbonMat = new THREE.MeshBasicMaterial({ color: COLORS.evCyan });
-    const tealRibbon = new THREE.Mesh(tealRibbonGeo, tealRibbonMat);
-    tealRibbon.position.set(0, 0.9, 0);
-    group.add(tealRibbon);
+    // 2. Deep Navy Blue Bottom Sill Stripe
+    const darkSillGeo = new THREE.BoxGeometry(9.12, 0.12, 2.57);
+    const darkSillMat = new THREE.MeshStandardMaterial({ color: COLORS.bmtcDarkBlue, roughness: 0.4 });
+    const darkSill = new THREE.Mesh(darkSillGeo, darkSillMat);
+    darkSill.position.set(0, 0.70, 0);
+    group.add(darkSill);
 
-    // Namma Green Bottom Skirt Stripe
-    const greenStripeGeo = new THREE.BoxGeometry(9.12, 0.1, 2.57);
-    const greenStripeMat = new THREE.MeshBasicMaterial({ color: COLORS.evGreen });
-    const greenStripe = new THREE.Mesh(greenStripeGeo, greenStripeMat);
-    greenStripe.position.set(0, 0.72, 0);
-    group.add(greenStripe);
+    // 3. Signature BMTC Electric Teal Livery Ribbon (The recognizable Bangalore stripe)
+    const tealStripeGeo = new THREE.BoxGeometry(9.12, 0.16, 2.57);
+    const tealStripeMat = new THREE.MeshBasicMaterial({ color: COLORS.bmtcTeal });
+    const tealStripe = new THREE.Mesh(tealStripeGeo, tealStripeMat);
+    tealStripe.position.set(0, 1.38, 0);
+    group.add(tealStripe);
 
-    // Futuristic Aerodynamic Front EV Nose Cap
-    const noseGeo = new THREE.CylinderGeometry(1.27, 1.27, 0.75, 16, 1, false, -Math.PI / 2, Math.PI);
-    const noseMat = new THREE.MeshStandardMaterial({ color: COLORS.evWhite, roughness: 0.18 });
+    // 4. Upper Window Belt Clean White Frame
+    const upperWhiteGeo = new THREE.BoxGeometry(9.1, 0.10, 2.55);
+    const upperWhiteMat = new THREE.MeshStandardMaterial({ color: COLORS.bmtcWhite, roughness: 0.2 });
+    const upperWhite = new THREE.Mesh(upperWhiteGeo, upperWhiteMat);
+    upperWhite.position.set(0, 2.48, 0);
+    group.add(upperWhite);
+
+    // 5. Authentic Front Nose & Grill with BMTC Emblem
+    const noseGeo = new THREE.CylinderGeometry(1.27, 1.27, 0.75, 20, 1, false, -Math.PI / 2, Math.PI);
+    const noseMat = new THREE.MeshStandardMaterial({ color: COLORS.bmtcBlue, roughness: 0.2 });
     const nose = new THREE.Mesh(noseGeo, noseMat);
     nose.rotation.z = Math.PI / 2;
     nose.position.set(4.55, 1.05, 0);
     group.add(nose);
 
-    // Full-Width Horizon LED Lightbar (Futuristic EV Signature Strip)
-    const lightbarGeo = new THREE.BoxGeometry(0.12, 0.08, 2.3);
-    const lightbarMat = new THREE.MeshBasicMaterial({ color: COLORS.evCyan });
-    const lightbar = new THREE.Mesh(lightbarGeo, lightbarMat);
-    lightbar.position.set(4.62, 1.15, 0);
-    group.add(lightbar);
+    // BMTC Front Emblem Crest
+    const emblemGeo = new THREE.PlaneGeometry(0.32, 0.32);
+    const emblemMat = new THREE.MeshBasicMaterial({
+      map: createBmtcEmblemTexture(),
+      transparent: true,
+    });
+    const emblem = new THREE.Mesh(emblemGeo, emblemMat);
+    emblem.rotation.y = Math.PI / 2;
+    emblem.position.set(4.94, 1.15, 0);
+    group.add(emblem);
 
-    // Dual Slim Projector Matrix Headlights
-    const hlightGeo = new THREE.BoxGeometry(0.1, 0.14, 0.45);
-    const hlightMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+    // Dual Front LED Projector Headlights
+    const hlightGeo = new THREE.BoxGeometry(0.08, 0.14, 0.38);
+    const hlightMat = new THREE.MeshBasicMaterial({ color: COLORS.headlightWarm });
     [-0.88, 0.88].forEach((lz) => {
       const hl = new THREE.Mesh(hlightGeo, hlightMat);
-      hl.position.set(4.6, 0.92, lz);
+      hl.position.set(4.68, 0.92, lz);
       group.add(hl);
+    });
+
+    // Front Fog / DRL Accents
+    const drlGeo = new THREE.BoxGeometry(0.04, 0.05, 0.22);
+    const drlMat = new THREE.MeshBasicMaterial({ color: 0x38BDF8 });
+    [-0.92, 0.92].forEach((lz) => {
+      const drl = new THREE.Mesh(drlGeo, drlMat);
+      drl.position.set(4.70, 0.74, lz);
+      group.add(drl);
+    });
+
+    // Rear Taillights (Vertical Stack Red & Amber)
+    const taillightGeo = new THREE.BoxGeometry(0.06, 0.28, 0.12);
+    const taillightMat = new THREE.MeshBasicMaterial({ color: COLORS.taillightRed });
+    [-1.05, 1.05].forEach((rz) => {
+      const tl = new THREE.Mesh(taillightGeo, taillightMat);
+      tl.position.set(-4.56, 1.25, rz);
+      group.add(tl);
+    });
+
+    // Large Bus Side Mirrors (Left & Right)
+    const mirrorArmGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.5, 6);
+    const mirrorArmMat = new THREE.MeshStandardMaterial({ color: 0x0F172A });
+    const mirrorHeadGeo = new THREE.BoxGeometry(0.08, 0.36, 0.16);
+    const mirrorHeadMat = new THREE.MeshStandardMaterial({ color: 0x0F172A, roughness: 0.3 });
+
+    [-1.38, 1.38].forEach((mz) => {
+      const arm = new THREE.Mesh(mirrorArmGeo, mirrorArmMat);
+      arm.rotation.x = mz > 0 ? 0.6 : -0.6;
+      arm.position.set(4.35, 1.95, mz * 0.95);
+      group.add(arm);
+
+      const head = new THREE.Mesh(mirrorHeadGeo, mirrorHeadMat);
+      head.position.set(4.45, 2.05, mz);
+      group.add(head);
+    });
+
+    // Windshield Wipers
+    const wiperGeo = new THREE.BoxGeometry(0.02, 0.45, 0.02);
+    const wiperMat = new THREE.MeshBasicMaterial({ color: 0x0F172A });
+    [-0.45, 0.45].forEach((wz) => {
+      const wiper = new THREE.Mesh(wiperGeo, wiperMat);
+      wiper.rotation.z = -0.3;
+      wiper.position.set(4.50, 1.62, wz);
+      group.add(wiper);
+    });
+
+    // Dual Passenger Entrance Doors (Low-Floor Double Inward Glazed Doors)
+    const doorFrameMat = new THREE.MeshStandardMaterial({ color: 0x0B0F19, roughness: 0.3 });
+    const doorGlassMat = new THREE.MeshPhysicalMaterial({
+      color: COLORS.glassTint,
+      transparent: true,
+      opacity: 0.7,
+      transmission: 0.6,
+      roughness: 0.1,
+    });
+
+    [2.3, -0.6].forEach((dx) => {
+      const dFrame = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.82, 0.06), doorFrameMat);
+      dFrame.position.set(dx, 1.48, 1.28);
+      group.add(dFrame);
+
+      const dGlass = new THREE.Mesh(new THREE.BoxGeometry(0.78, 1.5, 0.08), doorGlassMat);
+      dGlass.position.set(dx, 1.55, 1.28);
+      group.add(dGlass);
     });
 
     // Dark Window Pillars
     const pillarMat = new THREE.MeshStandardMaterial({ color: 0x0B0F19, roughness: 0.3 });
-    [-4.4, -2.6, -0.8, 1.0, 2.8, 4.4].forEach((px) => {
-      const p = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.15, 2.54), pillarMat);
+    [-4.4, -2.6, -1.3, 0.5, 1.6, 3.2, 4.4].forEach((px) => {
+      const p = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.05, 2.54), pillarMat);
       p.position.set(px, 1.95, 0);
       group.add(p);
     });
 
-    // Panoramic Frameless Glazing (Dark Tinted Glass)
+    // Panoramic Glazing (Bus Passenger Windows)
     const glassMat = new THREE.MeshPhysicalMaterial({
       color: COLORS.glassTint,
       transparent: true,
-      opacity: 0.52,
-      roughness: 0.04,
+      opacity: 0.55,
+      roughness: 0.05,
       metalness: 0.1,
-      transmission: 0.78,
+      transmission: 0.75,
       ior: 1.5,
     });
 
-    // Side Panoramic Glass Flush
-    const sideGlassGeo = new THREE.BoxGeometry(8.6, 0.98, 0.04);
+    // Side Windows
+    const sideGlassGeo = new THREE.BoxGeometry(8.6, 0.95, 0.04);
     [-1.27, 1.27].forEach((gz) => {
       const g = new THREE.Mesh(sideGlassGeo, glassMat);
       g.position.set(0, 1.95, gz);
       group.add(g);
     });
 
-    // Curved Aerodynamic Front Windshield
-    const frontWindshieldGeo = new THREE.BoxGeometry(0.06, 1.18, 2.4);
+    // Curved Front Windshield
+    const frontWindshieldGeo = new THREE.BoxGeometry(0.06, 1.15, 2.4);
     const frontWindshield = new THREE.Mesh(frontWindshieldGeo, glassMat);
     frontWindshield.position.set(4.48, 1.95, 0);
     frontWindshield.rotation.z = -0.12;
     group.add(frontWindshield);
 
-    // Front Destination LED Display ("378-P ELECTRIC")
-    const ledGeo = new THREE.BoxGeometry(0.08, 0.28, 1.7);
-    const ledMat = new THREE.MeshBasicMaterial({ color: COLORS.ledAmber });
-    const ledBoard = new THREE.Mesh(ledGeo, ledMat);
-    ledBoard.position.set(4.48, 2.45, 0);
-    group.add(ledBoard);
+    // Front Destination LED Display ("500-D SILK BOARD - HEBBAL")
+    const frontLedMat = new THREE.MeshBasicMaterial({
+      map: createLedBoardTexture('500-D SILK BOARD - HEBBAL'),
+    });
+    const frontLedGeo = new THREE.BoxGeometry(0.06, 0.28, 1.8);
+    const frontLed = new THREE.Mesh(frontLedGeo, frontLedMat);
+    frontLed.position.set(4.50, 2.44, 0);
+    group.add(frontLed);
+
+    // Side Destination LED Display Above Doors
+    const sideLedMat = new THREE.MeshBasicMaterial({
+      map: createLedBoardTexture('500-D ELECTRIC'),
+    });
+    const sideLedGeo = new THREE.BoxGeometry(1.2, 0.18, 0.06);
+    const sideLed = new THREE.Mesh(sideLedGeo, sideLedMat);
+    sideLed.position.set(0.8, 2.46, 1.28);
+    group.add(sideLed);
 
     return group;
   }
@@ -468,34 +627,34 @@
   function createRoofBatteryEnclosureLayer() {
     const group = new THREE.Group();
 
-    // White Aerodynamic Fiberglass Roof Plate
+    // Clean White Aerodynamic Fiberglass Roof Plate
     const roofPlateGeo = new THREE.BoxGeometry(9.2, 0.18, 2.58);
-    const roofPlateMat = new THREE.MeshStandardMaterial({ color: COLORS.evWhite, roughness: 0.25 });
+    const roofPlateMat = new THREE.MeshStandardMaterial({ color: COLORS.bmtcWhite, roughness: 0.25 });
     const roofPlate = new THREE.Mesh(roofPlateGeo, roofPlateMat);
     roofPlate.position.set(0, 2.58, 0);
     roofPlate.castShadow = true;
     group.add(roofPlate);
 
-    // Roof-Mounted High-Capacity EV Battery Fairing (Extended Sleek Enclosure)
+    // Roof-Mounted High-Capacity EV Battery Fairing in BMTC Livery
     const batFairingGeo = new THREE.BoxGeometry(4.8, 0.38, 1.9);
     const batFairingMat = new THREE.MeshStandardMaterial({
-      color: 0x0284C7,
+      color: COLORS.bmtcBlue,
       roughness: 0.3,
-      metalness: 0.5,
+      metalness: 0.4,
     });
     const batFairing = new THREE.Mesh(batFairingGeo, batFairingMat);
     batFairing.position.set(0.4, 2.84, 0);
     batFairing.castShadow = true;
     group.add(batFairing);
 
-    // Dual Ultra-Low-Profile Air Conditioning Pods
+    // Dual Air Conditioning Pods
     const acGeo = new THREE.BoxGeometry(1.6, 0.32, 1.8);
-    const acMat = new THREE.MeshStandardMaterial({ color: COLORS.evWhite, roughness: 0.4 });
+    const acMat = new THREE.MeshStandardMaterial({ color: COLORS.bmtcWhite, roughness: 0.4 });
     const acRear = new THREE.Mesh(acGeo, acMat);
     acRear.position.set(-2.8, 2.82, 0);
     group.add(acRear);
 
-    // Fast-Charging Pantograph Contact Rails on Rear
+    // Fast-Charging Pantograph Rails on Rear Roof
     const pantoRailGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.4, 8);
     const pantoRailMat = new THREE.MeshStandardMaterial({ color: COLORS.metalLight, metalness: 0.95 });
     [-0.5, 0.5].forEach((pz) => {
@@ -507,7 +666,7 @@
 
     // Roof High-Precision GPS Transceiver Dome
     const domeGeo = new THREE.SphereGeometry(0.15, 14, 14);
-    const domeMat = new THREE.MeshStandardMaterial({ color: COLORS.evCyan, roughness: 0.2, metalness: 0.85 });
+    const domeMat = new THREE.MeshStandardMaterial({ color: 0x00D2FF, roughness: 0.2, metalness: 0.85 });
     const dome = new THREE.Mesh(domeGeo, domeMat);
     dome.position.set(2.9, 2.76, 0);
     group.add(dome);
