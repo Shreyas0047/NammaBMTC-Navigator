@@ -1,10 +1,12 @@
 /**
  * NammaBMTC Navigator - 3D Exploded Transit Scrollytelling Engine
+ * Ultra-Modern BMTC Electric Bus (Tata Starbus EV / Volvo EV styling)
  * Powered by Three.js (Procedural PBR Model, zero external assets, ultra-fast load).
  * Visualizes the complete anatomy of a Bengaluru commute:
  * - Orbital VTMS Satellite Telemetry Layer
- * - AC Vajra & Climate-Comfort Roof Core
- * - Shakti Smart Ticket Deck & Chassis
+ * - Aerodynamic Roof-Mounted EV Battery & Dual Climate Core
+ * - Modern Low-Floor Interior & Shakti Smart Ticket Validator
+ * - Electric Powertrain Chassis & Aero-Alloy Wheels
  * - Subterranean Namma Metro & Arterial Highway Layer
  */
 
@@ -16,56 +18,51 @@
   if (!container) return;
 
   const canvas = document.getElementById('scrolly-3d-canvas');
-  const scrubSlider = document.getElementById('explode-scrub-slider');
-  const scrubValueText = document.getElementById('explode-scrub-val');
-  const stepPills = document.querySelectorAll('.scrolly-step-pill');
   const showcaseSection = document.getElementById('showcase-section');
-  const jumpToAppBtn = document.getElementById('jump-to-app-btn');
-  const navJumpBtn = document.getElementById('nav-jump-app-btn');
-  const navShowcaseBtn = document.getElementById('nav-showcase-btn');
+  const storyCards = document.querySelectorAll('.story-card');
 
   // Three.js Core Variables
   let scene, camera, renderer;
   let busRoot, layerSatellite, layerRoof, layerBody, layerInterior, layerChassis, layerMetro;
   let radarCone, solarPanelsLeft, solarPanelsRight;
-  let leaderLines = [];
   let isUserInteracting = false;
-  let targetRotationY = -0.45;
-  let targetRotationX = 0.22;
-  let currentRotationY = -0.45;
-  let currentRotationX = 0.22;
+  let targetRotationY = -0.42;
+  let targetRotationX = 0.20;
+  let currentRotationY = -0.42;
+  let currentRotationX = 0.20;
   let lastMouseX = 0, lastMouseY = 0;
   let explodeTarget = 0.0;
   let explodeCurrent = 0.0;
-  let isVisible = true;
+  let isVisible = false;
   let animFrameId = null;
 
-  // Materials & Colors
+  // Modern EV Color Palette
   const COLORS = {
-    bmtcBlue: 0x0284C7,
-    bmtcDeepBlue: 0x0369A1,
-    bmtcTeal: 0x06B6D4,
-    bmtcCyanGlow: 0x00D2FF,
-    nammaGreen: 0x10B981,
+    evWhite: 0xF8FAFC,
+    evBlue: 0x0284C7,
+    evCyan: 0x00D2FF,
+    evGreen: 0x10B981,
     metroPurple: 0x8B5CF6,
-    metalDark: 0x1E293B,
-    metalLight: 0xCBD5E1,
-    glassTint: 0x0F172A,
+    metalDark: 0x0F172A,
+    metalMid: 0x1E293B,
+    metalLight: 0xE2E8F0,
+    glassTint: 0x081326,
     roadDark: 0x0B0F19,
     solarGold: 0xF59E0B,
     ledAmber: 0xFBBF24,
+    hvOrange: 0xF97316,
   };
 
   function initThree() {
     // 1. Scene Setup
     scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x080D1A, 0.022);
+    scene.fog = new THREE.FogExp2(0x070B12, 0.02);
 
     // 2. Camera Setup
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || window.innerHeight;
-    camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
-    camera.position.set(13, 8, 14);
+    camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
+    camera.position.set(13, 7.5, 14);
     camera.lookAt(0, 1.2, 0);
 
     // 3. Renderer Setup
@@ -83,44 +80,46 @@
     renderer.toneMappingExposure = 1.15;
 
     // 4. Studio Lighting
-    const ambientLight = new THREE.AmbientLight(0x94A3B8, 0.9);
+    const ambientLight = new THREE.AmbientLight(0x94A3B8, 1.0);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.8);
-    dirLight.position.set(15, 25, 12);
+    const dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.9);
+    dirLight.position.set(14, 24, 12);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
     dirLight.shadow.camera.near = 0.5;
     dirLight.shadow.camera.far = 50;
-    dirLight.shadow.camera.left = -10;
-    dirLight.shadow.camera.right = 10;
-    dirLight.shadow.camera.top = 10;
-    dirLight.shadow.camera.bottom = -10;
     dirLight.shadow.bias = -0.0005;
     scene.add(dirLight);
 
-    // Cyan rim accent light
-    const cyanRimLight = new THREE.DirectionalLight(0x00D2FF, 2.2);
-    cyanRimLight.position.set(-12, 10, -10);
-    scene.add(cyanRimLight);
+    // Electric Cyan Rim Light
+    const cyanRim = new THREE.DirectionalLight(0x00D2FF, 2.4);
+    cyanRim.position.set(-12, 8, -10);
+    scene.add(cyanRim);
 
-    // Purple ground bounce light (representing Namma Metro underneath)
-    const purpleBounceLight = new THREE.PointLight(0x8B5CF6, 1.6, 25);
-    purpleBounceLight.position.set(0, -3, 0);
-    scene.add(purpleBounceLight);
+    // Emerald Green Underglow Light
+    const greenGlow = new THREE.PointLight(0x10B981, 1.8, 20);
+    greenGlow.position.set(0, 0.5, 0);
+    scene.add(greenGlow);
 
-    // 5. Build Procedural 3D Bus & Transit Strata
-    buildTransitScene();
+    // Purple Subterranean Metro Glow
+    const purpleGlow = new THREE.PointLight(0x8B5CF6, 1.6, 25);
+    purpleGlow.position.set(0, -3.2, 0);
+    scene.add(purpleGlow);
 
-    // 6. Event Listeners
+    // 5. Build Procedural 3D BMTC Electric Bus
+    buildElectricTransitScene();
+
+    // 6. Setup Interactions
     setupInteractions();
 
     // 7. Start Render Loop
+    handleScroll();
     animate();
   }
 
-  function buildTransitScene() {
+  function buildElectricTransitScene() {
     busRoot = new THREE.Group();
     scene.add(busRoot);
 
@@ -128,33 +127,33 @@
     layerMetro = createSubterraneanMetroLayer();
     busRoot.add(layerMetro);
 
-    // Layer 2: Chassis & Wheels
-    layerChassis = createChassisLayer();
+    // Layer 2: Electric Chassis & Aero Wheels
+    layerChassis = createElectricChassisLayer();
     busRoot.add(layerChassis);
 
-    // Layer 3: Passenger Deck & Shakti Ticketing
-    layerInterior = createInteriorDeckLayer();
+    // Layer 3: Low-Floor Interior & Shakti Validator
+    layerInterior = createLowFloorInteriorLayer();
     busRoot.add(layerInterior);
 
-    // Layer 4: Bus Aerodynamic Body & Glazing
-    layerBody = createBodyShellLayer();
+    // Layer 4: Aerodynamic EV Body & Horizon LED Lightbar
+    layerBody = createElectricBodyShellLayer();
     busRoot.add(layerBody);
 
-    // Layer 5: Roof Canopy & AC Vajra Climate Unit
-    layerRoof = createRoofCanopyLayer();
+    // Layer 5: Roof-Mounted EV Battery Enclosure & Climate Pods
+    layerRoof = createRoofBatteryEnclosureLayer();
     busRoot.add(layerRoof);
 
     // Layer 6: Orbital VTMS Satellite
     layerSatellite = createSatelliteTelemetryLayer();
     busRoot.add(layerSatellite);
 
-    // Ground High-Tech Perspective Grid
+    // Ambient Grid Plane
     const gridHelper = new THREE.GridHelper(36, 36, 0x0284C7, 0x1E293B);
     gridHelper.position.y = -2.8;
     scene.add(gridHelper);
   }
 
-  // ==================== LAYER CREATION FUNCTIONS ====================
+  // ==================== 3D PROCEDURAL BUILDERS ====================
 
   /** Layer 1: Subterranean Namma Metro Rails & Ground Highway */
   function createSubterraneanMetroLayer() {
@@ -182,48 +181,40 @@
       group.add(line);
     }
 
-    // Bus Lane Green / Cyan Tactile Strip
+    // Bus Lane Cyan Line
     const stripGeo = new THREE.BoxGeometry(16, 0.02, 0.25);
-    const stripMat = new THREE.MeshBasicMaterial({ color: COLORS.bmtcCyanGlow });
+    const stripMat = new THREE.MeshBasicMaterial({ color: COLORS.evCyan });
     const strip = new THREE.Mesh(stripGeo, stripMat);
     strip.position.set(0, 0.02, 2.5);
     group.add(strip);
 
-    // Boarding Platform Curb
+    // Platform Curb
     const curbGeo = new THREE.BoxGeometry(16, 0.35, 1.8);
-    const curbMat = new THREE.MeshStandardMaterial({
-      color: 0x334155,
-      roughness: 0.8,
-    });
+    const curbMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.8 });
     const curb = new THREE.Mesh(curbGeo, curbMat);
     curb.position.set(0, 0.15, 3.8);
     curb.receiveShadow = true;
     group.add(curb);
 
-    // Subterranean Metro Cutaway Tunnel Bed
-    const tunnelGeo = new THREE.BoxGeometry(18, 0.8, 4);
-    const tunnelMat = new THREE.MeshStandardMaterial({
-      color: 0x05070D,
-      roughness: 0.95,
-      metalness: 0.2,
-    });
+    // Subterranean Metro Cutaway Bed
+    const tunnelGeo = new THREE.BoxGeometry(18, 0.8, 4.2);
+    const tunnelMat = new THREE.MeshStandardMaterial({ color: 0x05070D, roughness: 0.95 });
     const tunnel = new THREE.Mesh(tunnelGeo, tunnelMat);
     tunnel.position.set(0, -1.8, 0);
     group.add(tunnel);
 
     // Dual Metro Tracks (Purple Line & Green Line)
-    const railMatPurple = new THREE.MeshStandardMaterial({ color: COLORS.metroPurple, roughness: 0.3, metalness: 0.8 });
-    const railMatGreen = new THREE.MeshStandardMaterial({ color: COLORS.nammaGreen, roughness: 0.3, metalness: 0.8 });
+    const railMatPurple = new THREE.MeshStandardMaterial({ color: COLORS.metroPurple, roughness: 0.25, metalness: 0.85 });
+    const railMatGreen = new THREE.MeshStandardMaterial({ color: COLORS.evGreen, roughness: 0.25, metalness: 0.85 });
+    const railGeo = new THREE.CylinderGeometry(0.045, 0.045, 18, 8);
 
-    const railGeo = new THREE.CylinderGeometry(0.04, 0.04, 18, 8);
-    // Purple Line Rails
     [-0.8, -0.3].forEach((z) => {
       const rail = new THREE.Mesh(railGeo, railMatPurple);
       rail.rotation.z = Math.PI / 2;
       rail.position.set(0, -1.35, z);
       group.add(rail);
     });
-    // Green Line Rails
+
     [0.3, 0.8].forEach((z) => {
       const rail = new THREE.Mesh(railGeo, railMatGreen);
       rail.rotation.z = Math.PI / 2;
@@ -231,8 +222,8 @@
       group.add(rail);
     });
 
-    // Metro Sleepers (Ties)
-    const tieGeo = new THREE.BoxGeometry(0.12, 0.08, 2.2);
+    // Metro Concrete Sleepers
+    const tieGeo = new THREE.BoxGeometry(0.14, 0.08, 2.4);
     const tieMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.9 });
     for (let x = -8; x <= 8; x += 0.9) {
       const tie = new THREE.Mesh(tieGeo, tieMat);
@@ -243,52 +234,60 @@
     return group;
   }
 
-  /** Layer 2: Chassis Frame & 6 Alloy Wheels */
-  function createChassisLayer() {
+  /** Layer 2: Electric Chassis, Underfloor Battery Tray & Aero Wheels */
+  function createElectricChassisLayer() {
     const group = new THREE.Group();
 
-    // Steel Ladder Frame Beams
-    const beamGeo = new THREE.BoxGeometry(8.2, 0.22, 0.2);
-    const beamMat = new THREE.MeshStandardMaterial({ color: COLORS.metalDark, roughness: 0.5, metalness: 0.8 });
+    // Aluminum Monocoque Subframe Beams
+    const beamGeo = new THREE.BoxGeometry(8.6, 0.2, 0.2);
+    const beamMat = new THREE.MeshStandardMaterial({ color: COLORS.metalDark, roughness: 0.4, metalness: 0.85 });
 
-    [-0.9, 0.9].forEach((z) => {
+    [-0.95, 0.95].forEach((z) => {
       const beam = new THREE.Mesh(beamGeo, beamMat);
-      beam.position.set(0, 0.45, z);
+      beam.position.set(0, 0.42, z);
       beam.castShadow = true;
       group.add(beam);
     });
 
-    // Cross members
-    const crossGeo = new THREE.BoxGeometry(0.2, 0.18, 1.9);
-    for (let x = -3.5; x <= 3.5; x += 1.4) {
-      const cross = new THREE.Mesh(crossGeo, beamMat);
-      cross.position.set(x, 0.45, 0);
-      group.add(cross);
-    }
+    // Underfloor Lithium Battery Tray with Liquid Cooling Ribs
+    const trayGeo = new THREE.BoxGeometry(5.2, 0.26, 1.9);
+    const trayMat = new THREE.MeshStandardMaterial({ color: 0x0284C7, roughness: 0.3, metalness: 0.7 });
+    const tray = new THREE.Mesh(trayGeo, trayMat);
+    tray.position.set(0, 0.38, 0);
+    group.add(tray);
 
-    // Battery Pack / Engine Module
-    const batGeo = new THREE.BoxGeometry(3.2, 0.35, 1.6);
-    const batMat = new THREE.MeshStandardMaterial({ color: 0x0284C7, roughness: 0.4, metalness: 0.6 });
-    const bat = new THREE.Mesh(batGeo, batMat);
-    bat.position.set(0, 0.45, 0);
-    group.add(bat);
+    // High Voltage Cable Conduits
+    const hvGeo = new THREE.CylinderGeometry(0.03, 0.03, 5.0, 8);
+    const hvMat = new THREE.MeshBasicMaterial({ color: COLORS.hvOrange });
+    const hvCable = new THREE.Mesh(hvGeo, hvMat);
+    hvCable.rotation.z = Math.PI / 2;
+    hvCable.position.set(0, 0.52, 0.75);
+    group.add(hvCable);
 
-    // 6 Wheels with Rims (2 Front, 4 Rear Dual)
+    // Rear Permanent Magnet Electric Drive Motor
+    const motorGeo = new THREE.CylinderGeometry(0.35, 0.35, 1.2, 16);
+    const motorMat = new THREE.MeshStandardMaterial({ color: COLORS.metalMid, roughness: 0.3, metalness: 0.9 });
+    const motor = new THREE.Mesh(motorGeo, motorMat);
+    motor.rotation.x = Math.PI / 2;
+    motor.position.set(-2.4, 0.44, 0);
+    group.add(motor);
+
+    // 6 EV Aero-Cover Wheels with Cyan Accents
     const wheelPositions = [
-      [2.7, 0.42, 1.25],   // Front Right
-      [2.7, 0.42, -1.25],  // Front Left
-      [-2.4, 0.42, 1.28],  // Rear Right Outer
-      [-2.4, 0.42, -1.28], // Rear Left Outer
-      [-2.4, 0.42, 1.12],  // Rear Right Inner
-      [-2.4, 0.42, -1.12], // Rear Left Inner
+      [2.7, 0.42, 1.28],   // Front Right
+      [2.7, 0.42, -1.28],  // Front Left
+      [-2.4, 0.42, 1.30],  // Rear Right Outer
+      [-2.4, 0.42, -1.30], // Rear Left Outer
+      [-2.4, 0.42, 1.14],  // Rear Right Inner
+      [-2.4, 0.42, -1.14], // Rear Left Inner
     ];
 
-    const tireGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.25, 20);
-    const tireMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.9, metalness: 0.1 });
-    const rimGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.26, 16);
-    const rimMat = new THREE.MeshStandardMaterial({ color: COLORS.metalLight, roughness: 0.2, metalness: 0.9 });
-    const capGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.28, 12);
-    const capMat = new THREE.MeshBasicMaterial({ color: COLORS.bmtcCyanGlow });
+    const tireGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.26, 22);
+    const tireMat = new THREE.MeshStandardMaterial({ color: 0x0F172A, roughness: 0.95 });
+    const aeroCoverGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.27, 16);
+    const aeroCoverMat = new THREE.MeshStandardMaterial({ color: COLORS.evWhite, roughness: 0.25, metalness: 0.6 });
+    const cyanTrimGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.28, 12);
+    const cyanTrimMat = new THREE.MeshBasicMaterial({ color: COLORS.evCyan });
 
     wheelPositions.forEach(([wx, wy, wz]) => {
       const tire = new THREE.Mesh(tireGeo, tireMat);
@@ -296,11 +295,11 @@
       tire.position.set(wx, wy, wz);
       tire.castShadow = true;
 
-      const rim = new THREE.Mesh(rimGeo, rimMat);
-      tire.add(rim);
+      const aeroCover = new THREE.Mesh(aeroCoverGeo, aeroCoverMat);
+      tire.add(aeroCover);
 
-      const cap = new THREE.Mesh(capGeo, capMat);
-      tire.add(cap);
+      const cyanTrim = new THREE.Mesh(cyanTrimGeo, cyanTrimMat);
+      tire.add(cyanTrim);
 
       group.add(tire);
     });
@@ -308,189 +307,209 @@
     return group;
   }
 
-  /** Layer 3: Passenger Deck, Seating & Shakti Concession Validator */
-  function createInteriorDeckLayer() {
+  /** Layer 3: Modern Low-Floor Interior, Ergonomic Seats & Shakti Tap Validator */
+  function createLowFloorInteriorLayer() {
     const group = new THREE.Group();
 
-    // Floor Plate
-    const floorGeo = new THREE.BoxGeometry(8.6, 0.1, 2.4);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x1F2937, roughness: 0.8, metalness: 0.2 });
+    // Low-Floor Base Deck
+    const floorGeo = new THREE.BoxGeometry(8.8, 0.08, 2.45);
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.85 });
     const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.position.set(0, 0.62, 0);
+    floor.position.set(0, 0.58, 0);
     floor.receiveShadow = true;
     group.add(floor);
 
-    // Passenger Seats Rows (Blue & Green BMTC Seats)
-    const seatGeo = new THREE.BoxGeometry(0.45, 0.45, 0.45);
-    const seatMatGreen = new THREE.MeshStandardMaterial({ color: COLORS.nammaGreen, roughness: 0.7 });
-    const seatMatBlue = new THREE.MeshStandardMaterial({ color: COLORS.bmtcBlue, roughness: 0.7 });
+    // Ergonomic Passenger Seats (Fresh Emerald / Cyan EV Upholstery)
+    const seatGeo = new THREE.BoxGeometry(0.48, 0.48, 0.45);
+    const seatMatCyan = new THREE.MeshStandardMaterial({ color: COLORS.evBlue, roughness: 0.6 });
+    const seatMatGreen = new THREE.MeshStandardMaterial({ color: COLORS.evGreen, roughness: 0.6 });
 
-    for (let x = -3.2; x <= 2.2; x += 0.85) {
-      // Left side seat
-      const sLeft = new THREE.Mesh(seatGeo, (Math.abs(x) < 1) ? seatMatGreen : seatMatBlue);
-      sLeft.position.set(x, 0.9, -0.85);
+    for (let x = -3.4; x <= 2.2; x += 0.9) {
+      const sLeft = new THREE.Mesh(seatGeo, (Math.abs(x) < 1.2) ? seatMatGreen : seatMatCyan);
+      sLeft.position.set(x, 0.88, -0.86);
       sLeft.castShadow = true;
       group.add(sLeft);
 
-      // Right side seat
-      const sRight = new THREE.Mesh(seatGeo, seatMatBlue);
-      sRight.position.set(x, 0.9, 0.85);
+      const sRight = new THREE.Mesh(seatGeo, seatMatCyan);
+      sRight.position.set(x, 0.88, 0.86);
       sRight.castShadow = true;
       group.add(sRight);
     }
 
-    // Driver Cab & Steering Console
-    const consoleGeo = new THREE.BoxGeometry(0.6, 0.7, 0.8);
-    const consoleMat = new THREE.MeshStandardMaterial({ color: 0x0F172A, roughness: 0.5 });
+    // Driver Glass Cockpit & Digital Multi-Function Display
+    const consoleGeo = new THREE.BoxGeometry(0.65, 0.75, 0.85);
+    const consoleMat = new THREE.MeshStandardMaterial({ color: 0x0B0F19, roughness: 0.4 });
     const consoleMesh = new THREE.Mesh(consoleGeo, consoleMat);
-    consoleMesh.position.set(3.8, 0.98, -0.6);
+    consoleMesh.position.set(3.9, 0.96, -0.6);
     group.add(consoleMesh);
 
-    // Shakti Scheme Smart Validator Stand near Entrance Door
-    const validatorStandGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.1, 8);
+    // Digital Cluster Screen
+    const screenGeo = new THREE.BoxGeometry(0.04, 0.22, 0.35);
+    const screenMat = new THREE.MeshBasicMaterial({ color: COLORS.evCyan });
+    const screen = new THREE.Mesh(screenGeo, screenMat);
+    screen.position.set(3.8, 1.22, -0.6);
+    group.add(screen);
+
+    // Shakti Scheme Illuminated Contactless Validator near Front Entrance
+    const standGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.15, 8);
     const standMat = new THREE.MeshStandardMaterial({ color: COLORS.metalLight, metalness: 0.9 });
-    const stand = new THREE.Mesh(validatorStandGeo, standMat);
-    stand.position.set(2.4, 1.18, 1.05);
+    const stand = new THREE.Mesh(standGeo, standMat);
+    stand.position.set(2.6, 1.15, 1.05);
     group.add(stand);
 
-    const validatorHeadGeo = new THREE.BoxGeometry(0.18, 0.26, 0.12);
-    const validatorMat = new THREE.MeshBasicMaterial({ color: COLORS.nammaGreen });
-    const valHead = new THREE.Mesh(validatorHeadGeo, validatorMat);
-    valHead.position.set(2.4, 1.7, 1.05);
+    const valHeadGeo = new THREE.BoxGeometry(0.2, 0.28, 0.14);
+    const valHeadMat = new THREE.MeshBasicMaterial({ color: COLORS.evGreen });
+    const valHead = new THREE.Mesh(valHeadGeo, valHeadMat);
+    valHead.position.set(2.6, 1.72, 1.05);
     group.add(valHead);
-
-    // Stainless Steel Stanchion Handrails
-    const railMat = new THREE.MeshStandardMaterial({ color: 0xE2E8F0, metalness: 0.95, roughness: 0.1 });
-    const vertRailGeo = new THREE.CylinderGeometry(0.025, 0.025, 1.8, 8);
-    [-2, 0, 1.8].forEach((rx) => {
-      const r = new THREE.Mesh(vertRailGeo, railMat);
-      r.position.set(rx, 1.55, 0.35);
-      group.add(r);
-    });
 
     return group;
   }
 
-  /** Layer 4: Bus Outer Body Shell, Livery & Panoramic Tinted Glazing */
-  function createBodyShellLayer() {
+  /** Layer 4: Aerodynamic EV Body, Horizon LED Lightbar & Panoramic Glazing */
+  function createElectricBodyShellLayer() {
     const group = new THREE.Group();
 
-    // Lower Body Skirts (Bangalore Deep Blue & White Stripe)
-    const lowerBodyGeo = new THREE.BoxGeometry(8.9, 0.8, 2.5);
+    // Sculpted EV Lower Body Skirt (Pearl White with Electric Teal / Green Ribbon)
+    const lowerBodyGeo = new THREE.BoxGeometry(9.1, 0.82, 2.55);
     const bodyMat = new THREE.MeshStandardMaterial({
-      color: COLORS.bmtcBlue,
-      roughness: 0.25,
-      metalness: 0.3,
+      color: COLORS.evWhite,
+      roughness: 0.18,
+      metalness: 0.2,
     });
     const lowerBody = new THREE.Mesh(lowerBodyGeo, bodyMat);
     lowerBody.position.set(0, 1.05, 0);
     lowerBody.castShadow = true;
     group.add(lowerBody);
 
-    // Teal Livery Accent Stripe
-    const stripeGeo = new THREE.BoxGeometry(8.92, 0.12, 2.52);
-    const stripeMat = new THREE.MeshBasicMaterial({ color: COLORS.bmtcCyanGlow });
-    const stripe = new THREE.Mesh(stripeGeo, stripeMat);
-    stripe.position.set(0, 1.35, 0);
-    group.add(stripe);
+    // Electric Teal Livery Accent Ribbon
+    const tealRibbonGeo = new THREE.BoxGeometry(9.12, 0.16, 2.57);
+    const tealRibbonMat = new THREE.MeshBasicMaterial({ color: COLORS.evCyan });
+    const tealRibbon = new THREE.Mesh(tealRibbonGeo, tealRibbonMat);
+    tealRibbon.position.set(0, 0.9, 0);
+    group.add(tealRibbon);
 
-    // Upper Window Pillars
-    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x0F172A, roughness: 0.4 });
-    [-4.35, -2.6, -0.8, 1.0, 2.8, 4.35].forEach((px) => {
-      const pGeo = new THREE.BoxGeometry(0.18, 1.1, 2.5);
-      const p = new THREE.Mesh(pGeo, pillarMat);
+    // Namma Green Bottom Skirt Stripe
+    const greenStripeGeo = new THREE.BoxGeometry(9.12, 0.1, 2.57);
+    const greenStripeMat = new THREE.MeshBasicMaterial({ color: COLORS.evGreen });
+    const greenStripe = new THREE.Mesh(greenStripeGeo, greenStripeMat);
+    greenStripe.position.set(0, 0.72, 0);
+    group.add(greenStripe);
+
+    // Futuristic Aerodynamic Front EV Nose Cap
+    const noseGeo = new THREE.CylinderGeometry(1.27, 1.27, 0.75, 16, 1, false, -Math.PI / 2, Math.PI);
+    const noseMat = new THREE.MeshStandardMaterial({ color: COLORS.evWhite, roughness: 0.18 });
+    const nose = new THREE.Mesh(noseGeo, noseMat);
+    nose.rotation.z = Math.PI / 2;
+    nose.position.set(4.55, 1.05, 0);
+    group.add(nose);
+
+    // Full-Width Horizon LED Lightbar (Futuristic EV Signature Strip)
+    const lightbarGeo = new THREE.BoxGeometry(0.12, 0.08, 2.3);
+    const lightbarMat = new THREE.MeshBasicMaterial({ color: COLORS.evCyan });
+    const lightbar = new THREE.Mesh(lightbarGeo, lightbarMat);
+    lightbar.position.set(4.62, 1.15, 0);
+    group.add(lightbar);
+
+    // Dual Slim Projector Matrix Headlights
+    const hlightGeo = new THREE.BoxGeometry(0.1, 0.14, 0.45);
+    const hlightMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+    [-0.88, 0.88].forEach((lz) => {
+      const hl = new THREE.Mesh(hlightGeo, hlightMat);
+      hl.position.set(4.6, 0.92, lz);
+      group.add(hl);
+    });
+
+    // Dark Window Pillars
+    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x0B0F19, roughness: 0.3 });
+    [-4.4, -2.6, -0.8, 1.0, 2.8, 4.4].forEach((px) => {
+      const p = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.15, 2.54), pillarMat);
       p.position.set(px, 1.95, 0);
       group.add(p);
     });
 
-    // Panoramic Window Glazing (Tinted Glass)
+    // Panoramic Frameless Glazing (Dark Tinted Glass)
     const glassMat = new THREE.MeshPhysicalMaterial({
-      color: 0x0F2942,
+      color: COLORS.glassTint,
       transparent: true,
-      opacity: 0.48,
-      roughness: 0.05,
+      opacity: 0.52,
+      roughness: 0.04,
       metalness: 0.1,
-      transmission: 0.8,
+      transmission: 0.78,
       ior: 1.5,
     });
 
-    // Side Windows Left & Right
-    const sideGlassGeo = new THREE.BoxGeometry(8.5, 0.95, 0.05);
-    [-1.24, 1.24].forEach((gz) => {
-      const glass = new THREE.Mesh(sideGlassGeo, glassMat);
-      glass.position.set(0, 1.95, gz);
-      group.add(glass);
+    // Side Panoramic Glass Flush
+    const sideGlassGeo = new THREE.BoxGeometry(8.6, 0.98, 0.04);
+    [-1.27, 1.27].forEach((gz) => {
+      const g = new THREE.Mesh(sideGlassGeo, glassMat);
+      g.position.set(0, 1.95, gz);
+      group.add(g);
     });
 
-    // Front Windshield
-    const frontGlassGeo = new THREE.BoxGeometry(0.05, 1.1, 2.35);
-    const frontGlass = new THREE.Mesh(frontGlassGeo, glassMat);
-    frontGlass.position.set(4.42, 1.95, 0);
-    frontGlass.rotation.z = -0.08;
-    group.add(frontGlass);
+    // Curved Aerodynamic Front Windshield
+    const frontWindshieldGeo = new THREE.BoxGeometry(0.06, 1.18, 2.4);
+    const frontWindshield = new THREE.Mesh(frontWindshieldGeo, glassMat);
+    frontWindshield.position.set(4.48, 1.95, 0);
+    frontWindshield.rotation.z = -0.12;
+    group.add(frontWindshield);
 
-    // Front Destination LED Route Display Board
-    const ledBoardGeo = new THREE.BoxGeometry(0.08, 0.28, 1.6);
-    const ledBoardMat = new THREE.MeshBasicMaterial({ color: COLORS.ledAmber });
-    const ledBoard = new THREE.Mesh(ledBoardGeo, ledBoardMat);
-    ledBoard.position.set(4.44, 2.45, 0);
+    // Front Destination LED Display ("378-P ELECTRIC")
+    const ledGeo = new THREE.BoxGeometry(0.08, 0.28, 1.7);
+    const ledMat = new THREE.MeshBasicMaterial({ color: COLORS.ledAmber });
+    const ledBoard = new THREE.Mesh(ledGeo, ledMat);
+    ledBoard.position.set(4.48, 2.45, 0);
     group.add(ledBoard);
-
-    // Dual High-Intensity LED Headlights
-    const lightMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
-    const lightGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.05, 12);
-    [-0.85, 0.85].forEach((lz) => {
-      const hlight = new THREE.Mesh(lightGeo, lightMat);
-      hlight.rotation.z = Math.PI / 2;
-      hlight.position.set(4.46, 0.88, lz);
-      group.add(hlight);
-    });
 
     return group;
   }
 
-  /** Layer 5: Roof Canopy & AC Vajra Climate Unit */
-  function createRoofCanopyLayer() {
+  /** Layer 5: Aerodynamic Roof-Mounted EV Battery Enclosure & Dual Climate Pods */
+  function createRoofBatteryEnclosureLayer() {
     const group = new THREE.Group();
 
-    // Fiberglass Roof Panel
-    const roofGeo = new THREE.BoxGeometry(9.0, 0.22, 2.52);
-    const roofMat = new THREE.MeshStandardMaterial({
-      color: 0xFFFFFF,
-      roughness: 0.3,
-      metalness: 0.1,
-    });
-    const roof = new THREE.Mesh(roofGeo, roofMat);
-    roof.position.set(0, 2.6, 0);
-    roof.castShadow = true;
-    group.add(roof);
+    // White Aerodynamic Fiberglass Roof Plate
+    const roofPlateGeo = new THREE.BoxGeometry(9.2, 0.18, 2.58);
+    const roofPlateMat = new THREE.MeshStandardMaterial({ color: COLORS.evWhite, roughness: 0.25 });
+    const roofPlate = new THREE.Mesh(roofPlateGeo, roofPlateMat);
+    roofPlate.position.set(0, 2.58, 0);
+    roofPlate.castShadow = true;
+    group.add(roofPlate);
 
-    // AC Vajra Climate Core Housing
-    const acGeo = new THREE.BoxGeometry(2.4, 0.42, 1.7);
-    const acMat = new THREE.MeshStandardMaterial({
-      color: 0xE2E8F0,
-      roughness: 0.4,
+    // Roof-Mounted High-Capacity EV Battery Fairing (Extended Sleek Enclosure)
+    const batFairingGeo = new THREE.BoxGeometry(4.8, 0.38, 1.9);
+    const batFairingMat = new THREE.MeshStandardMaterial({
+      color: 0x0284C7,
+      roughness: 0.3,
       metalness: 0.5,
     });
-    const ac = new THREE.Mesh(acGeo, acMat);
-    ac.position.set(-0.5, 2.88, 0);
-    ac.castShadow = true;
-    group.add(ac);
+    const batFairing = new THREE.Mesh(batFairingGeo, batFairingMat);
+    batFairing.position.set(0.4, 2.84, 0);
+    batFairing.castShadow = true;
+    group.add(batFairing);
 
-    // AC Dual Vents
-    const ventMat = new THREE.MeshBasicMaterial({ color: 0x1E293B });
-    const ventGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.05, 16);
-    [-0.5, 0.5].forEach((vx) => {
-      const vent = new THREE.Mesh(ventGeo, ventMat);
-      vent.position.set(-0.5 + vx, 3.1, 0);
-      group.add(vent);
+    // Dual Ultra-Low-Profile Air Conditioning Pods
+    const acGeo = new THREE.BoxGeometry(1.6, 0.32, 1.8);
+    const acMat = new THREE.MeshStandardMaterial({ color: COLORS.evWhite, roughness: 0.4 });
+    const acRear = new THREE.Mesh(acGeo, acMat);
+    acRear.position.set(-2.8, 2.82, 0);
+    group.add(acRear);
+
+    // Fast-Charging Pantograph Contact Rails on Rear
+    const pantoRailGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.4, 8);
+    const pantoRailMat = new THREE.MeshStandardMaterial({ color: COLORS.metalLight, metalness: 0.95 });
+    [-0.5, 0.5].forEach((pz) => {
+      const rail = new THREE.Mesh(pantoRailGeo, pantoRailMat);
+      rail.rotation.z = Math.PI / 2;
+      rail.position.set(-2.8, 3.08, pz);
+      group.add(rail);
     });
 
-    // Roof GPS Dome Transceiver
-    const domeGeo = new THREE.SphereGeometry(0.14, 12, 12);
-    const domeMat = new THREE.MeshStandardMaterial({ color: COLORS.bmtcCyanGlow, roughness: 0.2, metalness: 0.8 });
+    // Roof High-Precision GPS Transceiver Dome
+    const domeGeo = new THREE.SphereGeometry(0.15, 14, 14);
+    const domeMat = new THREE.MeshStandardMaterial({ color: COLORS.evCyan, roughness: 0.2, metalness: 0.85 });
     const dome = new THREE.Mesh(domeGeo, domeMat);
-    dome.position.set(2.8, 2.76, 0);
+    dome.position.set(2.9, 2.76, 0);
     group.add(dome);
 
     return group;
@@ -500,28 +519,28 @@
   function createSatelliteTelemetryLayer() {
     const group = new THREE.Group();
 
-    // Satellite Core Chassis
-    const satBodyGeo = new THREE.BoxGeometry(0.85, 0.85, 0.85);
+    // Satellite Core Body (Gold Multi-Layer Insulation Foil)
+    const satBodyGeo = new THREE.BoxGeometry(0.9, 0.9, 0.9);
     const satBodyMat = new THREE.MeshStandardMaterial({
       color: COLORS.solarGold,
-      roughness: 0.25,
-      metalness: 0.9,
+      roughness: 0.2,
+      metalness: 0.92,
     });
     const satBody = new THREE.Mesh(satBodyGeo, satBodyMat);
-    satBody.position.set(2.8, 5.8, 0);
+    satBody.position.set(2.9, 5.8, 0);
     satBody.castShadow = true;
     group.add(satBody);
 
-    // Rotating Antenna Dish
-    const dishGeo = new THREE.CylinderGeometry(0.45, 0.05, 0.15, 16);
+    // Downward Parabolic Antenna Dish
+    const dishGeo = new THREE.CylinderGeometry(0.48, 0.06, 0.16, 16);
     const dishMat = new THREE.MeshStandardMaterial({ color: COLORS.metalLight, metalness: 0.95 });
     const dish = new THREE.Mesh(dishGeo, dishMat);
-    dish.position.set(2.8, 5.25, 0);
+    dish.position.set(2.9, 5.24, 0);
     dish.rotation.x = Math.PI;
     group.add(dish);
 
-    // Solar Panel Arrays Left & Right
-    const panelGeo = new THREE.BoxGeometry(1.6, 0.04, 0.85);
+    // Dual Photovoltaic Solar Panel Wings
+    const panelGeo = new THREE.BoxGeometry(1.7, 0.04, 0.9);
     const panelMat = new THREE.MeshStandardMaterial({
       color: 0x1E3A8A,
       roughness: 0.2,
@@ -529,33 +548,33 @@
     });
 
     solarPanelsLeft = new THREE.Mesh(panelGeo, panelMat);
-    solarPanelsLeft.position.set(2.8, 5.8, -1.45);
+    solarPanelsLeft.position.set(2.9, 5.8, -1.5);
     group.add(solarPanelsLeft);
 
     solarPanelsRight = new THREE.Mesh(panelGeo, panelMat);
-    solarPanelsRight.position.set(2.8, 5.8, 1.45);
+    solarPanelsRight.position.set(2.9, 5.8, 1.5);
     group.add(solarPanelsRight);
 
     // Telemetry Radar Pulse Cone
-    const coneGeo = new THREE.ConeGeometry(1.9, 3.2, 24, 1, true);
+    const coneGeo = new THREE.ConeGeometry(2.0, 3.2, 24, 1, true);
     const coneMat = new THREE.MeshBasicMaterial({
-      color: COLORS.bmtcCyanGlow,
+      color: COLORS.evCyan,
       transparent: true,
-      opacity: 0.28,
+      opacity: 0.25,
       side: THREE.DoubleSide,
       depthWrite: false,
     });
     radarCone = new THREE.Mesh(coneGeo, coneMat);
-    radarCone.position.set(2.8, 3.8, 0);
+    radarCone.position.set(2.9, 3.8, 0);
     group.add(radarCone);
 
     return group;
   }
 
-  // ==================== INTERACTION & SCROLLYTELLING ====================
+  // ==================== NATURAL SCROLL & PARALLAX ENGINE ====================
 
   function setupInteractions() {
-    // 1. Mouse / Touch Drag to Orbit Model
+    // Mouse / Touch Drag to Orbit Model (Natural 360° Inspection)
     container.addEventListener('mousedown', (e) => {
       isUserInteracting = true;
       lastMouseX = e.clientX;
@@ -578,7 +597,7 @@
       isUserInteracting = false;
     });
 
-    // Touch support for mobile devices
+    // Touch support for mobile
     container.addEventListener('touchstart', (e) => {
       if (e.touches.length === 1) {
         isUserInteracting = true;
@@ -603,91 +622,42 @@
       isUserInteracting = false;
     });
 
-    // 2. Manual Scrub Slider
-    if (scrubSlider) {
-      scrubSlider.addEventListener('input', (e) => {
-        const val = parseFloat(e.target.value);
-        explodeTarget = val / 100.0;
-        updateScrubLabel(val);
-      });
-    }
-
-    // 3. Step Pills Buttons
-    stepPills.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const stepVal = parseFloat(btn.dataset.explode || '0');
-        explodeTarget = stepVal;
-        if (scrubSlider) scrubSlider.value = (stepVal * 100).toFixed(0);
-        updateScrubLabel(stepVal * 100);
-        stepPills.forEach((p) => p.classList.remove('active'));
-        btn.classList.add('active');
-
-        // Scroll to corresponding narrative card
-        const targetCard = document.querySelector(`.story-card[data-step="${btn.dataset.step}"]`);
-        if (targetCard) {
-          targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      });
-    });
-
-    // 4. Scroll-Triggered Explosion Driver
+    // Natural Scroll-Triggered Dissection
     window.addEventListener('scroll', handleScroll, { passive: true });
-
-    // 5. Window Resize Handler
     window.addEventListener('resize', handleResize);
-
-    // 6. Navigation Buttons
-    const scrollToApp = () => {
-      const appTarget = document.getElementById('navigator-app') || document.getElementById('search-card');
-      if (appTarget) {
-        appTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    };
-
-    if (jumpToAppBtn) jumpToAppBtn.addEventListener('click', scrollToApp);
-    if (navJumpBtn) navJumpBtn.addEventListener('click', scrollToApp);
-    if (navShowcaseBtn) {
-      navShowcaseBtn.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-    }
   }
 
   function handleScroll() {
     if (!showcaseSection) return;
 
     const rect = showcaseSection.getBoundingClientRect();
-    const sectionHeight = showcaseSection.offsetHeight;
     const windowHeight = window.innerHeight;
 
-    // Determine visibility for render loop throttling
-    isVisible = (rect.bottom > 0 && rect.top < windowHeight);
+    // Check if showcase section is visible in viewport
+    isVisible = (rect.bottom > -100 && rect.top < windowHeight + 100);
 
-    // Calculate normalized scroll progress within showcase
-    const scrollStart = 0;
-    const scrollEnd = sectionHeight - windowHeight;
+    if (!isVisible) return;
+
+    // Calculate natural scroll progress through showcase section
+    const totalDist = showcaseSection.offsetHeight - windowHeight;
     const currentScroll = -rect.top;
 
-    if (currentScroll >= scrollStart && currentScroll <= scrollEnd) {
-      const progress = Math.max(0, Math.min(1, currentScroll / (scrollEnd - scrollStart)));
+    if (totalDist > 0) {
+      const progress = Math.max(0, Math.min(1, currentScroll / totalDist));
       explodeTarget = progress;
-      if (scrubSlider) scrubSlider.value = (progress * 100).toFixed(0);
-      updateScrubLabel(progress * 100);
-      syncStepPills(progress);
+
+      // Update active state on aesthetic story cards based on scroll depth
+      syncStoryCards(progress);
     }
   }
 
-  function syncStepPills(progress) {
-    stepPills.forEach((pill) => {
-      const val = parseFloat(pill.dataset.explode || '0');
-      pill.classList.toggle('active', Math.abs(progress - val) < 0.18);
+  function syncStoryCards(progress) {
+    if (!storyCards || storyCards.length === 0) return;
+    const stepIdx = Math.min(storyCards.length - 1, Math.floor(progress * storyCards.length));
+
+    storyCards.forEach((card, idx) => {
+      card.classList.toggle('active', idx === stepIdx);
     });
-  }
-
-  function updateScrubLabel(percentage) {
-    if (scrubValueText) {
-      scrubValueText.textContent = `${Math.round(percentage)}%`;
-    }
   }
 
   function handleResize() {
@@ -701,61 +671,56 @@
 
   // ==================== ANIMATION & RENDER LOOP ====================
 
-  function applyExplosion(factor) {
-    // Smooth lerp easing
-    const t = factor;
-
-    // Layer 1 (Subterranean Metro & Road): Pulls downward into strata
+  function applyExplosion(t) {
+    // Layer 1: Subterranean Metro & Road descends into geological strata
     if (layerMetro) {
       layerMetro.position.y = -t * 2.8;
     }
 
-    // Layer 2 (Chassis & Wheels): Anchored base
+    // Layer 2: Electric Chassis & Wheels stay anchored
     if (layerChassis) {
       layerChassis.position.y = 0;
     }
 
-    // Layer 3 (Passenger Deck & Shakti Validator): Floats upward slightly
+    // Layer 3: Low-Floor Deck & Shakti Validator floats up
     if (layerInterior) {
       layerInterior.position.y = t * 1.8;
     }
 
-    // Layer 4 (Aerodynamic Body Shell & Glazing): Lifts high
+    // Layer 4: Aerodynamic EV Body & Horizon Lightbar lifts
     if (layerBody) {
       layerBody.position.y = t * 3.8;
     }
 
-    // Layer 5 (Roof Canopy & Climate Core): Floats into stratosphere
+    // Layer 5: Roof-Mounted EV Battery Enclosure floats into stratosphere
     if (layerRoof) {
       layerRoof.position.y = t * 6.2;
     }
 
-    // Layer 6 (Orbital Satellite Telemetry): Deploys high into orbit
+    // Layer 6: Orbital Satellite Telemetry deploys into orbit
     if (layerSatellite) {
-      layerSatellite.position.y = t * 7.5;
+      layerSatellite.position.y = t * 7.6;
 
-      // Expand & pulse radar cone
       if (radarCone) {
         radarCone.scale.set(1 + t * 0.8, 1 + t * 1.2, 1 + t * 0.8);
         radarCone.material.opacity = 0.15 + Math.sin(Date.now() * 0.005) * 0.12;
       }
 
-      // Rotate satellite solar wings slowly
       if (solarPanelsLeft && solarPanelsRight) {
         solarPanelsLeft.rotation.z = Math.sin(Date.now() * 0.001) * 0.1;
         solarPanelsRight.rotation.z = -Math.sin(Date.now() * 0.001) * 0.1;
       }
     }
 
-    // Dynamic Camera Orbit adjustments based on explode factor
-    camera.position.y = 8 + t * 4.5;
-    camera.position.z = 14 + t * 3.0;
+    // Dynamic Camera Orbit adjustments
+    camera.position.y = 7.5 + t * 4.2;
+    camera.position.z = 14 + t * 2.8;
   }
 
   function animate() {
     animFrameId = requestAnimationFrame(animate);
 
-    if (!isVisible) return; // Save GPU cycles when scrolled away
+    if (!isVisible) return; // Pause WebGL rendering when outside viewport
 
     // Smooth lerp rotation towards target
     currentRotationY += (targetRotationY - currentRotationY) * 0.08;

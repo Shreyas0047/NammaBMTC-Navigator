@@ -78,18 +78,6 @@
         </div>
       </div>
 
-      <!-- Navigation Mode Tabs -->
-      <nav class="nav-mode-tabs" role="tablist">
-        <button id="nav-showcase-btn" class="nav-tab-item active" type="button">
-          <span class="tab-dot"></span>
-          <span>3D Anatomy</span>
-        </button>
-        <button id="nav-jump-app-btn" class="nav-tab-item" type="button">
-          <span class="tab-dot green"></span>
-          <span>Live Navigator</span>
-        </button>
-      </nav>
-
       <!-- Live GPS Pill -->
       <div class="nav-right-actions">
         <button id="gps-status-pill" class="location-pill" type="button" title="Click to use live GPS location">
@@ -100,125 +88,7 @@
     </div>
   </header>
 
-  <!-- ================= 3D EXPLODED SCROLLYTELLING SHOWCASE ================= -->
-  <section id="showcase-section" class="showcase-section">
-    <!-- Sticky 3D WebGL Canvas Viewport -->
-    <div class="scrolly-viewport">
-      <div id="scrolly-canvas-container" class="canvas-container">
-        <canvas id="scrolly-3d-canvas"></canvas>
-
-        <!-- 3D HUD Interface Overlay -->
-        <div class="scrolly-hud-overlay">
-          <!-- Top HUD Stats -->
-          <div class="hud-top-bar">
-            <div class="hud-badge">
-              <span class="hud-dot"></span>
-              <span class="hud-title">EXPLODED TRANSIT CHASSIS & CORRIDOR</span>
-            </div>
-            <div class="hud-stats-group">
-              <span class="hud-metric">DISSECTION: <b id="explode-scrub-val">0%</b></span>
-              <span class="hud-metric-pill">GTFS 2026.09</span>
-            </div>
-          </div>
-
-          <!-- Bottom Floating Interactive Scrubber Bar -->
-          <div class="hud-bottom-bar">
-            <div class="scrub-controls-box">
-              <div class="scrubber-header">
-                <span class="scrubber-label">MANUAL TEARDOWN CONTROLLER</span>
-                <span class="scrubber-hint">Drag slider or scroll page to dissect</span>
-              </div>
-              <div class="slider-row">
-                <span class="slider-bound">0%</span>
-                <input type="range" id="explode-scrub-slider" min="0" max="100" value="0" step="1" class="explode-range-slider" aria-label="Explode 3D Model Slider">
-                <span class="slider-bound">100%</span>
-              </div>
-              <div class="step-pills-row">
-                <button type="button" class="scrolly-step-pill active" data-explode="0.0" data-step="1">01 · Fleet</button>
-                <button type="button" class="scrolly-step-pill" data-explode="0.33" data-step="2">02 · VTMS Orbit</button>
-                <button type="button" class="scrolly-step-pill" data-explode="0.66" data-step="3">03 · Shakti Deck</button>
-                <button type="button" class="scrolly-step-pill" data-explode="1.0" data-step="4">04 · Metro Fusion</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Scrollytelling Story Track (Overlaid scrolling narrative) -->
-    <div class="story-track">
-      <!-- Step 1 -->
-      <article class="story-card active" data-step="1">
-        <div class="card-step-badge">01 // BENGALURU LIFELINE</div>
-        <h2 class="card-headline">Precision Transit Engineering</h2>
-        <p class="card-desc">
-          Bengaluru’s bus network is one of the densest transit networks on Earth. Over <b>6,500 fleet buses</b> navigate <b>740 km²</b>, serving 4 million commuters every single day.
-        </p>
-        <div class="card-metrics-grid">
-          <div class="metric-item">
-            <span class="m-val">9,960</span>
-            <span class="m-lbl">Geo-Indexed Stops</span>
-          </div>
-          <div class="metric-item">
-            <span class="m-val">74,000+</span>
-            <span class="m-lbl">Daily Schedules</span>
-          </div>
-        </div>
-      </article>
-
-      <!-- Step 2 -->
-      <article class="story-card" data-step="2">
-        <div class="card-step-badge">02 // ORBITAL TELEMETRY</div>
-        <h2 class="card-headline">18-Second Satellite VTMS Radar</h2>
-        <p class="card-desc">
-          Every vehicle is triangulated through continuous satellite telemetry. NammaBMTC connects directly to vehicle tracking streams with an intelligent corridor fallback engine that guarantees you never wait in the dark.
-        </p>
-        <div class="card-telemetry-pill">
-          <span class="radar-dot"></span>
-          <span>LIVE FLEET GPS ACCURACY: ±2.4 METERS</span>
-        </div>
-      </article>
-
-      <!-- Step 3 -->
-      <article class="story-card" data-step="3">
-        <div class="card-step-badge">03 // INCLUSIVE FARES & SCHEMES</div>
-        <h2 class="card-headline">Shakti Scheme & AC Vajra Comfort</h2>
-        <p class="card-desc">
-          100% free travel for Karnataka women on ordinary non-AC services, alongside daily ₹70 pass validation and dedicated ₹140 Volvo Vajra air-conditioned transit options.
-        </p>
-        <div class="card-metrics-grid">
-          <div class="metric-item">
-            <span class="m-val" style="color: var(--bmtc-green-light, #10B981);">100% Free</span>
-            <span class="m-lbl">Shakti Scheme</span>
-          </div>
-          <div class="metric-item">
-            <span class="m-val" style="color: var(--bmtc-blue-light, #38BDF8);">Volvo AC</span>
-            <span class="m-lbl">Airport Vayu Vajra</span>
-          </div>
-        </div>
-      </article>
-
-      <!-- Step 4 -->
-      <article class="story-card" data-step="4">
-        <div class="card-step-badge">04 // INTERMODAL STRATA</div>
-        <h2 class="card-headline">Subterranean Namma Metro Fusion</h2>
-        <p class="card-desc">
-          BMRCL Purple, Green & Yellow Metro tracks run beneath the arterial roads. NammaBMTC unites both systems into unified, traffic-immune hybrid connections that save up to 45 minutes on peak commutes.
-        </p>
-        <div class="story-cta-box">
-          <button id="jump-to-app-btn" class="jump-action-btn" type="button">
-            <span>Launch Live Route Cockpit</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <polyline points="19 12 12 19 5 12"></polyline>
-            </svg>
-          </button>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <!-- ================= HIGH-PERFORMANCE TRANSIT COCKPIT ================= -->
+  <!-- ================= HIGH-PERFORMANCE TRANSIT COCKPIT (FIRST & IMMEDIATE) ================= -->
   <div class="mobile-app" id="navigator-app">
     <!-- App Cockpit Header -->
     <div class="cockpit-header">
@@ -698,8 +568,118 @@
     <footer class="app-footer">
       <div class="footer-badge">BMTC TRANSIT RECOG ENGINE</div>
       <p>Official Bengaluru Urban & Rural GTFS • Open Database License (ODbL 1.0)</p>
-    </footer>
   </div>
+
+  <!-- ================= 3D EXPLODED TRANSIT SHOWCASE (ACCESSED VIA SCROLL) ================= -->
+  <section id="showcase-section" class="showcase-section">
+    <div class="showcase-lead-header">
+      <span class="lead-pill">ENGINEERING ANATOMY</span>
+      <h2 class="lead-title">Inside Bengaluru's Electric Transit Fleet</h2>
+      <p class="lead-subtitle">Scroll to explore the multi-layered technology powering NammaBMTC commutes.</p>
+    </div>
+
+    <!-- Sticky 3D WebGL Canvas Viewport -->
+    <div class="scrolly-viewport">
+      <div id="scrolly-canvas-container" class="canvas-container">
+        <canvas id="scrolly-3d-canvas"></canvas>
+      </div>
+    </div>
+
+    <!-- Scrollytelling Story Track (Aesthetic Minimalist Cards) -->
+    <div class="story-track">
+      <!-- Card 1: Electric Fleet -->
+      <article class="story-card active" data-step="1">
+        <div class="card-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span>FLEET ARCHITECTURE</span>
+        </div>
+        <h3 class="card-headline">Zero-Emission EV Fleet</h3>
+        <p class="card-desc">
+          Bengaluru’s modern arterial backbone. Over 6,500 low-floor electric and high-efficiency buses navigating 740 km² across 9,960 geo-indexed stops.
+        </p>
+        <div class="card-data-row">
+          <div class="data-chip">
+            <span class="chip-num">6,500+</span>
+            <span class="chip-label">Active Fleet</span>
+          </div>
+          <div class="data-chip">
+            <span class="chip-num">9,960</span>
+            <span class="chip-label">Indexed Stops</span>
+          </div>
+          <div class="data-chip">
+            <span class="chip-num" style="color: #34D399;">100% EV</span>
+            <span class="chip-label">Zero Emission</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 2: VTMS Orbit -->
+      <article class="story-card" data-step="2">
+        <div class="card-eyebrow">
+          <span class="eyebrow-dot cyan"></span>
+          <span>SATELLITE TELEMETRY</span>
+        </div>
+        <h3 class="card-headline">18s Orbital GPS Radar</h3>
+        <p class="card-desc">
+          Sub-meter positioning beamed from BMTC vehicle telemetry systems. Continuous corridor triangulation guarantees real-time approaching ETAs.
+        </p>
+        <div class="card-data-row">
+          <div class="data-chip">
+            <span class="chip-num">18 sec</span>
+            <span class="chip-label">Sync Window</span>
+          </div>
+          <div class="data-chip">
+            <span class="chip-num">±2.4m</span>
+            <span class="chip-label">GPS Precision</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 3: Shakti Deck -->
+      <article class="story-card" data-step="3">
+        <div class="card-eyebrow">
+          <span class="eyebrow-dot emerald"></span>
+          <span>INCLUSIVE MOBILITY</span>
+        </div>
+        <h3 class="card-headline">Shakti Smart Deck</h3>
+        <p class="card-desc">
+          100% free mobility for Karnataka women on ordinary services, integrated contactless smart ticketing, and dedicated Volvo Vajra AC express services.
+        </p>
+        <div class="card-data-row">
+          <div class="data-chip">
+            <span class="chip-num" style="color: #34D399;">₹0</span>
+            <span class="chip-label">Shakti Scheme</span>
+          </div>
+          <div class="data-chip">
+            <span class="chip-num">₹70 / ₹140</span>
+            <span class="chip-label">Daily Pass</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 4: Metro Fusion -->
+      <article class="story-card" data-step="4">
+        <div class="card-eyebrow">
+          <span class="eyebrow-dot purple"></span>
+          <span>MULTI-MODAL TRANSIT</span>
+        </div>
+        <h3 class="card-headline">Subterranean Metro Fusion</h3>
+        <p class="card-desc">
+          Uniting surface bus routes with BMRCL Purple, Green & Yellow Metro lines beneath the asphalt. Seamless transfer wayfinding that cuts peak commutes by up to 45 minutes.
+        </p>
+        <div class="card-data-row">
+          <div class="data-chip">
+            <span class="chip-num" style="color: #A78BFA;">3 Lines</span>
+            <span class="chip-label">Purple · Green · Yellow</span>
+          </div>
+          <div class="data-chip">
+            <span class="chip-num">-45 min</span>
+            <span class="chip-label">Peak Time Saved</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
 
   <!-- Route Details Modal Window (Modern Industrial HUD) -->
   <div id="route-details-modal" class="route-modal hidden" role="dialog" aria-modal="true" aria-labelledby="route-modal-title">
