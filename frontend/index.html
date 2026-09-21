@@ -61,24 +61,172 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="mobile-app">
-    <!-- Top Navigation (Luna Royal Blue) -->
-    <header class="app-navbar">
+  <!-- Global Top Navigation Bar (High-Performance Industrial Transit) -->
+  <header class="global-navbar">
+    <div class="nav-container">
       <div class="nav-brand" id="brand-logo">
         <div class="logo-wrapper">
-          <img src="assets/logo.svg" alt="NammaBMTC Navigator Logo" class="app-logo" width="38" height="38">
+          <img src="assets/logo.svg" alt="NammaBMTC Navigator Logo" class="app-logo" width="34" height="34">
+          <span class="logo-pulse-ring"></span>
         </div>
         <div class="brand-text">
-          <h1>NammaBMTC <span class="nav-badge">NAVIGATOR</span></h1>
-          <span class="city-tag">Bengaluru Transit • Urban & Rural</span>
+          <div class="brand-title-row">
+            <span class="brand-name">NammaBMTC</span>
+            <span class="nav-badge">ENGINEERING</span>
+          </div>
+          <span class="city-tag">Bengaluru Urban & Rural Transit Platform</span>
         </div>
       </div>
+
+      <!-- Navigation Mode Tabs -->
+      <nav class="nav-mode-tabs" role="tablist">
+        <button id="nav-showcase-btn" class="nav-tab-item active" type="button">
+          <span class="tab-dot"></span>
+          <span>3D Anatomy</span>
+        </button>
+        <button id="nav-jump-app-btn" class="nav-tab-item" type="button">
+          <span class="tab-dot green"></span>
+          <span>Live Navigator</span>
+        </button>
+      </nav>
+
       <!-- Live GPS Pill -->
-      <button id="gps-status-pill" class="location-pill" type="button" title="Click to use live GPS location">
-        <span class="radar-dot"></span>
-        <span id="gps-status-text">Use GPS</span>
-      </button>
-    </header>
+      <div class="nav-right-actions">
+        <button id="gps-status-pill" class="location-pill" type="button" title="Click to use live GPS location">
+          <span class="radar-dot"></span>
+          <span id="gps-status-text">Use GPS</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= 3D EXPLODED SCROLLYTELLING SHOWCASE ================= -->
+  <section id="showcase-section" class="showcase-section">
+    <!-- Sticky 3D WebGL Canvas Viewport -->
+    <div class="scrolly-viewport">
+      <div id="scrolly-canvas-container" class="canvas-container">
+        <canvas id="scrolly-3d-canvas"></canvas>
+
+        <!-- 3D HUD Interface Overlay -->
+        <div class="scrolly-hud-overlay">
+          <!-- Top HUD Stats -->
+          <div class="hud-top-bar">
+            <div class="hud-badge">
+              <span class="hud-dot"></span>
+              <span class="hud-title">EXPLODED TRANSIT CHASSIS & CORRIDOR</span>
+            </div>
+            <div class="hud-stats-group">
+              <span class="hud-metric">DISSECTION: <b id="explode-scrub-val">0%</b></span>
+              <span class="hud-metric-pill">GTFS 2026.09</span>
+            </div>
+          </div>
+
+          <!-- Bottom Floating Interactive Scrubber Bar -->
+          <div class="hud-bottom-bar">
+            <div class="scrub-controls-box">
+              <div class="scrubber-header">
+                <span class="scrubber-label">MANUAL TEARDOWN CONTROLLER</span>
+                <span class="scrubber-hint">Drag slider or scroll page to dissect</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-bound">0%</span>
+                <input type="range" id="explode-scrub-slider" min="0" max="100" value="0" step="1" class="explode-range-slider" aria-label="Explode 3D Model Slider">
+                <span class="slider-bound">100%</span>
+              </div>
+              <div class="step-pills-row">
+                <button type="button" class="scrolly-step-pill active" data-explode="0.0" data-step="1">01 · Fleet</button>
+                <button type="button" class="scrolly-step-pill" data-explode="0.33" data-step="2">02 · VTMS Orbit</button>
+                <button type="button" class="scrolly-step-pill" data-explode="0.66" data-step="3">03 · Shakti Deck</button>
+                <button type="button" class="scrolly-step-pill" data-explode="1.0" data-step="4">04 · Metro Fusion</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scrollytelling Story Track (Overlaid scrolling narrative) -->
+    <div class="story-track">
+      <!-- Step 1 -->
+      <article class="story-card active" data-step="1">
+        <div class="card-step-badge">01 // BENGALURU LIFELINE</div>
+        <h2 class="card-headline">Precision Transit Engineering</h2>
+        <p class="card-desc">
+          Bengaluru’s bus network is one of the densest transit networks on Earth. Over <b>6,500 fleet buses</b> navigate <b>740 km²</b>, serving 4 million commuters every single day.
+        </p>
+        <div class="card-metrics-grid">
+          <div class="metric-item">
+            <span class="m-val">9,960</span>
+            <span class="m-lbl">Geo-Indexed Stops</span>
+          </div>
+          <div class="metric-item">
+            <span class="m-val">74,000+</span>
+            <span class="m-lbl">Daily Schedules</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Step 2 -->
+      <article class="story-card" data-step="2">
+        <div class="card-step-badge">02 // ORBITAL TELEMETRY</div>
+        <h2 class="card-headline">18-Second Satellite VTMS Radar</h2>
+        <p class="card-desc">
+          Every vehicle is triangulated through continuous satellite telemetry. NammaBMTC connects directly to vehicle tracking streams with an intelligent corridor fallback engine that guarantees you never wait in the dark.
+        </p>
+        <div class="card-telemetry-pill">
+          <span class="radar-dot"></span>
+          <span>LIVE FLEET GPS ACCURACY: ±2.4 METERS</span>
+        </div>
+      </article>
+
+      <!-- Step 3 -->
+      <article class="story-card" data-step="3">
+        <div class="card-step-badge">03 // INCLUSIVE FARES & SCHEMES</div>
+        <h2 class="card-headline">Shakti Scheme & AC Vajra Comfort</h2>
+        <p class="card-desc">
+          100% free travel for Karnataka women on ordinary non-AC services, alongside daily ₹70 pass validation and dedicated ₹140 Volvo Vajra air-conditioned transit options.
+        </p>
+        <div class="card-metrics-grid">
+          <div class="metric-item">
+            <span class="m-val" style="color: var(--bmtc-green-light, #10B981);">100% Free</span>
+            <span class="m-lbl">Shakti Scheme</span>
+          </div>
+          <div class="metric-item">
+            <span class="m-val" style="color: var(--bmtc-blue-light, #38BDF8);">Volvo AC</span>
+            <span class="m-lbl">Airport Vayu Vajra</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Step 4 -->
+      <article class="story-card" data-step="4">
+        <div class="card-step-badge">04 // INTERMODAL STRATA</div>
+        <h2 class="card-headline">Subterranean Namma Metro Fusion</h2>
+        <p class="card-desc">
+          BMRCL Purple, Green & Yellow Metro tracks run beneath the arterial roads. NammaBMTC unites both systems into unified, traffic-immune hybrid connections that save up to 45 minutes on peak commutes.
+        </p>
+        <div class="story-cta-box">
+          <button id="jump-to-app-btn" class="jump-action-btn" type="button">
+            <span>Launch Live Route Cockpit</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <polyline points="19 12 12 19 5 12"></polyline>
+            </svg>
+          </button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ================= HIGH-PERFORMANCE TRANSIT COCKPIT ================= -->
+  <div class="mobile-app" id="navigator-app">
+    <!-- App Cockpit Header -->
+    <div class="cockpit-header">
+      <div class="cockpit-title-row">
+        <span class="cockpit-pill">TRANSIT COCKPIT</span>
+        <span class="cockpit-sub">Bengaluru Urban & Rural Bus Router</span>
+      </div>
+    </div>
 
     <!-- Location Context Bar -->
     <div class="location-bar">
@@ -572,6 +720,8 @@
     </div>
   </div>
 
+  <script src="vendor/three.min.js"></script>
+  <script src="scrolly.js"></script>
   <script src="vendor/leaflet.js"></script>
   <script src="app.js"></script>
 </body>
