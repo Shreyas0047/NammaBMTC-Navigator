@@ -93,7 +93,10 @@
     <!-- App Cockpit Header -->
     <div class="cockpit-header">
       <div class="cockpit-title-row">
-        <span class="cockpit-pill">TRANSIT COCKPIT</span>
+        <div class="cockpit-brand-badge">
+          <span class="cockpit-dot"></span>
+          <span class="cockpit-pill">TRANSIT COCKPIT</span>
+        </div>
         <span class="cockpit-sub">Bengaluru Urban & Rural Bus Router</span>
       </div>
     </div>
@@ -510,17 +513,17 @@
           </div>
 
           <!-- Optional 2nd Transfer Interchange Step (When transfers_count >= 2) -->
-          <div id="transfer2-step-box" class="journey-step transfer-step hidden">
+          <div id="transfer2-step-box" class="journey-step transfer-step transfer-step-2 hidden">
             <div class="step-marker">
-              <div class="marker-circle transfer-circle" style="background-color: #EA580C; box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.25);">⇄</div>
+              <div class="marker-circle transfer-circle transfer-circle-2">⇄</div>
               <div class="connector-line transit-line"></div>
             </div>
-            <div class="step-details transfer-details" style="background-color: #FFF7ED !important; border-color: #FED7AA !important;">
-              <div class="transfer-tag" style="background-color: #FFEDD5; color: #C2410C;">INTERCHANGE 2 • CHANGE BUS HERE</div>
-              <h4 class="transfer-title" id="transfer2-hub-name" style="color: #9A3412;">Lakkasandra / Dairy Circle</h4>
-              <div class="transfer-desc" id="transfer2-hub-desc" style="color: #7C2D12;">Towards Destination</div>
-              <div class="buses-box leg2-box" style="border-top-color: #FED7AA !important;">
-                <span class="box-caption" style="color: #C2410C;">BOARD FINAL BUS (LEG 3)</span>
+            <div class="step-details transfer-details transfer-details-2">
+              <div class="transfer-tag transfer-tag-2">INTERCHANGE 2 • CHANGE BUS HERE</div>
+              <h4 class="transfer-title transfer-title-2" id="transfer2-hub-name">Lakkasandra / Dairy Circle</h4>
+              <div class="transfer-desc transfer-desc-2" id="transfer2-hub-desc">Towards Destination</div>
+              <div class="buses-box leg2-box leg3-box">
+                <span class="box-caption transfer2-caption">BOARD FINAL BUS (LEG 3)</span>
                 <div id="rec-leg3-routes-list" class="buses-list"></div>
               </div>
             </div>
