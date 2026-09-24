@@ -812,11 +812,11 @@ body {
 /* Destination Search In-Card Flow */
 .destination-search-card .suggestions-dropdown {
   position: static !important;
-  margin-top: 14px;
+  margin-top: 12px;
   background: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  border: 1.5px solid #CBD5E1;
   border-radius: 14px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   max-height: 280px;
   overflow-y: auto;
   animation: fadeInDown 0.18s var(--ease-spring);

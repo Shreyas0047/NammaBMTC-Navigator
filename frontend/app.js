@@ -327,16 +327,26 @@ function setupAutocomplete(inputEl, dropdownEl, onSelect) {
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       activeIndex = (activeIndex - 1 + items.length) % items.length;
-      updateActiveItem(items, activeIndex);
-    } else if (e.key === "Enter" && activeIndex >= 0 && items[activeIndex]) {
+    } else if (e.key === "Enter") {
       e.preventDefault();
-      items[activeIndex].click();
+      if (activeIndex >= 0 && items[activeIndex]) {
+        items[activeIndex].click();
+      } else if (items.length > 0) {
+        items[0].click();
+      }
     } else if (e.key === "Escape") {
       closeDropdown();
     }
   });
 
   inputEl.addEventListener("input", () => {
+    if (inputEl === destSearchInput && clearDestBtn) {
+      if (inputEl.value.trim().length > 0) {
+        clearDestBtn.classList.remove("hidden");
+      } else {
+        clearDestBtn.classList.add("hidden");
+      }
+    }
     const q = inputEl.value.trim();
     if (q.length < 2) {
       closeDropdown();
@@ -1051,18 +1061,6 @@ function renderJourney(data) {
     stopLiveBusTelemetry();
   }
 
-  // Destination
-  const destName = p.routes.length > 0 ? p.routes[0].destination_stop : state.destination.name;
-  recDestStop.textContent = destName;
-
-  // Trigger Real-Time Live Bus VTMS Telemetry Tracking with Multi-Route aggregation
-  if (routesToDisplay && routesToDisplay.length > 0) {
-    const candidateRoutes = [...new Set(routesToDisplay.map((r) => (r.route || "").trim()).filter(Boolean))].slice(0, 4);
-    const routesParam = candidateRoutes.length > 0 ? candidateRoutes.join(",") : routesToDisplay[0].route;
-    startLiveBusTelemetry(routesParam, p.lat, p.lon, state.destination.lat, state.destination.lon);
-  } else {
-    stopLiveBusTelemetry();
-  }
 
   // Alternatives Accordion
   const alts = data.alternatives || [];
@@ -1827,10 +1825,7 @@ if (mapLiveBusesBtn) {
 }
 
 // ================= Route Details Popup Modal =================
-const routeModal = document.getElementById("route-details-modal");
-const routeModalTitle = document.getElementById("route-modal-title");
-const routeModalBody = document.getElementById("route-modal-body");
-const closeRouteModalBtn = document.getElementById("close-route-modal-btn");
+const routeModal = routeDetailsModal;
 
 function closeRouteDetailsModal() {
   if (routeModal) {
