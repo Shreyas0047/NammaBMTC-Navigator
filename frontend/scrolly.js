@@ -36,20 +36,20 @@
   let isVisible = false;
   let animFrameId = null;
 
-  // Authentic BMTC Color Palette
+  // Authentic BMTC Color Palette (Daylight Architectural Render)
   const COLORS = {
     bmtcBlue: 0x0284C7,       // BMTC Primary Livery Blue
     bmtcTeal: 0x00A896,       // BMTC Accent Teal / Aqua
     bmtcWhite: 0xF8FAFC,      // BMTC Clean Upper White
     bmtcGreen: 0x059669,      // BMTC Eco Green / Shakti
-    bmtcDarkBlue: 0x0C4A6E,   // Deep BMTC Navy Lower Skirt
+    bmtcDarkBlue: 0x0369A1,   // BMTC Deep Blue Skirt
     metroPurple: 0x8B5CF6,    // BMRCL Purple Line
     metroGreen: 0x10B981,     // BMRCL Green Line
-    metalDark: 0x0F172A,      // Chassis Steel
-    metalMid: 0x1E293B,       // Mechanical Cast Iron
+    metalDark: 0x334155,      // Chassis Steel
+    metalMid: 0x64748B,       // Mechanical Steel
     metalLight: 0xE2E8F0,     // Stainless Steel Grab Poles & Panto
-    glassTint: 0x0C1929,      // Realistic Bus Window Tint
-    roadDark: 0x0B0F19,       // Asphalt
+    glassTint: 0x0284C7,      // Bus Window Tint
+    roadDark: 0x475569,       // Transit Asphalt
     solarGold: 0xF59E0B,      // Satellite MLI Foil
     ledAmber: 0xF59E0B,       // BMTC LED Destination Display
     hvOrange: 0xEA580C,       // High Voltage EV Cables
@@ -60,7 +60,7 @@
   function initThree() {
     // 1. Scene Setup
     scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x070B12, 0.02);
+    scene.fog = new THREE.FogExp2(0xF8FAFC, 0.015);
 
     // 2. Camera Setup
     const width = container.clientWidth || window.innerWidth;
@@ -81,13 +81,13 @@
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.05;
 
-    // 4. Studio Lighting
-    const ambientLight = new THREE.AmbientLight(0x94A3B8, 1.0);
+    // 4. Studio Lighting - Bright Clean Daylight Environment
+    const ambientLight = new THREE.AmbientLight(0xFFFFFF, 1.1);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.9);
+    const dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.6);
     dirLight.position.set(14, 24, 12);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
@@ -97,20 +97,15 @@
     dirLight.shadow.bias = -0.0005;
     scene.add(dirLight);
 
-    // Electric Cyan Rim Light
-    const cyanRim = new THREE.DirectionalLight(0x00D2FF, 2.4);
-    cyanRim.position.set(-12, 8, -10);
-    scene.add(cyanRim);
+    // Subtle Sky Soft Fill Light
+    const skyFill = new THREE.DirectionalLight(0xBAE6FD, 0.8);
+    skyFill.position.set(-12, 10, -10);
+    scene.add(skyFill);
 
-    // Emerald Green Underglow Light
-    const greenGlow = new THREE.PointLight(0x10B981, 1.8, 20);
-    greenGlow.position.set(0, 0.5, 0);
-    scene.add(greenGlow);
-
-    // Purple Subterranean Metro Glow
-    const purpleGlow = new THREE.PointLight(0x8B5CF6, 1.6, 25);
-    purpleGlow.position.set(0, -3.2, 0);
-    scene.add(purpleGlow);
+    // Subtle Warm Bounce Light
+    const groundBounce = new THREE.DirectionalLight(0xFEF3C7, 0.4);
+    groundBounce.position.set(0, -5, 5);
+    scene.add(groundBounce);
 
     // 5. Build Procedural 3D BMTC Electric Bus
     buildElectricTransitScene();
@@ -151,8 +146,8 @@
     layerSatellite = createSatelliteTelemetryLayer();
     busRoot.add(layerSatellite);
 
-    // Ambient Grid Plane
-    const gridHelper = new THREE.GridHelper(36, 36, 0x0284C7, 0x1E293B);
+    // Ambient Grid Plane (Clean Architectural Light Grid)
+    const gridHelper = new THREE.GridHelper(36, 36, 0xCBD5E1, 0xE2E8F0);
     gridHelper.position.y = -2.8;
     scene.add(gridHelper);
   }
@@ -236,7 +231,7 @@
 
     // Platform Curb
     const curbGeo = new THREE.BoxGeometry(16, 0.35, 1.8);
-    const curbMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.8 });
+    const curbMat = new THREE.MeshStandardMaterial({ color: 0xE2E8F0, roughness: 0.7 });
     const curb = new THREE.Mesh(curbGeo, curbMat);
     curb.position.set(0, 0.15, 3.8);
     curb.receiveShadow = true;
@@ -244,7 +239,7 @@
 
     // Subterranean Metro Cutaway Bed
     const tunnelGeo = new THREE.BoxGeometry(18, 0.8, 4.2);
-    const tunnelMat = new THREE.MeshStandardMaterial({ color: 0x05070D, roughness: 0.95 });
+    const tunnelMat = new THREE.MeshStandardMaterial({ color: 0x94A3B8, roughness: 0.9 });
     const tunnel = new THREE.Mesh(tunnelGeo, tunnelMat);
     tunnel.position.set(0, -1.8, 0);
     group.add(tunnel);
@@ -270,7 +265,7 @@
 
     // Metro Concrete Sleepers
     const tieGeo = new THREE.BoxGeometry(0.14, 0.08, 2.4);
-    const tieMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.9 });
+    const tieMat = new THREE.MeshStandardMaterial({ color: 0x64748B, roughness: 0.9 });
     for (let x = -8; x <= 8; x += 0.9) {
       const tie = new THREE.Mesh(tieGeo, tieMat);
       tie.position.set(x, -1.42, 0);
