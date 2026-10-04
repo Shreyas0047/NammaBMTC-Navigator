@@ -780,6 +780,20 @@ function renderJourney(data) {
   const p = data.primary;
   currentPrimaryStop = p;
 
+  // Update browser URL query params for shareable deep linking
+  try {
+    const url = new URL(window.location.href);
+    if (state.destination.name) {
+      url.searchParams.set("to", state.destination.name);
+    }
+    if (state.origin.name && !state.origin.isLive) {
+      url.searchParams.set("from", state.origin.name);
+    } else {
+      url.searchParams.delete("from");
+    }
+    window.history.replaceState({}, "", url.toString());
+  } catch (e) {}
+
   // Clear any existing metro map overlay
   if (mapInstance && metroPolyline) {
     mapInstance.removeLayer(metroPolyline);
@@ -2008,3 +2022,151 @@ function renderRouteDetailsContent(d) {
 // Global hooks for route details buttons
 window.openRouteDetailsModal = openRouteDetailsModal;
 window.closeRouteDetailsModal = closeRouteDetailsModal;
+
+// ================= 1-Tap Share Route (WhatsApp / Native Share / Clipboard) =================
+const shareRouteBtn = document.getElementById("share-route-btn");
+const shareBtnText = document.getElementById("share-btn-text");
+
+if (shareRouteBtn) {
+  shareRouteBtn.addEventListener("click", async () => {
+    if (!currentJourneyData || !currentJourneyData.primary) return;
+    const p = currentJourneyData.primary;
+    const origName = state.origin.name || "My Location";
+    const destName = state.destination.name || "Destination";
+    const shareUrl = window.location.href;
+
+    let routeSummary = "";
+    if (p.is_direct && p.routes && p.routes.length > 0) {
+      const routeNums = p.routes.slice(0, 3).map((r) => r.route).join(", ");
+      routeSummary = `Direct Bus: ${routeNums} at ${p.stop_name}`;
+    } else if (p.leg1_routes && p.leg2_routes) {
+      const r1 = p.leg1_routes.slice(0, 2).map((r) => r.route).join(", ");
+      const r2 = p.leg2_routes.slice(0, 2).map((r) => r.route).join(", ");
+      routeSummary = `Transfer at ${p.transfer_stop_name || "Hub"}: Leg 1 (${r1}) → Leg 2 (${r2})`;
+    }
+
+    const shareText = `🚌 BMTC Route: ${origName} → ${destName}\n${routeSummary}\nView live stops & map: ${shareUrl}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `BMTC Route: ${origName} to ${destName}`,
+          text: `🚌 BMTC Route: ${origName} → ${destName}\n${routeSummary}`,
+          url: shareUrl,
+        });
+        return;
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.warn("Share failed, falling back to copy/WhatsApp:", err);
+        } else {
+          return;
+        }
+      }
+    }
+
+    // Fallback: Copy to clipboard and open WhatsApp
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(`${shareText}`);
+      }
+      if (shareBtnText) shareBtnText.textContent = "Link Copied!";
+      shareRouteBtn.classList.add("copied");
+      setTimeout(() => {
+        if (shareBtnText) shareBtnText.textContent = "Share";
+        shareRouteBtn.classList.remove("copied");
+      }, 2500);
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, "_blank");
+    } catch (e) {
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, "_blank");
+    }
+  });
+}
+
+// ================= PWA Install App Prompt =================
+const pwaInstallBtn = document.getElementById("pwa-install-btn");
+let deferredPrompt = null;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (pwaInstallBtn) {
+    pwaInstallBtn.classList.remove("hidden");
+  }
+});
+
+if (pwaInstallBtn) {
+  pwaInstallBtn.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") {
+      pwaInstallBtn.classList.add("hidden");
+    }
+    deferredPrompt = null;
+  });
+}
+
+window.addEventListener("appinstalled", () => {
+  if (pwaInstallBtn) pwaInstallBtn.classList.add("hidden");
+  deferredPrompt = null;
+});
+
+// ================= URL Deep Link Reader on Initial Load =================
+async function initDeepLinkFromUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const toParam = params.get("to") || params.get("dest") || params.get("destination");
+    const fromParam = params.get("from") || params.get("origin");
+
+    let hasOrigin = false;
+    let hasDest = false;
+
+    if (toParam && toParam.trim().length >= 2) {
+      destSearchInput.value = toParam.trim();
+      clearDestBtn.classList.remove("hidden");
+      try {
+        const res = await fetch(`/api/stops/search?q=${encodeURIComponent(toParam.trim())}`);
+        const items = await res.json();
+        if (items && items.length > 0) {
+          state.destination.name = items[0].stop_name;
+          state.destination.lat = items[0].lat;
+          state.destination.lon = items[0].lon;
+          hasDest = true;
+        }
+      } catch (err) {
+        console.warn("Failed resolving destination from URL:", err);
+      }
+    }
+
+    if (fromParam && fromParam.trim().length >= 2) {
+      try {
+        const res = await fetch(`/api/stops/search?q=${encodeURIComponent(fromParam.trim())}`);
+        const items = await res.json();
+        if (items && items.length > 0) {
+          state.origin.name = items[0].stop_name;
+          state.origin.lat = items[0].lat;
+          state.origin.lon = items[0].lon;
+          state.origin.isLive = false;
+          currentLocDisplay.textContent = `📍 ${items[0].stop_name}`;
+          editOriginBtn.textContent = "Change";
+          hasOrigin = true;
+        }
+      } catch (err) {
+        console.warn("Failed resolving origin from URL:", err);
+      }
+    }
+
+    // If both origin and destination were passed in the URL, trigger route search immediately!
+    if (hasOrigin && hasDest) {
+      triggerRecommendation();
+    }
+  } catch (e) {
+    console.warn("Error parsing URL deep links:", e);
+  }
+}
+
+// Auto-run deep-link check when page finishes loading
+window.addEventListener("DOMContentLoaded", () => {
+  initDeepLinkFromUrl();
+});
+

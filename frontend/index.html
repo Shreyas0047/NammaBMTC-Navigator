@@ -25,14 +25,19 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://nammabmtc-navigator.onrender.com/">
   <meta property="og:title" content="NammaBMTC Navigator – Bengaluru Bus & Boarding Point Guide">
-  <meta property="og:description" content="Find exact BMTC boarding stops, multi-transfer bus connections, and street walking directions across Bengaluru.">
+  <meta property="og:description" content="Find exact BMTC boarding stops, multi-transfer bus connections, live GPS tracking, and street walking directions across Bengaluru.">
+  <meta property="og:image" content="https://nammabmtc-navigator.onrender.com/assets/app-icon.jpg">
+  <meta property="og:image:width" content="1024">
+  <meta property="og:image:height" content="1024">
+  <meta property="og:image:alt" content="NammaBMTC Navigator Bengaluru Transit Route Finder">
   <meta property="og:locale" content="en_IN">
   <meta property="og:site_name" content="NammaBMTC Navigator">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="NammaBMTC Navigator – BMTC Bus Route Finder">
-  <meta name="twitter:description" content="Find exact BMTC boarding stops and connecting bus routes across Bengaluru Urban & Rural.">
+  <meta name="twitter:description" content="Find exact BMTC boarding stops, connecting bus routes, and live GPS tracking across Bengaluru.">
+  <meta name="twitter:image" content="https://nammabmtc-navigator.onrender.com/assets/app-icon.jpg">
 
   <!-- Structured Data: Schema.org WebApplication / TransitApp -->
   <script type="application/ld+json">
@@ -81,8 +86,16 @@
         </div>
       </div>
 
-      <!-- Live GPS Pill -->
+      <!-- Live GPS Pill & Optional PWA Install -->
       <div class="nav-right-actions">
+        <button id="pwa-install-btn" class="install-pill hidden" type="button" title="Install NammaBMTC on home screen">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Install</span>
+        </button>
         <button id="gps-status-pill" class="location-pill" type="button" title="Click to use live GPS location">
           <span class="radar-dot"></span>
           <span id="gps-status-text">Use GPS</span>
@@ -260,8 +273,20 @@
       <!-- Recommendation Journey Section -->
       <section id="result-view" class="result-view hidden">
         <div class="result-header">
-          <span id="result-badge-text" class="result-badge">PRIMARY RECOMMENDATION</span>
-          <span id="result-time-stamp" class="result-timestamp">Destination-Aware Match</span>
+          <div class="result-header-left">
+            <span id="result-badge-text" class="result-badge">PRIMARY RECOMMENDATION</span>
+            <span id="result-time-stamp" class="result-timestamp">Destination-Aware Match</span>
+          </div>
+          <button id="share-route-btn" class="share-route-btn" type="button" title="Share Route via WhatsApp or link">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+            <span id="share-btn-text">Share</span>
+          </button>
         </div>
 
         <!-- Metro Intermodal Option Card (Namma Metro BMRCL) -->
