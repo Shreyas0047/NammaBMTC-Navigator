@@ -1556,8 +1556,8 @@ function renderLiveBusTelemetry(data) {
     const routesListStr = data.routes_queried && data.routes_queried.length > 0 ? data.routes_queried.join(", ") : (data.route || "");
     if (telemetryStatusTitle) {
       telemetryStatusTitle.textContent = data.approaching_count > 0
-        ? `LIVE BUS GPS RADAR • ${data.approaching_count} APPROACHING (${routesListStr})`
-        : `LIVE FLEET RADAR • ${data.active_buses_total} BUSES ACTIVE (${routesListStr})`;
+        ? `LIVE BUS TRACKER • ${data.approaching_count} APPROACHING (${routesListStr})`
+        : `LIVE FLEET TRACKER • ${data.active_buses_total} BUSES ACTIVE (${routesListStr})`;
     }
     if (telemetryLastSync) {
       telemetryLastSync.textContent = `Synced ${timeStr}`;
