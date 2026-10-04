@@ -229,6 +229,17 @@ def main():
         except Exception as e:
             assert_test(f"Static file: {path}", False, str(e))
 
+    # Verify Programmatic SEO Route Landing Pages
+    seo_routes_to_test = ["/route/KIA-9", "/route/500-D", "/route/365"]
+    for r_path in seo_routes_to_test:
+        try:
+            status, body = get(r_path)
+            has_schema = "BusTrip" in body and "BreadcrumbList" in body
+            has_adsense = "ca-pub-3357683031374517" in body
+            assert_test(f"SEO Route Page: {r_path}", status == 200 and has_schema and has_adsense, f"HTTP {status}, Schema={has_schema}")
+        except Exception as e:
+            assert_test(f"SEO Route Page: {r_path}", False, str(e))
+
     # Verify Popular Hubs removed from HTML
     try:
         _, html = get("/")

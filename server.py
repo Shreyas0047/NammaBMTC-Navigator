@@ -8,7 +8,7 @@ import os
 import sys
 from typing import Optional
 from fastapi import FastAPI, Query, HTTPException
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -22,6 +22,7 @@ from engine.spatial_index import haversine
 from engine.live_tracker import get_live_route_telemetry
 from engine.intermodal import find_intermodal_route
 from engine.route_details import get_route_details
+from engine.seo_routes import render_route_seo_html
 from data.metro_network import METRO_LINES, get_all_lines_polylines
 
 app = FastAPI(
@@ -302,6 +303,20 @@ def ads_txt():
         with open(ads_path, "r", encoding="utf-8") as f:
             return f.read()
     return "google.com, pub-3357683031374517, DIRECT, f08c47fec0942fa0\n"
+
+
+@app.get("/route/{route_name}", response_class=HTMLResponse)
+@app.get("/routes/{route_name}", response_class=HTMLResponse)
+def get_route_seo_page(route_name: str):
+    """
+    Server-rendered SEO landing page for BMTC routes.
+    Rankable on Google Search with Schema.org structured data,
+    ordered stop sequence, schedules, and fares.
+    """
+    html_content = render_route_seo_html(route_name)
+    if not html_content:
+        raise HTTPException(status_code=404, detail=f"BMTC Route '{route_name}' not found.")
+    return html_content
 
 
 # Mount static frontend
