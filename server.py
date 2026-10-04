@@ -8,6 +8,7 @@ import os
 import sys
 from typing import Optional
 from fastapi import FastAPI, Query, HTTPException
+from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -289,9 +290,21 @@ def route_details(
     return details
 
 
-# Mount static frontend
 frontend_dir = os.path.join(BASE_DIR, "frontend")
 os.makedirs(frontend_dir, exist_ok=True)
+
+
+@app.get("/ads.txt", response_class=PlainTextResponse)
+def ads_txt():
+    """Google AdSense verification ads.txt file"""
+    ads_path = os.path.join(frontend_dir, "ads.txt")
+    if os.path.exists(ads_path):
+        with open(ads_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "google.com, pub-3357683031374517, DIRECT, f08c47fec0942fa0\n"
+
+
+# Mount static frontend
 app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
 
 

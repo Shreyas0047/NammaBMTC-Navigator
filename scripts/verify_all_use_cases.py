@@ -216,6 +216,7 @@ def main():
         ("/app.js", 200, "javascript"),
         ("/manifest.json", 200, "json"),
         ("/robots.txt", 200, "text/plain"),
+        ("/ads.txt", 200, "text/plain"),
         ("/sitemap.xml", 200, "xml"),
         ("/assets/logo.svg", 200, "image/svg+xml"),
         ("/assets/app-icon.jpg", 200, "image/jpeg"),
