@@ -187,33 +187,7 @@ closeDrawerBtn.addEventListener("click", () => {
   originDrawer.classList.add("hidden");
 });
 
-// Handle Enter key in origin search input
-originSearchInput.addEventListener("keydown", async (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    const typed = originSearchInput.value.trim();
-    if (typed.length >= 2) {
-      try {
-        const res = await fetch(`/api/stops/search?q=${encodeURIComponent(typed)}`);
-        const items = await res.json();
-        if (items && items.length > 0) {
-          const s = items[0];
-          state.origin.name = s.stop_name;
-          state.origin.lat = s.lat;
-          state.origin.lon = s.lon;
-          state.origin.isLive = false;
-          currentLocDisplay.textContent = s.stop_name;
-          editOriginBtn.textContent = "Change";
-          gpsStatusText.textContent = "Custom Origin";
-          gpsStatusPill.classList.remove("active");
-          originDrawer.classList.add("hidden");
-          originSuggestions.classList.add("hidden");
-          hideStatus();
-        }
-      } catch (err) {}
-    }
-  }
-});
+
 
 // ================= Enhanced Autocomplete & Recent Searches =================
 const RECENT_SEARCHES_KEY = "bmtc_recent_destinations";
@@ -305,6 +279,7 @@ document.addEventListener("keydown", (e) => {
 let debounceTimer = null;
 function setupAutocomplete(inputEl, dropdownEl, onSelect) {
   let activeIndex = -1;
+  let localDebounceTimer = null;
 
   function closeDropdown() {
     dropdownEl.innerHTML = "";
@@ -312,55 +287,106 @@ function setupAutocomplete(inputEl, dropdownEl, onSelect) {
     activeIndex = -1;
     if (dropdownEl === destSuggestions) {
       document.querySelector(".search-section")?.classList.remove("is-searching");
+      if (inputEl.value.trim().length === 0) {
+        renderRecentSearches();
+      }
     }
   }
 
   // Keyboard navigation inside input (ArrowDown, ArrowUp, Enter, Escape)
-  inputEl.addEventListener("keydown", (e) => {
+  inputEl.addEventListener("keydown", async (e) => {
     const items = dropdownEl.querySelectorAll(".suggestion-item");
-    if (!items || items.length === 0) return;
+
+    if (e.key === "Escape") {
+      closeDropdown();
+      return;
+    }
 
     if (e.key === "ArrowDown") {
+      if (items.length > 0) {
+        e.preventDefault();
+        activeIndex = (activeIndex + 1) % items.length;
+        updateActiveItem(items, activeIndex);
+      }
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
+      if (items.length > 0) {
+        e.preventDefault();
+        activeIndex = (activeIndex - 1 + items.length) % items.length;
+        updateActiveItem(items, activeIndex);
+      }
+      return;
+    }
+
+    if (e.key === "Enter") {
       e.preventDefault();
-      activeIndex = (activeIndex + 1) % items.length;
-      updateActiveItem(items, activeIndex);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      activeIndex = (activeIndex - 1 + items.length) % items.length;
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (activeIndex >= 0 && items[activeIndex]) {
+      if (items.length > 0 && activeIndex >= 0 && items[activeIndex]) {
         items[activeIndex].click();
       } else if (items.length > 0) {
         items[0].click();
+      } else {
+        const typed = inputEl.value.trim();
+        if (typed.length >= 2) {
+          try {
+            const res = await fetch(`/api/stops/search?q=${encodeURIComponent(typed)}`);
+            const fetched = await res.json();
+            if (fetched && fetched.length > 0) {
+              const s = fetched[0];
+              onSelect({
+                id: s.stop_id,
+                name: s.stop_name,
+                desc: s.stop_desc,
+                lat: s.lat,
+                lon: s.lon,
+              });
+              closeDropdown();
+              return;
+            }
+          } catch (err) {}
+        }
+        if (inputEl === destSearchInput) {
+          closeDropdown();
+          triggerRecommendation();
+        }
       }
-    } else if (e.key === "Escape") {
-      closeDropdown();
     }
   });
 
   inputEl.addEventListener("input", () => {
-    if (inputEl === destSearchInput && clearDestBtn) {
-      if (inputEl.value.trim().length > 0) {
-        clearDestBtn.classList.remove("hidden");
-      } else {
-        clearDestBtn.classList.add("hidden");
+    if (inputEl === destSearchInput) {
+      if (clearDestBtn) {
+        if (inputEl.value.trim().length > 0) {
+          clearDestBtn.classList.remove("hidden");
+        } else {
+          clearDestBtn.classList.add("hidden");
+        }
+      }
+      if (recentTray) {
+        if (inputEl.value.trim().length > 0) {
+          recentTray.classList.add("hidden");
+        } else {
+          renderRecentSearches();
+        }
       }
     }
+
     const q = inputEl.value.trim();
     if (q.length < 2) {
       closeDropdown();
       return;
     }
 
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(async () => {
+    clearTimeout(localDebounceTimer);
+    localDebounceTimer = setTimeout(async () => {
       try {
         const uLat = state.origin.lat || "";
         const uLon = state.origin.lon || "";
         const url = `/api/stops/search?q=${encodeURIComponent(q)}&user_lat=${uLat}&user_lon=${uLon}`;
         const res = await fetch(url);
         const stops = await res.json();
+        if (inputEl.value.trim() !== q) return; // Discard stale response
         activeIndex = -1;
         renderDropdown(stops, dropdownEl, (item) => {
           onSelect(item);
@@ -410,7 +436,7 @@ function renderDropdown(items, dropdownEl, onSelect) {
   dropdownEl.innerHTML = items
     .map(
       (s) => `
-      <div class="suggestion-item" data-id="${s.stop_id}" data-name="${s.stop_name}" data-desc="${s.stop_desc}" data-lat="${s.lat}" data-lon="${s.lon}">
+      <div class="suggestion-item" data-id="${s.stop_id}" data-name="${s.stop_name}" data-desc="${s.stop_desc || ""}" data-lat="${s.lat}" data-lon="${s.lon}">
         <div class="sugg-left">
           <span class="sugg-pin-icon">🚏</span>
           <div class="sugg-meta">
@@ -427,7 +453,15 @@ function renderDropdown(items, dropdownEl, onSelect) {
   dropdownEl.classList.remove("hidden");
 
   dropdownEl.querySelectorAll(".suggestion-item").forEach((el) => {
-    el.addEventListener("click", () => {
+    // Prevent loss of focus / dismissal before selection triggers on mobile or desktop
+    el.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+    });
+    el.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+    });
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
       const data = {
         id: el.dataset.id,
         name: el.dataset.name,
@@ -487,6 +521,7 @@ clearDestBtn.addEventListener("click", () => {
   }
   stopLiveBusTelemetry();
   destSearchInput.focus();
+  renderRecentSearches();
 });
 
 // Render recent searches on startup
@@ -498,7 +533,7 @@ document.addEventListener("click", (e) => {
     destSuggestions.classList.add("hidden");
     document.querySelector(".search-section")?.classList.remove("is-searching");
   }
-  if (!e.target.closest(".search-box")) {
+  if (!e.target.closest(".origin-drawer") && !e.target.closest("#edit-origin-btn")) {
     originSuggestions.classList.add("hidden");
   }
 });
@@ -538,15 +573,6 @@ const breakdownShaktiPill = document.getElementById("breakdown-shakti-pill");
 const breakdownPassPill = document.getElementById("breakdown-pass-pill");
 const enrouteMilestonesBox = document.getElementById("enroute-milestones-box");
 const milestonesPillsList = document.getElementById("milestones-pills-list");
-
-// Handle Enter key in destination input
-destSearchInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    destSuggestions.classList.add("hidden");
-    triggerRecommendation();
-  }
-});
 
 // ================= Return Journey Swap Handler =================
 if (swapJourneyBtn) {
