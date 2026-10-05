@@ -1148,13 +1148,13 @@ body {
   margin-bottom: 14px;
 }
 
-/* Commute Time & Milestones */
+/* Streamlined Commute Summary */
 .commute-breakdown-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-hairline);
   border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  margin-bottom: 14px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
 }
 
 .breakdown-primary-row {
@@ -1163,7 +1163,6 @@ body {
   justify-content: space-between;
   gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 8px;
 }
 
 .total-time-pill {
@@ -1180,18 +1179,21 @@ body {
 
 .pill-val {
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 800;
   color: var(--text-primary);
 }
 
 .breakdown-chips-row {
   display: flex;
+  align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .commute-chip {
   font-size: 11px;
+  font-weight: 500;
   color: var(--text-secondary);
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
@@ -1199,31 +1201,13 @@ body {
   border-radius: var(--radius-sm);
 }
 
-.breakdown-pass-row {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-subtle);
-}
-
 .shakti-pill {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
   color: #A7F3D0;
   background: var(--accent-emerald-tint);
   border: 1px solid var(--accent-emerald-border);
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-}
-
-.pass-pill {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: var(--radius-sm);
 }
 
@@ -1243,63 +1227,9 @@ body {
   letter-spacing: 0.04em;
   margin-bottom: 6px;
   display: block;
-}
-
-.milestones-pills {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
-}
-
-.milestone-pill {
-  font-size: 11px;
-  color: var(--text-secondary);
-  background: var(--bg-input);
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-}
-
 /* ================= Walking Map & Radar ================= */
 .walking-navigation-box {
   margin-bottom: 16px;
-}
-
-.nav-status-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.distance-badge {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.compass-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.compass-dial-plate {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 1px solid var(--border-hairline);
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.compass-needle {
-  width: 2px;
-  height: 10px;
-  background: #EF4444;
 }
 
 .map-container {
@@ -1504,92 +1434,7 @@ body {
   border-color: var(--border-focus);
 }
 
-/* ================= Live Bus Telemetry (VTMS) ================= */
-.live-telemetry-box {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
-  padding: 14px;
-  margin-top: 14px;
-}
 
-.telemetry-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.telemetry-status-badge {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  color: var(--text-primary);
-}
-
-.pulse-live-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--accent-emerald);
-}
-
-.telemetry-refresh-control {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.sync-time {
-  font-size: 10.5px;
-  color: var(--text-muted);
-}
-
-.refresh-pill-btn {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-full);
-  padding: 3px 8px;
-  font-size: 10.5px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.nearest-bus-banner {
-  background: var(--bg-input);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.nearest-bus-tag {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-}
-
-.nearest-bus-eta {
-  font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 800;
-  color: #A7F3D0;
-}
-
-.nearest-bus-dist {
-  font-size: 11px;
-  color: var(--text-secondary);
-}
 
 /* ================= Transfer Step Cards ================= */
 .transfer-step-box {

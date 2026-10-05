@@ -950,7 +950,7 @@ function renderJourney(data) {
 
   // Handle Direct vs 1-Transfer vs 2-Transfer Journey
   if (p.transfers_count === 2) {
-    resultBadgeText.textContent = "2 BUS CHANGES • 3-LEG JOURNEY";
+    resultBadgeText.textContent = "CONNECTING ROUTE (2 BUS CHANGES)";
     resultBadgeText.style.backgroundColor = "#C2410C";
     boardingTagLabel.textContent = "BOARD BUS 1 HERE";
     leg1BoxCaption.textContent = "LEG 1: CATCH ANY TO 1ST INTERCHANGE";
@@ -977,7 +977,7 @@ function renderJourney(data) {
 
     timelineTransitText.textContent = `Via ${p.transfer_stop_name} & ${p.transfer2_stop_name}`;
   } else if (p.is_direct === false || p.transfers_count === 1) {
-    resultBadgeText.textContent = "TRANSFER ROUTE • 1 BUS CHANGE";
+    resultBadgeText.textContent = "CONNECTING ROUTE (1 BUS CHANGE)";
     resultBadgeText.style.backgroundColor = "#D97706";
     boardingTagLabel.textContent = "BOARD BUS 1 HERE";
     leg1BoxCaption.textContent = "LEG 1: CATCH ANY TO INTERCHANGE";
@@ -996,7 +996,7 @@ function renderJourney(data) {
 
     timelineTransitText.textContent = `Change at ${p.transfer_stop_name}`;
   } else {
-    resultBadgeText.textContent = "PRIMARY RECOMMENDATION (DIRECT)";
+    resultBadgeText.textContent = "DIRECT BUS ROUTE";
     resultBadgeText.style.backgroundColor = "var(--bmtc-navy)";
     boardingTagLabel.textContent = "BOARD YOUR BUS HERE";
     leg1BoxCaption.textContent = "CATCH ANY OF THESE SERVICES";
@@ -1617,6 +1617,7 @@ async function pollLiveBusTelemetry() {
     const data = await resp.json();
     latestTelemetryData = data;
 
+    updateLiveBusMapMarkers(data.approaching_buses || [], data.all_active_buses || []);
     renderLiveBusTelemetry(data);
   } catch (err) {
     console.warn("Live telemetry poll failed:", err);

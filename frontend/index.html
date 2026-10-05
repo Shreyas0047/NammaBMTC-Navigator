@@ -378,54 +378,23 @@
                 <span class="dir-text">Towards Subbiah Circle</span>
               </div>
 
-              <!-- Commute Time & ETA Breakdown Card -->
+              <!-- Streamlined Transit Trip Summary (Compact 1-row) -->
               <div class="commute-breakdown-card" id="commute-breakdown-card">
                 <div class="breakdown-primary-row">
                   <div class="total-time-pill" id="commute-total-time-pill">
-                    <span class="pill-label">EST. COMMUTE</span>
+                    <span class="pill-label">EST. TRIP</span>
                     <strong class="pill-val" id="commute-total-mins">~38 min</strong>
                   </div>
                   <div class="breakdown-chips-row">
                     <span class="commute-chip" id="breakdown-walk-chip">3m walk</span>
-                    <span class="commute-chip" id="breakdown-wait-chip">~5m wait</span>
                     <span class="commute-chip" id="breakdown-ride-chip">~30m ride</span>
+                    <span class="shakti-pill" id="breakdown-shakti-pill">Shakti Free for Women</span>
                   </div>
                 </div>
-                <!-- Pass & Shakti Scheme Eligibility -->
-                <div class="breakdown-pass-row" id="breakdown-pass-row">
-                  <span class="shakti-pill" id="breakdown-shakti-pill">Shakti Scheme Eligible (Free for Women)</span>
-                  <span class="pass-pill" id="breakdown-pass-pill">₹70 BMTC Day Pass Valid</span>
-                </div>
               </div>
 
-              <!-- Key En-Route Milestone Stops Reassurance Strip -->
-              <div class="enroute-milestones-box hidden" id="enroute-milestones-box">
-                <div class="milestones-header">
-                  <span class="milestones-caption">PASSES KEY WAYPOINTS:</span>
-                </div>
-                <div class="milestones-pills" id="milestones-pills-list"></div>
-              </div>
-
-              <!-- Live Walking Radar & Navigation Section -->
+              <!-- Live Walking Navigation & Interactive Mini Map -->
               <div class="walking-navigation-box">
-                <div class="nav-status-header">
-                  <div class="distance-badge">
-                    <span id="live-distance-countdown">Walk 250 m (~3 min)</span>
-                  </div>
-                  <!-- Directional Compass Badge -->
-                  <div class="compass-badge" id="compass-badge" title="Walking heading">
-                    <div class="compass-dial-plate">
-                      <div class="compass-needle" id="compass-needle">
-                        <div class="needle-tip north"></div>
-                        <div class="needle-tip south"></div>
-                      </div>
-                      <div class="compass-cap"></div>
-                    </div>
-                    <span class="compass-label" id="compass-bearing-label">Heading</span>
-                  </div>
-                  <span id="arrival-status-pill" class="arrival-pill hidden">Arrived at Stop!</span>
-                </div>
-
                 <!-- Interactive Mini Map Canvas -->
                 <div id="walking-map-container" class="map-container">
                   <div id="walking-map"></div>
@@ -454,9 +423,6 @@
               <!-- Route Options Box (Leg 1) -->
               <div class="buses-box">
                 <span id="leg1-box-caption" class="box-caption">CATCH ANY OF THESE SERVICES</span>
-                <div id="active-filter-strip" class="active-filter-strip is-all">
-                  <span class="filter-strip-msg">Showing all available BMTC buses (Ordinary & AC Vajra)</span>
-                </div>
                 <!-- Selected Single Route Filter Bar -->
                 <div id="selected-route-banner" class="selected-route-banner hidden">
                   <div class="selected-route-msg">
@@ -467,45 +433,6 @@
                 </div>
                 <div id="rec-routes-list" class="buses-list">
                   <!-- Injected dynamically -->
-                </div>
-              </div>
-
-              <!-- Live Bus VTMS Telemetry Box -->
-              <div id="live-bus-telemetry-box" class="live-telemetry-box">
-                <div class="telemetry-header">
-                  <div class="telemetry-status-badge">
-                    <span class="pulse-live-dot"></span>
-                    <span id="telemetry-status-title">LIVE BMTC BUS TRACKING (VTMS)</span>
-                  </div>
-                  <div class="telemetry-refresh-control">
-                    <span id="telemetry-last-sync" class="sync-time">Connecting to BMTC...</span>
-                    <button id="telemetry-refresh-btn" class="refresh-pill-btn" type="button" title="Refresh Live Bus GPS">
-                      <svg class="spin-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-                      </svg>
-                      <span>Refresh</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div id="telemetry-content-area" class="telemetry-body">
-                  <!-- Nearest approaching bus highlight banner -->
-                  <div id="nearest-bus-banner" class="nearest-bus-banner">
-                    <div class="telemetry-skeleton">
-                      <div class="skeleton-shimmer"></div>
-                      <span>Locating approaching buses via satellite GPS...</span>
-                    </div>
-                  </div>
-
-                  <!-- Active approaching buses grid -->
-                  <div id="approaching-buses-list" class="approaching-buses-grid hidden"></div>
-
-                  <!-- Map View Toggle -->
-                  <div class="telemetry-actions">
-                    <button id="toggle-bus-map-btn" class="bus-map-toggle-btn" type="button">
-                      <span>Show Live Buses on Map</span>
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
