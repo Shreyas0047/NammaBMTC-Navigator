@@ -114,33 +114,36 @@
       </div>
     </div>
 
-    <!-- Location Context Bar -->
-    <div class="location-bar">
-      <div class="loc-info">
-        <span class="loc-label">STARTING FROM</span>
-        <div class="loc-val-row">
-          <span id="current-loc-display" class="loc-val">Tap 'Set Origin' or use GPS</span>
-          <button id="edit-origin-btn" class="edit-btn" type="button">Set Origin</button>
+    <!-- Unified Starting Location Card -->
+    <div class="location-bar" id="location-card">
+      <!-- State A: Origin Display Mode (Default) -->
+      <div id="origin-display-mode" class="loc-display-mode">
+        <div class="loc-info">
+          <span class="loc-label">STARTING FROM</span>
+          <div class="loc-val-row">
+            <span id="current-loc-display" class="loc-val">Tap 'Set Origin' or use GPS</span>
+            <button id="edit-origin-btn" class="edit-btn" type="button">Set Origin</button>
+          </div>
         </div>
+        <button id="swap-journey-btn" class="swap-journey-btn" type="button" title="Swap Origin and Destination (Return Journey)">
+          <span class="swap-icon">⇄</span>
+          <span class="swap-label">Return</span>
+        </button>
       </div>
-      <button id="swap-journey-btn" class="swap-journey-btn" type="button" title="Swap Origin and Destination (Return Journey)">
-        <span class="swap-icon">⇄</span>
-        <span class="swap-label">Return</span>
-      </button>
-    </div>
 
-    <!-- Hidden Origin Edit Drawer/Modal -->
-    <div id="origin-edit-drawer" class="origin-drawer hidden">
-      <div class="drawer-header">
-        <span>Set Starting Location</span>
-        <button id="close-drawer-btn" class="close-btn" type="button">✕</button>
-      </div>
-      <div class="drawer-body">
-        <div class="search-box">
-          <input type="text" id="origin-search-input" placeholder="Type a bus stop or area..." autocomplete="off">
-          <button id="use-gps-trigger" class="action-btn" type="button">📍 Use GPS</button>
+      <!-- State B: Origin Edit Mode (Shown ONLY when 'Set Origin' or 'Change' is clicked) -->
+      <div id="origin-edit-drawer" class="origin-edit-mode hidden">
+        <div class="drawer-header">
+          <span class="loc-label">SET STARTING LOCATION</span>
+          <button id="close-drawer-btn" class="close-btn" type="button" title="Cancel">✕ Cancel</button>
         </div>
-        <div id="origin-suggestions" class="suggestions-dropdown hidden"></div>
+        <div class="drawer-body">
+          <div class="search-box">
+            <input type="text" id="origin-search-input" placeholder="Type a bus stop or area (e.g. Majestic, Silk Board)..." autocomplete="off">
+            <button id="use-gps-trigger" class="action-btn" type="button">📍 Use GPS</button>
+          </div>
+          <div id="origin-suggestions" class="suggestions-dropdown hidden"></div>
+        </div>
       </div>
     </div>
 

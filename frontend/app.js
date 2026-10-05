@@ -27,11 +27,17 @@ let walkPolyline = null;
 let liveWatchId = null;
 let currentPrimaryStop = null;
 
+// API Base URL (auto-detects local dev, Live Server port, and production)
+const API_BASE = (window.location.protocol === 'file:' || (window.location.hostname === 'localhost' && window.location.port !== '8000' && window.location.port !== ''))
+  ? 'http://localhost:8000'
+  : '';
+
 // DOM Elements
 const gpsStatusPill = document.getElementById("gps-status-pill");
 const gpsStatusText = document.getElementById("gps-status-text");
 const currentLocDisplay = document.getElementById("current-loc-display");
 const editOriginBtn = document.getElementById("edit-origin-btn");
+const originDisplayMode = document.getElementById("origin-display-mode");
 const originDrawer = document.getElementById("origin-edit-drawer");
 const closeDrawerBtn = document.getElementById("close-drawer-btn");
 const originSearchInput = document.getElementById("origin-search-input");
@@ -181,6 +187,7 @@ function requestLiveLocation(silent = false) {
       editOriginBtn.textContent = "Change";
       gpsStatusText.textContent = "Live GPS Active";
       gpsStatusPill.classList.add("active");
+      closeOriginEditMode();
       hideStatus();
     },
     (err) => {
@@ -189,6 +196,18 @@ function requestLiveLocation(silent = false) {
     },
     { enableHighAccuracy: true, timeout: 9000 }
   );
+}
+
+function openOriginEditMode() {
+  if (originDisplayMode) originDisplayMode.classList.add("hidden");
+  if (originDrawer) originDrawer.classList.remove("hidden");
+  if (originSearchInput) originSearchInput.focus();
+}
+
+function closeOriginEditMode() {
+  if (originDrawer) originDrawer.classList.add("hidden");
+  if (originDisplayMode) originDisplayMode.classList.remove("hidden");
+  if (originSuggestions) originSuggestions.classList.add("hidden");
 }
 
 function fallbackLocation(msg) {
@@ -202,26 +221,19 @@ function fallbackLocation(msg) {
   editOriginBtn.textContent = "Set Origin";
   gpsStatusText.textContent = "Use GPS";
   gpsStatusPill.classList.remove("active");
+  closeOriginEditMode();
   if (msg) showStatus(msg, "info");
 }
 
 gpsStatusPill.addEventListener("click", () => requestLiveLocation(false));
 useGpsTrigger.addEventListener("click", () => {
   requestLiveLocation(false);
-  originDrawer.classList.add("hidden");
+  closeOriginEditMode();
 });
 
-// Origin Edit Drawer
-editOriginBtn.addEventListener("click", () => {
-  originDrawer.classList.toggle("hidden");
-  if (!originDrawer.classList.contains("hidden")) {
-    originSearchInput.focus();
-  }
-});
-
-closeDrawerBtn.addEventListener("click", () => {
-  originDrawer.classList.add("hidden");
-});
+// Origin Edit Mode Toggles (Single In-Place Card)
+editOriginBtn.addEventListener("click", openOriginEditMode);
+closeDrawerBtn.addEventListener("click", closeOriginEditMode);
 
 
 
@@ -366,7 +378,7 @@ function setupAutocomplete(inputEl, dropdownEl, onSelect) {
         const typed = inputEl.value.trim();
         if (typed.length >= 2) {
           try {
-            const res = await fetch(`/api/stops/search?q=${encodeURIComponent(typed)}`);
+            const res = await fetch(`${API_BASE}/api/stops/search?q=${encodeURIComponent(typed)}`);
             const fetched = await res.json();
             if (fetched && fetched.length > 0) {
               const s = fetched[0];
@@ -419,7 +431,7 @@ function setupAutocomplete(inputEl, dropdownEl, onSelect) {
       try {
         const uLat = state.origin.lat || "";
         const uLon = state.origin.lon || "";
-        const url = `/api/stops/search?q=${encodeURIComponent(q)}&user_lat=${uLat}&user_lon=${uLon}`;
+        const url = `${API_BASE}/api/stops/search?q=${encodeURIComponent(q)}&user_lat=${uLat}&user_lon=${uLon}`;
         const res = await fetch(url);
         const stops = await res.json();
         if (inputEl.value.trim() !== q) return; // Discard stale response
@@ -521,7 +533,7 @@ setupAutocomplete(originSearchInput, originSuggestions, (stop) => {
   editOriginBtn.textContent = "Change";
   gpsStatusText.textContent = "Custom Origin";
   gpsStatusPill.classList.remove("active");
-  originDrawer.classList.add("hidden");
+  closeOriginEditMode();
   hideStatus();
 });
 
@@ -569,8 +581,11 @@ document.addEventListener("click", (e) => {
     destSuggestions.classList.add("hidden");
     document.querySelector(".search-section")?.classList.remove("is-searching");
   }
-  if (!e.target.closest(".origin-drawer") && !e.target.closest("#edit-origin-btn")) {
+  if (!e.target.closest("#location-card")) {
     originSuggestions.classList.add("hidden");
+    if (state.origin.lat && originDrawer && !originDrawer.classList.contains("hidden")) {
+      closeOriginEditMode();
+    }
   }
 });
 
@@ -615,8 +630,7 @@ if (swapJourneyBtn) {
   swapJourneyBtn.addEventListener("click", async () => {
     if (!state.origin.lat) {
       showStatus("Please set your starting location or enable GPS first.", "info");
-      originDrawer.classList.remove("hidden");
-      originSearchInput.focus();
+      openOriginEditMode();
       return;
     }
     
@@ -629,7 +643,7 @@ if (swapJourneyBtn) {
       const typed = destSearchInput.value.trim();
       if (typed.length >= 2) {
         try {
-          const res = await fetch(`/api/stops/search?q=${encodeURIComponent(typed)}`);
+          const res = await fetch(`${API_BASE}/api/stops/search?q=${encodeURIComponent(typed)}`);
           const items = await res.json();
           if (items && items.length > 0) {
             targetDestName = items[0].stop_name;
@@ -697,9 +711,8 @@ findActionBtn.addEventListener("click", () => {
 
 async function triggerRecommendation() {
   if (!state.origin.lat || !state.origin.lon) {
-    showStatus("Please set your starting location or enable GPS.", "error");
-    originDrawer.classList.remove("hidden");
-    originSearchInput.focus();
+    showStatus("Please set your starting location or enable GPS.", "info");
+    openOriginEditMode();
     return;
   }
 
@@ -708,7 +721,7 @@ async function triggerRecommendation() {
     const typed = destSearchInput.value.trim();
     if (typed.length >= 2) {
       try {
-        const searchRes = await fetch(`/api/stops/search?q=${encodeURIComponent(typed)}`);
+        const searchRes = await fetch(`${API_BASE}/api/stops/search?q=${encodeURIComponent(typed)}`);
         const items = await searchRes.json();
         if (items && items.length > 0) {
           setDestination(items[0].stop_name, items[0].lat, items[0].lon);
@@ -752,7 +765,7 @@ async function triggerRecommendation() {
       service_filter: state.serviceFilter || "ALL",
     };
 
-    const fetchPromise = fetch("/api/recommend", {
+    const fetchPromise = fetch(`${API_BASE}/api/recommend`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -767,9 +780,21 @@ async function triggerRecommendation() {
       }),
     ]);
 
+    if (!res.ok) {
+      let errMsg = "Could not find a route between these points.";
+      try {
+        const errJson = await res.json();
+        if (errJson && errJson.message) errMsg = errJson.message;
+      } catch (_) {}
+      skeletonView.classList.add("hidden");
+      showStatus(errMsg, "error");
+      resultView.classList.add("hidden");
+      return;
+    }
+
     const data = await res.json();
 
-    if (!res.ok || data.status !== "OK" || !data.primary) {
+    if (data.status !== "OK" || !data.primary) {
       skeletonView.classList.add("hidden");
       showStatus(data.message || "No viable BMTC bus route found between these points.", "error");
       resultView.classList.add("hidden");
@@ -780,7 +805,11 @@ async function triggerRecommendation() {
   } catch (err) {
     console.error("API Error:", err);
     skeletonView.classList.add("hidden");
-    showStatus("Failed to connect to local recommender server.", "error");
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const msg = isLocal
+      ? "Unable to reach recommender server. Please ensure server.py is running on port 8000."
+      : "Connecting to transit server... If the server is waking up, please retry in a moment.";
+    showStatus(msg, "error");
   } finally {
     findActionBtn.disabled = false;
     findActionBtn.innerHTML = `
@@ -1609,7 +1638,7 @@ async function pollLiveBusTelemetry() {
   }
 
   try {
-    const url = `/api/live-bus?route=${encodeURIComponent(routeNo)}&orig_lat=${origLat}&orig_lon=${origLon}` +
+    const url = `${API_BASE}/api/live-bus?route=${encodeURIComponent(routeNo)}&orig_lat=${origLat}&orig_lon=${origLon}` +
       (destLat != null ? `&dest_lat=${destLat}&dest_lon=${destLon}` : "");
 
     const resp = await fetch(url);
@@ -1958,7 +1987,7 @@ async function openRouteDetailsModal(routeName) {
   document.body.style.overflow = "hidden";
 
   try {
-    let url = `/api/route-details?route=${encodeURIComponent(cleanRoute)}`;
+    let url = `${API_BASE}/api/route-details?route=${encodeURIComponent(cleanRoute)}`;
     if (state.origin && state.origin.lat) {
       url += `&orig_lat=${state.origin.lat}&orig_lon=${state.origin.lon}`;
     }
@@ -2198,7 +2227,7 @@ async function initDeepLinkFromUrl() {
       destSearchInput.value = toParam.trim();
       clearDestBtn.classList.remove("hidden");
       try {
-        const res = await fetch(`/api/stops/search?q=${encodeURIComponent(toParam.trim())}`);
+        const res = await fetch(`${API_BASE}/api/stops/search?q=${encodeURIComponent(toParam.trim())}`);
         const items = await res.json();
         if (items && items.length > 0) {
           state.destination.name = items[0].stop_name;
@@ -2213,7 +2242,7 @@ async function initDeepLinkFromUrl() {
 
     if (fromParam && fromParam.trim().length >= 2) {
       try {
-        const res = await fetch(`/api/stops/search?q=${encodeURIComponent(fromParam.trim())}`);
+        const res = await fetch(`${API_BASE}/api/stops/search?q=${encodeURIComponent(fromParam.trim())}`);
         const items = await res.json();
         if (items && items.length > 0) {
           state.origin.name = items[0].stop_name;
