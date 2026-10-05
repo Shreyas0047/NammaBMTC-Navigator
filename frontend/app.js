@@ -977,9 +977,9 @@ function renderJourney(data) {
 
   // Walk Directive
   const walkStr = `Walk ${p.walk_distance_m} m (~${p.walk_duration_min} min)`;
-  timelineWalkText.textContent = walkStr;
-  liveDistanceCountdown.textContent = walkStr;
-  arrivalStatusPill.classList.add("hidden");
+  if (timelineWalkText) timelineWalkText.textContent = walkStr;
+  if (liveDistanceCountdown) liveDistanceCountdown.textContent = walkStr;
+  if (arrivalStatusPill) arrivalStatusPill.classList.add("hidden");
 
   // Boarding Stop
   recStopName.textContent = p.stop_name;
@@ -991,7 +991,6 @@ function renderJourney(data) {
   }
 
   // Service Category & Fare Indicator Badge (Clean, without emojis)
-  const sf = state.serviceFilter || "ALL";
   const isCorridorNoAc = sf === "AC" && !p.has_ac;
 
   if (serviceFareBadge) {
@@ -1605,13 +1604,13 @@ function startWalkingTracker(stopLat, stopLon) {
       const estWalkMin = Math.max(1, Math.ceil(estWalkM / 72));
 
       if (rawDist <= 30) {
-        liveDistanceCountdown.textContent = "You have arrived at the stop!";
-        arrivalStatusPill.classList.remove("hidden");
+        if (liveDistanceCountdown) liveDistanceCountdown.textContent = "You have arrived at the stop!";
+        if (arrivalStatusPill) arrivalStatusPill.classList.remove("hidden");
       } else {
         const liveStr = `Walk ${estWalkM} m (~${estWalkMin} min)`;
-        liveDistanceCountdown.textContent = liveStr;
-        timelineWalkText.textContent = liveStr;
-        arrivalStatusPill.classList.add("hidden");
+        if (liveDistanceCountdown) liveDistanceCountdown.textContent = liveStr;
+        if (timelineWalkText) timelineWalkText.textContent = liveStr;
+        if (arrivalStatusPill) arrivalStatusPill.classList.add("hidden");
       }
 
       if (userMarker) userMarker.setLatLng([curLat, curLon]);

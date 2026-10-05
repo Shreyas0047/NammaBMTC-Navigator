@@ -49,6 +49,12 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Essential Utility: Hidden elements */
+.hidden {
+  display: none !important;
+}
+
+
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-canvas);
@@ -1240,6 +1246,8 @@ body {
   letter-spacing: 0.04em;
   margin-bottom: 6px;
   display: block;
+}
+
 /* ================= Walking Map & Radar ================= */
 .walking-navigation-box {
   margin-bottom: 16px;
