@@ -57,6 +57,42 @@ const arrivalStatusPill = document.getElementById("arrival-status-pill");
 const nativeNavBtn = document.getElementById("native-nav-btn");
 const recenterMapBtn = document.getElementById("recenter-map-btn");
 
+const iosMapsModal = document.getElementById("ios-maps-modal");
+const iosMapsBackdrop = document.getElementById("ios-maps-backdrop");
+const closeIosMapsBtn = document.getElementById("close-ios-maps-btn");
+const iosAppleMapsBtn = document.getElementById("ios-apple-maps-btn");
+const iosGoogleMapsBtn = document.getElementById("ios-google-maps-btn");
+
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+let currentGoogleMapsUrl = "";
+let currentAppleMapsUrl = "";
+
+if (closeIosMapsBtn) {
+  closeIosMapsBtn.addEventListener("click", () => iosMapsModal?.classList.add("hidden"));
+}
+if (iosMapsBackdrop) {
+  iosMapsBackdrop.addEventListener("click", () => iosMapsModal?.classList.add("hidden"));
+}
+if (iosAppleMapsBtn) {
+  iosAppleMapsBtn.addEventListener("click", () => iosMapsModal?.classList.add("hidden"));
+}
+if (iosGoogleMapsBtn) {
+  iosGoogleMapsBtn.addEventListener("click", () => iosMapsModal?.classList.add("hidden"));
+}
+
+if (nativeNavBtn) {
+  nativeNavBtn.addEventListener("click", (e) => {
+    if (isIOS) {
+      e.preventDefault();
+      if (iosAppleMapsBtn) iosAppleMapsBtn.href = currentAppleMapsUrl;
+      if (iosGoogleMapsBtn) iosGoogleMapsBtn.href = currentGoogleMapsUrl;
+      if (iosMapsModal) iosMapsModal.classList.remove("hidden");
+    }
+  });
+}
+
 const toggleAltsBtn = document.getElementById("toggle-alts-btn");
 const altsCountLabel = document.getElementById("alts-count-label");
 const alternativesContainer = document.getElementById("alternatives-container");
@@ -969,9 +1005,18 @@ function renderJourney(data) {
     timelineTransitText.textContent = "Direct BMTC Bus Route";
   }
 
-  // Setup Native Walking Navigation Deep-Link (Google Maps Walking Mode)
-  const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${state.origin.lat},${state.origin.lon}&destination=${p.lat},${p.lon}&travelmode=walking`;
-  nativeNavBtn.href = mapsUrl;
+  // Setup Native Walking Navigation Deep-Link (Android -> Google Maps, iOS -> Apple Maps / Google Maps)
+  currentGoogleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${state.origin.lat},${state.origin.lon}&destination=${p.lat},${p.lon}&travelmode=walking`;
+  currentAppleMapsUrl = `https://maps.apple.com/?saddr=${state.origin.lat},${state.origin.lon}&daddr=${p.lat},${p.lon}&dirflg=w`;
+
+  const btnSubText = nativeNavBtn.querySelector(".btn-sub-text");
+  if (isIOS) {
+    if (btnSubText) btnSubText.textContent = "Opens Apple Maps or Google Maps";
+    nativeNavBtn.href = currentAppleMapsUrl;
+  } else {
+    if (btnSubText) btnSubText.textContent = "Opens Google Maps walking turn-by-turn";
+    nativeNavBtn.href = currentGoogleMapsUrl;
+  }
 
   // Initialize or update the interactive walking map
   initOrUpdateWalkingMap(state.origin.lat, state.origin.lon, p.lat, p.lon, p.stop_name, p.stop_desc);

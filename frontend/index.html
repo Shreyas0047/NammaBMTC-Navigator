@@ -609,6 +609,26 @@
     </div>
   </div>
 
+  <!-- iOS Walking Navigation Modal (Choose Google Maps or Apple Maps) -->
+  <div id="ios-maps-modal" class="route-modal hidden" role="dialog" aria-modal="true" aria-labelledby="ios-maps-title">
+    <div class="route-modal-backdrop" id="ios-maps-backdrop"></div>
+    <div class="route-modal-window" style="max-width: 340px; padding: 22px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <h3 id="ios-maps-title" style="font-size: 15px; font-weight: 700; color: #FFFFFF; margin: 0;">Walking Navigation</h3>
+        <button id="close-ios-maps-btn" class="close-btn" type="button" style="font-size: 16px;">✕</button>
+      </div>
+      <p style="font-size: 12.5px; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.4;">Select your preferred maps app for turn-by-turn walking guidance:</p>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <a id="ios-apple-maps-btn" class="action-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 13px; font-size: 13.5px; font-weight: 600; border-radius: var(--radius-sm); background: var(--bg-elevated); border: 1px solid var(--border-hairline);" target="_blank" rel="noopener">
+          <span>🍎 Open in Apple Maps</span>
+        </a>
+        <a id="ios-google-maps-btn" class="action-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 13px; font-size: 13.5px; font-weight: 700; border-radius: var(--radius-sm); background: var(--accent-blue); color: #000000; border: none;" target="_blank" rel="noopener">
+          <span>🗺️ Open in Google Maps</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
   <script src="vendor/leaflet.js"></script>
   <script src="app.js"></script>
 </body>
