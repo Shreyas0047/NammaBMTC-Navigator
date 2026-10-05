@@ -1345,8 +1345,9 @@ function initOrUpdateWalkingMap(userLat, userLon, stopLat, stopLon, stopName, st
       zoomControl: false,
       attributionControl: false,
     });
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
       maxZoom: 19,
+      subdomains: 'abcd',
     }).addTo(mapInstance);
   }
 

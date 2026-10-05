@@ -2,6 +2,7 @@
 SEO Landing Page Generator for BMTC Routes.
 Generates crawlable, fast-loading, Schema.org-enriched HTML pages
 for individual BMTC bus routes to rank at the top of Google Search.
+Aesthetic 4-color dark theme matching the NammaBMTC design system.
 """
 
 import html
@@ -26,6 +27,317 @@ POPULAR_ROUTES = [
     ("201", "Domlur ⇔ Srinagar"),
     ("KIA-5", "Airport ⇔ Banashankari"),
 ]
+
+DARK_SEO_CSS = """
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --primary: #00A3FF;
+  --primary-dark: #008EE0;
+  --bg: #090B10;
+  --surface: #111522;
+  --surface-elevated: #161B2B;
+  --surface-input: #0D101A;
+  --border: #1F263B;
+  --text-main: #FFFFFF;
+  --text-muted: #8E9CAE;
+  --accent-green: #10B981;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text-main);
+  line-height: 1.5;
+  padding: 0 16px 60px 16px;
+}
+.seo-navbar {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text-main);
+  font-weight: 800;
+  font-size: 16px;
+}
+.home-btn {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  text-decoration: none;
+  padding: 6px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  transition: all 0.15s ease;
+}
+.home-btn:hover { background: var(--surface-elevated); border-color: var(--primary); }
+
+.seo-content {
+  max-width: 820px;
+  margin: 24px auto 0 auto;
+}
+.breadcrumbs {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+.breadcrumbs a { color: var(--primary); text-decoration: none; }
+
+.route-hero-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px 24px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.route-hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+  background: var(--primary);
+}
+.route-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.route-pill-large {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--primary);
+  background: rgba(0, 163, 255, 0.12);
+  border: 1px solid rgba(0, 163, 255, 0.3);
+  padding: 4px 14px;
+  border-radius: 8px;
+  letter-spacing: -0.02em;
+}
+.service-tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: var(--surface-elevated);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.route-hero-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+  color: var(--text-main);
+}
+.route-hero-sub {
+  font-size: 14.5px;
+  color: var(--text-muted);
+  margin-bottom: 22px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.metric-card {
+  background: var(--surface-input);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.metric-num {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.metric-lbl {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cta-banner {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.cta-text h3 { font-size: 16px; font-weight: 800; margin-bottom: 4px; color: var(--text-main); }
+.cta-text p { font-size: 13px; color: var(--text-muted); }
+.cta-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary);
+  color: #FFFFFF;
+  font-size: 13.5px;
+  font-weight: 800;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.cta-action-btn:hover { background: var(--primary-dark); }
+
+.section-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 14px;
+  color: var(--text-main);
+}
+
+.stops-timeline {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+.stops-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+.stop-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  position: relative;
+}
+.stop-marker-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 24px;
+  flex-shrink: 0;
+}
+.stop-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4E5970;
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 2px var(--border);
+  z-index: 2;
+}
+.stop-dot.terminus-node {
+  width: 14px;
+  height: 14px;
+  background: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 163, 255, 0.2);
+}
+.stop-line {
+  width: 2px;
+  background: var(--border);
+  height: 48px;
+  margin: 4px 0;
+}
+.stop-info-col {
+  padding-bottom: 22px;
+  flex: 1;
+}
+.stop-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+.stop-idx-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.stop-name-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.stop-desc-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.related-section {
+  margin-top: 40px;
+}
+.related-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.related-chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text-main);
+  transition: all 0.15s ease;
+}
+.related-chip:hover {
+  border-color: var(--primary);
+  background: var(--surface-elevated);
+}
+.chip-route-no {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--primary);
+}
+.chip-route-corridor {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.seo-footer {
+  margin-top: 50px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+"""
 
 
 def render_route_seo_html(route_name: str) -> Optional[str]:
@@ -64,7 +376,6 @@ def render_route_seo_html(route_name: str) -> Optional[str]:
 
     # Build Stop Items HTML
     stops_html_list = []
-    stops_json_list = []
     stops = data.get("stops", [])
     for idx, s in enumerate(stops, 1):
         s_name = html.escape(s.get("stop_name", ""))
@@ -89,11 +400,6 @@ def render_route_seo_html(route_name: str) -> Optional[str]:
           </div>
         </li>
         """)
-
-        stops_json_list.append({
-            "@type": "BusStop",
-            "name": s.get("stop_name", ""),
-        })
 
     stops_rendered = "".join(stops_html_list)
 
@@ -124,9 +430,11 @@ def render_route_seo_html(route_name: str) -> Optional[str]:
   <meta name="description" content="{meta_desc}">
   <meta name="keywords" content="BMTC Route {sname}, {sname} bus timings, {sname} bus stops, {orig} to {dest} bus, Bangalore BMTC {sname}, Namma BMTC {sname} fare">
   <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#090B10">
   <link rel="canonical" href="{canonical_url}">
 
-  <!-- Google AdSense Verification & Monetization -->
+  <!-- Google Search Console & AdSense -->
+  <meta name="google-site-verification" content="iAQ7YYhDGLNzFsQOaI6wwPZ_o7yE1hbHPULsk40YLfU" />
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3357683031374517" crossorigin="anonymous"></script>
 
   <!-- Open Graph -->
@@ -199,313 +507,7 @@ def render_route_seo_html(route_name: str) -> Optional[str]:
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
-    :root {{
-      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
-      --primary: #0284C7;
-      --primary-dark: #0369A1;
-      --bg: #F8FAFC;
-      --surface: #FFFFFF;
-      --border: #E2E8F0;
-      --text-main: #0F172A;
-      --text-muted: #64748B;
-      --accent-green: #059669;
-    }}
-    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-    body {{
-      font-family: var(--font-sans);
-      background: var(--bg);
-      color: var(--text-main);
-      line-height: 1.5;
-      padding: 0 16px 60px 16px;
-    }}
-    .seo-navbar {{
-      max-width: 820px;
-      margin: 0 auto;
-      padding: 16px 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-    }}
-    .brand-link {{
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-      color: var(--text-main);
-      font-weight: 800;
-      font-size: 16px;
-    }}
-    .home-btn {{
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--primary);
-      text-decoration: none;
-      padding: 6px 14px;
-      background: #F0F9FF;
-      border: 1px solid #BAE6FD;
-      border-radius: 9999px;
-      transition: all 0.15s ease;
-    }}
-    .home-btn:hover {{ background: #E0F2FE; }}
-
-    .seo-content {{
-      max-width: 820px;
-      margin: 24px auto 0 auto;
-    }}
-    .breadcrumbs {{
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-bottom: 16px;
-    }}
-    .breadcrumbs a {{ color: var(--primary); text-decoration: none; }}
-
-    .route-hero-card {{
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 28px 24px;
-      box-shadow: 0 4px 20px -4px rgba(0,0,0,0.05);
-      position: relative;
-      overflow: hidden;
-      margin-bottom: 24px;
-    }}
-    .route-hero-card::before {{
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; height: 5px;
-      background: linear-gradient(90deg, #059669 0%, #0284C7 100%);
-    }}
-    .route-badge-row {{
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }}
-    .route-pill-large {{
-      font-family: var(--font-mono);
-      font-size: 20px;
-      font-weight: 800;
-      color: #FFFFFF;
-      background: var(--primary);
-      padding: 4px 14px;
-      border-radius: 8px;
-      letter-spacing: -0.02em;
-    }}
-    .service-tag {{
-      font-size: 12px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      padding: 4px 10px;
-      border-radius: 9999px;
-      background: #E0F2FE;
-      color: var(--primary-dark);
-      border: 1px solid #BAE6FD;
-    }}
-    .route-hero-title {{
-      font-size: 24px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      margin-bottom: 8px;
-    }}
-    .route-hero-sub {{
-      font-size: 14.5px;
-      color: var(--text-muted);
-      margin-bottom: 22px;
-    }}
-
-    .metrics-grid {{
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 12px;
-      margin-bottom: 24px;
-    }}
-    .metric-card {{
-      background: #F8FAFC;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }}
-    .metric-num {{
-      font-family: var(--font-mono);
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--primary);
-    }}
-    .metric-lbl {{
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }}
-
-    .cta-banner {{
-      background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
-      color: #FFFFFF;
-      border-radius: 16px;
-      padding: 20px 22px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 28px;
-    }}
-    .cta-text h3 {{ font-size: 16px; font-weight: 800; margin-bottom: 4px; }}
-    .cta-text p {{ font-size: 13px; opacity: 0.9; }}
-    .cta-action-btn {{
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #FFFFFF;
-      color: var(--primary-dark);
-      font-size: 13.5px;
-      font-weight: 800;
-      padding: 10px 18px;
-      border-radius: 9999px;
-      text-decoration: none;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      transition: transform 0.15s ease;
-    }}
-    .cta-action-btn:hover {{ transform: scale(1.02); }}
-
-    .section-title {{
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      margin-bottom: 14px;
-    }}
-
-    .stops-timeline {{
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 24px;
-      box-shadow: 0 4px 20px -4px rgba(0,0,0,0.05);
-      margin-bottom: 32px;
-    }}
-    .stops-list {{
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-    }}
-    .stop-item {{
-      display: flex;
-      align-items: flex-start;
-      gap: 16px;
-      position: relative;
-    }}
-    .stop-marker-col {{
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 24px;
-      flex-shrink: 0;
-    }}
-    .stop-dot {{
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: #94A3B8;
-      border: 2px solid #FFFFFF;
-      box-shadow: 0 0 0 2px #CBD5E1;
-      z-index: 2;
-    }}
-    .stop-dot.terminus-node {{
-      width: 16px;
-      height: 16px;
-      background: var(--primary);
-      box-shadow: 0 0 0 3px #BAE6FD;
-    }}
-    .stop-line {{
-      width: 2px;
-      background: #E2E8F0;
-      height: 48px;
-      margin: 4px 0;
-    }}
-    .stop-info-col {{
-      padding-bottom: 22px;
-      flex: 1;
-    }}
-    .stop-tag-row {{
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 2px;
-    }}
-    .stop-idx-badge {{
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }}
-    .stop-name-title {{
-      font-size: 14.5px;
-      font-weight: 700;
-      color: var(--text-main);
-    }}
-    .stop-desc-text {{
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }}
-
-    .related-section {{
-      margin-top: 40px;
-    }}
-    .related-chips-grid {{
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 10px;
-    }}
-    .related-chip {{
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-      color: var(--text-main);
-      transition: all 0.15s ease;
-    }}
-    .related-chip:hover {{
-      border-color: var(--primary);
-      background: #F0F9FF;
-      transform: translateY(-1px);
-    }}
-    .chip-route-no {{
-      font-family: var(--font-mono);
-      font-size: 13px;
-      font-weight: 800;
-      color: var(--primary);
-    }}
-    .chip-route-corridor {{
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }}
-
-    .seo-footer {{
-      margin-top: 50px;
-      padding-top: 24px;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      font-size: 12px;
-      color: var(--text-muted);
-    }}
+{DARK_SEO_CSS}
   </style>
 </head>
 <body>
@@ -529,7 +531,7 @@ def render_route_seo_html(route_name: str) -> Optional[str]:
       <div class="route-badge-row">
         <span class="route-pill-large">{sname}</span>
         <span class="service-tag">{stype}</span>
-        {f'<span class="service-tag" style="background:#ECFDF5; color:#065F46; border-color:#A7F3D0;">₹0 Shakti Scheme Eligible</span>' if shakti else ''}
+        {f'<span class="service-tag" style="background:rgba(16, 185, 129, 0.12); color:#A7F3D0; border-color:rgba(16, 185, 129, 0.3);">₹0 Shakti Scheme Eligible</span>' if shakti else ''}
       </div>
       <h1 class="route-hero-title">{orig} ⇔ {dest}</h1>
       <p class="route-hero-sub">Official BMTC Route {sname} ordered stop directory, schedule timetable, and passenger boarding guide for Bengaluru commuters.</p>

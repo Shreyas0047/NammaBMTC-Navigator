@@ -17,7 +17,7 @@
   <meta name="keywords" content="BMTC, BMTC bus routes, Bengaluru bus route finder, Bangalore bus timings, BMTC connecting bus, BMTC transfer routes, Namma BMTC, BMTC boarding point, Majestic bus stand, Silk Board bus routes, Bangalore transit">
   <meta name="author" content="NammaBMTC Transit">
   <meta name="robots" content="index, follow">
-  <meta name="theme-color" content="#1b5e20">
+  <meta name="theme-color" content="#0B0D13">
   <link rel="canonical" href="https://nammabmtc-navigator.onrender.com/">
   <link rel="manifest" href="manifest.json">
 
@@ -109,11 +109,8 @@
     <!-- App Header -->
     <div class="cockpit-header">
       <div class="cockpit-title-row">
-        <div class="cockpit-brand-badge">
-          <span class="cockpit-dot"></span>
-          <span class="cockpit-pill">BUS ROUTE FINDER</span>
-        </div>
-        <span class="cockpit-sub">Bengaluru Bus & Boarding Point Guide</span>
+        <h1 class="cockpit-main-title">Bengaluru Bus & Route Guide</h1>
+        <span class="cockpit-sub">Direct & connecting BMTC route recommendations</span>
       </div>
     </div>
 
@@ -188,22 +185,13 @@
         <!-- AC vs Non-AC Bus Service Filter -->
         <div class="service-filter-strip" role="group" aria-label="Bus Service Category Filter">
           <button type="button" class="filter-tab-btn active" data-filter="ALL" id="filter-all-btn">
-            <span class="tab-status-tag">✓ Active</span>
-            <span class="tab-icon">🚌</span>
-            <span class="tab-text">All Services</span>
-            <span class="tab-fare-hint">All Buses</span>
+            <span class="tab-text">All Buses</span>
           </button>
           <button type="button" class="filter-tab-btn" data-filter="NON_AC" id="filter-nonac-btn">
-            <span class="tab-status-tag">✓ Non-AC</span>
-            <span class="tab-icon">🟢</span>
-            <span class="tab-text">Non-AC Ordinary</span>
-            <span class="tab-fare-hint">Budget</span>
+            <span class="tab-text">Ordinary (Non-AC)</span>
           </button>
           <button type="button" class="filter-tab-btn" data-filter="AC" id="filter-ac-btn">
-            <span class="tab-status-tag">✓ AC Only</span>
-            <span class="tab-icon">AC</span>
-            <span class="tab-text">AC Vajra / Volvo</span>
-            <span class="tab-fare-hint ac">AC Comfort</span>
+            <span class="tab-text">Vajra / Vayu Vajra (AC)</span>
           </button>
         </div>
 
@@ -602,118 +590,7 @@
     </footer>
   </div>
 
-  <!-- ================= 3D BMTC FLEET SHOWCASE (ACCESSED VIA SCROLL) ================= -->
-  <section id="showcase-section" class="showcase-section">
-    <div class="showcase-lead-header">
-      <span class="lead-pill">BMTC FLEET CAPABILITIES</span>
-      <h2 class="lead-title">4 Core Features of Bengaluru BMTC Buses</h2>
-      <p class="lead-subtitle">Explore the essential systems, multi-tier services, and inclusive transit powering daily commutes across Bengaluru.</p>
-    </div>
-
-    <!-- Sticky 3D WebGL Canvas Viewport -->
-    <div class="scrolly-viewport">
-      <div id="scrolly-canvas-container" class="canvas-container">
-        <canvas id="scrolly-3d-canvas"></canvas>
-      </div>
-    </div>
-
-    <!-- Scrollytelling Story Track (Aesthetic Minimalist Cards) -->
-    <div class="story-track">
-      <!-- Card 1: Multi-Tier Fleet Services -->
-      <article class="story-card active" data-step="1">
-        <div class="card-eyebrow">
-          <span class="eyebrow-dot"></span>
-          <span>COMPREHENSIVE FLEET</span>
-        </div>
-        <h3 class="card-headline">Multi-Tier Transit Services</h3>
-        <p class="card-desc">
-          Bengaluru’s multi-class bus network—spanning economical Ordinary city buses, premium Vajra Volvo ACs, high-frequency Vayu Vajra KIA Airport expresses, and modern electric buses.
-        </p>
-        <div class="card-data-row">
-          <div class="data-chip">
-            <span class="chip-num">6,500+</span>
-            <span class="chip-label">Active Buses</span>
-          </div>
-          <div class="data-chip">
-            <span class="chip-num">2,000+</span>
-            <span class="chip-label">Bus Routes</span>
-          </div>
-          <div class="data-chip">
-            <span class="chip-num">9,960</span>
-            <span class="chip-label">Indexed Stops</span>
-          </div>
-        </div>
-      </article>
-
-      <!-- Card 2: VTMS Real-Time Tracking -->
-      <article class="story-card" data-step="2">
-        <div class="card-eyebrow">
-          <span class="eyebrow-dot cyan"></span>
-          <span>INTELLIGENT TELEMETRY</span>
-        </div>
-        <h3 class="card-headline">Live GPS & VTMS System</h3>
-        <p class="card-desc">
-          Automated Vehicle Tracking & Management System (VTMS) transponders broadcast live bus positions to calculate approaching vehicle status and accurate stop arrival estimates.
-        </p>
-        <div class="card-data-row">
-          <div class="data-chip">
-            <span class="chip-num">10-15s</span>
-            <span class="chip-label">Update Cadence</span>
-          </div>
-          <div class="data-chip">
-            <span class="chip-num">Live GPS</span>
-            <span class="chip-label">Stop Approaching</span>
-          </div>
-        </div>
-      </article>
-
-      <!-- Card 3: Shakti Scheme & Inclusive Travel -->
-      <article class="story-card" data-step="3">
-        <div class="card-eyebrow">
-          <span class="eyebrow-dot emerald"></span>
-          <span>COMMUTER WELFARE</span>
-        </div>
-        <h3 class="card-headline">Shakti Scheme & Inclusive Access</h3>
-        <p class="card-desc">
-          Universal zero-fare travel for women domiciled in Karnataka under the Shakti Scheme, alongside affordable ₹70 daily commuter passes and concessional student travel passes.
-        </p>
-        <div class="card-data-row">
-          <div class="data-chip">
-            <span class="chip-num" style="color: #059669;">₹0 Fare</span>
-            <span class="chip-label">Shakti Scheme</span>
-          </div>
-          <div class="data-chip">
-            <span class="chip-num">₹70 / ₹140</span>
-            <span class="chip-label">Daily Pass</span>
-          </div>
-        </div>
-      </article>
-
-      <!-- Card 4: Metro Feeder & Intermodal Network -->
-      <article class="story-card" data-step="4">
-        <div class="card-eyebrow">
-          <span class="eyebrow-dot purple"></span>
-          <span>MULTI-MODAL NETWORK</span>
-        </div>
-        <h3 class="card-headline">Metro Feeder & Multi-Modal Sync</h3>
-        <p class="card-desc">
-          Dedicated Metro Feeder (MF-series) services interconnect key BMRCL Purple, Green, and Yellow Metro line stations with residential corridors and major IT tech parks.
-        </p>
-        <div class="card-data-row">
-          <div class="data-chip">
-            <span class="chip-num" style="color: #7C3AED;">MF Series</span>
-            <span class="chip-label">Feeder Fleet</span>
-          </div>
-          <div class="data-chip">
-            <span class="chip-num">3 Lines</span>
-            <span class="chip-label">Purple · Green · Yellow</span>
-          </div>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <!-- Route Details Modal Window (Modern Industrial HUD) -->
+  <!-- Route Details Modal Window (Clean Dark Sheet) -->
   <div id="route-details-modal" class="route-modal hidden" role="dialog" aria-modal="true" aria-labelledby="route-modal-title">
     <div class="route-modal-backdrop" id="route-modal-backdrop"></div>
     <div class="route-modal-window">
@@ -726,14 +603,12 @@
       </div>
       <div class="route-modal-body" id="route-modal-body">
         <div class="modal-loading-state">
-          <span>Loading comprehensive route details...</span>
+          <span>Loading route details...</span>
         </div>
       </div>
     </div>
   </div>
 
-  <script src="vendor/three.min.js"></script>
-  <script src="scrolly.js"></script>
   <script src="vendor/leaflet.js"></script>
   <script src="app.js"></script>
 </body>
