@@ -27,10 +27,21 @@ let walkPolyline = null;
 let liveWatchId = null;
 let currentPrimaryStop = null;
 
-// API Base URL (auto-detects local dev, Live Server port, and production)
-const API_BASE = (window.location.protocol === 'file:' || (window.location.hostname === 'localhost' && window.location.port !== '8000' && window.location.port !== ''))
-  ? 'http://localhost:8000'
+// API Base URL (auto-detects local dev, Live Server ports, and production)
+const isLocalhost = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname) ||
+                    window.location.hostname.startsWith('192.168.') ||
+                    window.location.hostname.startsWith('10.') ||
+                    window.location.hostname.endsWith('.local');
+const API_BASE = (window.location.protocol === 'file:' || (isLocalhost && window.location.port !== '8000' && window.location.port !== ''))
+  ? `http://${window.location.hostname || 'localhost'}:8000`
   : '';
+
+// Silent background keep-warm / cold-start primer (wakes up Render instance on page load)
+(function primeServer() {
+  try {
+    fetch(`${API_BASE}/health`, { method: "GET", cache: "no-store" }).catch(() => {});
+  } catch (_) {}
+})();
 
 // DOM Elements
 const gpsStatusPill = document.getElementById("gps-status-pill");
@@ -765,20 +776,39 @@ async function triggerRecommendation() {
       service_filter: state.serviceFilter || "ALL",
     };
 
-    const fetchPromise = fetch(`${API_BASE}/api/recommend`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    // Resilient fetch with cold-start auto-retry
+    let res = null;
+    let lastErr = null;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
+        res = await fetch(`${API_BASE}/api/recommend`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        if (res && res.ok) break;
+      } catch (err) {
+        lastErr = err;
+        if (attempt < 2) {
+          showStatus("Connecting to transit server... Initializing service, please wait.", "info");
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+      }
+    }
 
-    const [res] = await Promise.all([
-      fetchPromise,
-      new Promise((resolve) => {
-        const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, MIN_SKELETON_MS - elapsed);
-        setTimeout(resolve, remaining);
-      }),
-    ]);
+    if (!res) {
+      throw lastErr || new Error("Failed to connect to transit server.");
+    }
+
+    // Ensure smooth minimum shimmer
+    const elapsed = Date.now() - startTime;
+    if (elapsed < MIN_SKELETON_MS) {
+      await new Promise((r) => setTimeout(r, MIN_SKELETON_MS - elapsed));
+    }
 
     if (!res.ok) {
       let errMsg = "Could not find a route between these points.";
@@ -794,6 +824,17 @@ async function triggerRecommendation() {
 
     const data = await res.json();
 
+    if (state.serviceFilter === "METRO") {
+      if (!data.metro_option || !data.metro_option.available) {
+        skeletonView.classList.add("hidden");
+        showStatus("No direct Namma Metro line for this corridor yet. Try 'All Buses' or 'Ordinary' for BMTC routes.", "info");
+        resultView.classList.add("hidden");
+        return;
+      }
+      renderJourney(data);
+      return;
+    }
+
     if (data.status !== "OK" || !data.primary) {
       skeletonView.classList.add("hidden");
       showStatus(data.message || "No viable BMTC bus route found between these points.", "error");
@@ -805,7 +846,7 @@ async function triggerRecommendation() {
   } catch (err) {
     console.error("API Error:", err);
     skeletonView.classList.add("hidden");
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
     const msg = isLocal
       ? "Unable to reach recommender server. Please ensure server.py is running on port 8000."
       : "Connecting to transit server... If the server is waking up, please retry in a moment.";
@@ -891,11 +932,45 @@ function renderJourney(data) {
     metroMarkers.forEach((m) => mapInstance.removeLayer(m));
     metroPolyline = null;
     metroMarkers = [];
-    if (toggleMetroMapBtn) toggleMetroMapBtn.innerHTML = "<span>Highlight Metro Track on Map</span>";
+    if (toggleMetroMapBtn) toggleMetroMapBtn.innerHTML = "<span>Highlight Metro Line on Map</span>";
   }
 
-  // Render Namma Metro Intermodal Option
-  renderMetroIntermodalCard(data.metro_option);
+  const sf = state.serviceFilter || "ALL";
+  const journeyCard = document.getElementById("journey-card");
+
+  // === EXCLUSIVE NAMMA METRO ROUTE VIEW ===
+  if (sf === "METRO") {
+    if (journeyCard) journeyCard.classList.add("hidden");
+    if (toggleAltsBtn) toggleAltsBtn.classList.add("hidden");
+    if (alternativesContainer) alternativesContainer.classList.add("hidden");
+
+    if (data.metro_option && data.metro_option.available) {
+      if (resultBadgeText) {
+        resultBadgeText.textContent = "NAMMA METRO ROUTE";
+        resultBadgeText.style.backgroundColor = data.metro_option.primary_color || "#7C3AED";
+      }
+      renderMetroIntermodalCard(data.metro_option);
+      resultView.classList.remove("hidden");
+      void resultView.offsetWidth;
+      resultView.classList.add("is-visible");
+      resultView.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      if (metroIntermodalCard) metroIntermodalCard.classList.add("hidden");
+      showStatus("No direct Namma Metro line for this corridor yet. Switch to 'All Buses' or 'Ordinary' for BMTC routes.", "info");
+      resultView.classList.add("hidden");
+    }
+    return;
+  }
+
+  // === EXCLUSIVE BMTC BUS VIEW (STRICTLY NO METRO CARD) ===
+  if (metroIntermodalCard) metroIntermodalCard.classList.add("hidden");
+  if (journeyCard) journeyCard.classList.remove("hidden");
+
+  if (!p) {
+    showStatus("No viable BMTC bus route found between these points.", "error");
+    resultView.classList.add("hidden");
+    return;
+  }
 
   // Origin step
   journeyOriginTitle.textContent = state.origin.name || "Your Current Location";
@@ -905,9 +980,6 @@ function renderJourney(data) {
   timelineWalkText.textContent = walkStr;
   liveDistanceCountdown.textContent = walkStr;
   arrivalStatusPill.classList.add("hidden");
-
-  // Update Interactive 3D Directional Compass
-  update3DCompass(state.origin.lat, state.origin.lon, p.lat, p.lon);
 
   // Boarding Stop
   recStopName.textContent = p.stop_name;
@@ -1304,17 +1376,17 @@ function renderMetroIntermodalCard(metro) {
   // Speed Badge & Savings
   const savingsPill = document.getElementById("metro-time-savings-pill");
   if (metro.is_substantially_faster) {
-    metroSpeedBadge.textContent = "⚡ FASTEST: NAMMA METRO HYBRID";
+    metroSpeedBadge.textContent = "FASTEST: DIRECT METRO LINE";
     metroSpeedBadge.className = "metro-speed-badge";
     if (metroSavingsMins) metroSavingsMins.textContent = `~${metro.time_saved_mins} min`;
     if (savingsPill) savingsPill.style.display = "flex";
   } else if (metro.is_faster) {
-    metroSpeedBadge.textContent = "🚇 TRAFFIC-IMMUNE METRO ROUTE";
+    metroSpeedBadge.textContent = "NAMMA METRO DIRECT";
     metroSpeedBadge.className = "metro-speed-badge normal";
     if (metroSavingsMins) metroSavingsMins.textContent = `~${metro.time_saved_mins} min`;
     if (savingsPill) savingsPill.style.display = "flex";
   } else {
-    metroSpeedBadge.textContent = "🚇 METRO TRANSIT ALTERNATIVE";
+    metroSpeedBadge.textContent = "NAMMA METRO ROUTE";
     metroSpeedBadge.className = "metro-speed-badge normal";
     if (savingsPill) savingsPill.style.display = "none";
   }
@@ -1331,9 +1403,9 @@ function renderMetroIntermodalCard(metro) {
   if (metroRouteTitle) {
     if (metro.has_interchange) {
       const lines = (metro.lines_used || []).join(" + ");
-      metroRouteTitle.textContent = `${metro.origin_station.name} ➔ ${metro.dest_station.name} (${lines} Line)`;
+      metroRouteTitle.textContent = `${metro.origin_station.name} -> ${metro.dest_station.name} (${lines} Line)`;
     } else {
-      metroRouteTitle.textContent = `${metro.primary_line} Line: ${metro.origin_station.name} ➔ ${metro.dest_station.name}`;
+      metroRouteTitle.textContent = `${metro.primary_line} Line: ${metro.origin_station.name} -> ${metro.dest_station.name}`;
     }
   }
 
@@ -1354,11 +1426,13 @@ function renderMetroIntermodalCard(metro) {
         ? "metro-step-item is-interchange"
         : "metro-step-item";
 
+      const stepMarker = isMetro ? "•" : isInterchange ? "⇄" : "•";
+
       return `
         <div class="${itemClass}">
-          <span class="metro-step-icon">${s.icon || "📍"}</span>
+          <span class="metro-step-icon" style="font-weight: 800;">${stepMarker}</span>
           <div class="metro-step-body">
-            <div class="metro-step-title">${s.title}</div>
+            <div class="metro-step-title">${s.title.replace(/🚇|🚶|📍/g, "").trim()}</div>
             <div class="metro-step-desc">${s.subtitle || ""}</div>
           </div>
         </div>
@@ -1563,36 +1637,6 @@ toggleAltsBtn.addEventListener("click", () => {
 // Auto-run GPS detection on initial load
 requestLiveLocation(true);
 
-// ================= Walking Direction Compass =================
-function calculateBearing(lat1, lon1, lat2, lon2) {
-  const toRad = (d) => (d * Math.PI) / 180;
-  const toDeg = (r) => (r * 180) / Math.PI;
-  const φ1 = toRad(lat1), φ2 = toRad(lat2);
-  const Δλ = toRad(lon2 - lon1);
-  const y = Math.sin(Δλ) * Math.cos(φ2);
-  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-  let θ = toDeg(Math.atan2(y, x));
-  return (θ + 360) % 360;
-}
-
-function getCompassCardinal(deg) {
-  const cardinals = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
-  const idx = Math.round(deg / 45) % 8;
-  return cardinals[idx];
-}
-
-function update3DCompass(oLat, oLon, dLat, dLon) {
-  const needle = document.getElementById("compass-needle");
-  const label = document.getElementById("compass-bearing-label");
-  if (!needle || !label) return;
-
-  if (oLat && oLon && dLat && dLon) {
-    const bearing = Math.round(calculateBearing(oLat, oLon, dLat, dLon));
-    needle.style.transform = `rotate(${bearing}deg)`;
-    const cardinal = getCompassCardinal(bearing);
-    label.textContent = `${cardinal} ${bearing}°`;
-  }
-}
 
 // ================= Real-Time Live Bus VTMS Telemetry =================
 function startLiveBusTelemetry(routeNo, origLat, origLon, destLat, destLon) {

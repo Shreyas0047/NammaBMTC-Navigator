@@ -13,8 +13,8 @@
      crossorigin="anonymous"></script>
 
   <!-- SEO Meta Tags -->
-  <meta name="description" content="Find the exact BMTC bus boarding stop, real-time connecting bus transfers, walking directions, and direct routes across Bengaluru Urban and Rural. Fast, zero-hallucination transit navigation.">
-  <meta name="keywords" content="BMTC, BMTC bus routes, Bengaluru bus route finder, Bangalore bus timings, BMTC connecting bus, BMTC transfer routes, Namma BMTC, BMTC boarding point, Majestic bus stand, Silk Board bus routes, Bangalore transit">
+  <meta name="description" content="Find the exact BMTC bus boarding stop, direct routes, connecting transfers, and Namma Metro lines across Bengaluru. Fast, zero-hallucination Bangalore transit navigation.">
+  <meta name="keywords" content="BMTC, BMTC bus routes, Bengaluru bus route finder, Bangalore bus timings, BMTC connecting bus, BMTC transfer routes, Namma BMTC, BMTC boarding point, Namma Metro routes, Bangalore metro timings, Majestic bus stand, Silk Board bus routes, Bangalore transit">
   <meta name="author" content="NammaBMTC Transit">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#0B0D13">
@@ -24,8 +24,8 @@
   <!-- Open Graph / Facebook / WhatsApp -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://nammabmtc-navigator.onrender.com/">
-  <meta property="og:title" content="NammaBMTC Navigator – Bengaluru Bus & Boarding Point Guide">
-  <meta property="og:description" content="Find exact BMTC boarding stops, multi-transfer bus connections, live GPS tracking, and street walking directions across Bengaluru.">
+  <meta property="og:title" content="NammaBMTC Navigator – Bengaluru Bus & Metro Transit Guide">
+  <meta property="og:description" content="Find exact BMTC boarding stops, multi-transfer bus connections, Namma Metro routes, and turn-by-turn walking directions across Bengaluru.">
   <meta property="og:image" content="https://nammabmtc-navigator.onrender.com/assets/app-icon.jpg">
   <meta property="og:image:width" content="1024">
   <meta property="og:image:height" content="1024">
@@ -35,8 +35,8 @@
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="NammaBMTC Navigator – BMTC Bus Route Finder">
-  <meta name="twitter:description" content="Find exact BMTC boarding stops, connecting bus routes, and live GPS tracking across Bengaluru.">
+  <meta name="twitter:title" content="NammaBMTC Navigator – BMTC Bus & Metro Route Finder">
+  <meta name="twitter:description" content="Find exact BMTC boarding stops, connecting bus routes, and Namma Metro across Bengaluru.">
   <meta name="twitter:image" content="https://nammabmtc-navigator.onrender.com/assets/app-icon.jpg">
 
   <!-- Structured Data: Schema.org WebApplication / TransitApp -->
@@ -45,14 +45,19 @@
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "NammaBMTC Navigator",
-    "alternateName": ["BMTC Boarding Recommender", "Namma BMTC Bus Route Finder", "Bangalore Bus Guide"],
+    "alternateName": ["BMTC Boarding Recommender", "Namma BMTC Bus Route Finder", "Bangalore Bus & Metro Guide"],
     "url": "https://nammabmtc-navigator.onrender.com/",
-    "description": "Destination-aware BMTC boarding point recommender and multi-transfer bus route guide for Bengaluru Urban and Rural.",
+    "description": "Destination-aware BMTC boarding point recommender, multi-transfer bus route guide, and Namma Metro navigator for Bengaluru Urban and Rural.",
     "applicationCategory": "TravelApplication",
     "operatingSystem": "All",
     "areaServed": {
       "@type": "AdministrativeArea",
       "name": "Bengaluru, Karnataka, India"
+    },
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://nammabmtc-navigator.onrender.com/?to={search_term_string}",
+      "query-input": "required name=search_term_string"
     },
     "provider": {
       "@type": "Organization",
@@ -185,16 +190,19 @@
           </div>
         </div>
 
-        <!-- AC vs Non-AC Bus Service Filter -->
-        <div class="service-filter-strip" role="group" aria-label="Bus Service Category Filter">
+        <!-- Transit Category Filter (Buses & Namma Metro) -->
+        <div class="service-filter-strip" role="group" aria-label="Transit Mode & Category Filter">
           <button type="button" class="filter-tab-btn active" data-filter="ALL" id="filter-all-btn">
             <span class="tab-text">All Buses</span>
           </button>
           <button type="button" class="filter-tab-btn" data-filter="NON_AC" id="filter-nonac-btn">
-            <span class="tab-text">Ordinary (Non-AC)</span>
+            <span class="tab-text">Ordinary</span>
           </button>
           <button type="button" class="filter-tab-btn" data-filter="AC" id="filter-ac-btn">
-            <span class="tab-text">Vajra / Vayu Vajra (AC)</span>
+            <span class="tab-text">Vajra</span>
+          </button>
+          <button type="button" class="filter-tab-btn" data-filter="METRO" id="filter-metro-btn">
+            <span class="tab-text">Metro</span>
           </button>
         </div>
 
@@ -280,46 +288,42 @@
           </button>
         </div>
 
-        <!-- Metro Intermodal Option Card (Namma Metro BMRCL) -->
+        <!-- Metro Option Card (Namma Metro BMRCL) -->
         <div id="metro-intermodal-card" class="metro-intermodal-card hidden">
           <div class="metro-card-header">
             <div class="metro-header-left">
               <div class="metro-badges-row">
-                <span id="metro-speed-badge" class="metro-speed-badge">⚡ FASTEST: NAMMA METRO HYBRID</span>
+                <span id="metro-speed-badge" class="metro-speed-badge">NAMMA METRO DIRECT</span>
                 <span id="metro-line-pill" class="metro-line-pill">PURPLE LINE</span>
               </div>
               <h3 class="metro-route-title" id="metro-route-title">Purple Line Direct</h3>
             </div>
             <div class="metro-time-savings-pill" id="metro-time-savings-pill">
-              <span class="savings-prefix">⚡ SAVES</span>
+              <span class="savings-prefix">SAVES</span>
               <span class="savings-val" id="metro-savings-mins">~35 min</span>
             </div>
           </div>
 
           <div class="metro-metrics-strip">
             <div class="metro-metric">
-              <span class="metric-icon">🚇</span>
               <div class="metric-text">
                 <span class="metric-label">METRO RIDE</span>
                 <span class="metric-val" id="metro-ride-time">49 min</span>
               </div>
             </div>
             <div class="metro-metric">
-              <span class="metric-icon">🚉</span>
               <div class="metric-text">
                 <span class="metric-label">STATIONS</span>
                 <span class="metric-val" id="metro-stations-count">19 stops</span>
               </div>
             </div>
             <div class="metro-metric">
-              <span class="metric-icon">🪙</span>
               <div class="metric-text">
                 <span class="metric-label">EST. FARE</span>
                 <span class="metric-val" id="metro-fare-val">₹50</span>
               </div>
             </div>
             <div class="metro-metric">
-              <span class="metric-icon">🚶</span>
               <div class="metric-text">
                 <span class="metric-label">TOTAL TIME</span>
                 <span class="metric-val" id="metro-total-time">51 min</span>
@@ -329,7 +333,7 @@
 
           <!-- Step-by-Step Metro Itinerary -->
           <div class="metro-steps-container">
-            <span class="metro-steps-caption">HYBRID METRO TRANSIT ITINERARY</span>
+            <span class="metro-steps-caption">METRO TRANSIT ITINERARY</span>
             <div id="metro-steps-list" class="metro-steps-list">
               <!-- Dynamically populated -->
             </div>
@@ -338,7 +342,7 @@
           <!-- Metro Map Action Button -->
           <div class="metro-actions-bar">
             <button id="toggle-metro-map-btn" class="metro-map-btn" type="button">
-              <span>🗺️ Highlight Metro Track on Map</span>
+              <span>Highlight Metro Line on Map</span>
             </button>
           </div>
         </div>

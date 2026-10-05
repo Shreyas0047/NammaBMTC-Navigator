@@ -669,10 +669,10 @@ body {
   border-color: var(--border-focus);
 }
 
-/* ================= Service Segment Tabs ================= */
+/* ================= Service Segment Tabs (Buses & Metro) ================= */
 .service-filter-strip {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   background: var(--bg-surface);
   border: 1px solid var(--border-hairline);
   border-radius: var(--radius-md);
@@ -684,9 +684,9 @@ body {
   background: transparent;
   border: none;
   border-radius: var(--radius-sm);
-  padding: 10px 8px;
+  padding: 9px 4px;
   font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
   cursor: pointer;
@@ -694,6 +694,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
 }
 
 .filter-tab-btn:hover {

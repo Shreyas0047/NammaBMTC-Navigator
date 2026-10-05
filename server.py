@@ -194,18 +194,30 @@ def recommend(req: RecommendRequest):
             transfer_penalty = 12 if not rec.primary_candidate.is_direct else 0
             bus_mins = walk_min + int(stops_count * 2.8) + transfer_penalty
 
-        # Check for Namma Metro (BMRCL) intermodal transit option
+        # Check for Namma Metro (BMRCL) transit option
+        max_access = 3.5 if req.service_filter == "METRO" else 2.5
         metro_opt = find_intermodal_route(
             origin_lat=req.origin_lat,
             origin_lon=req.origin_lon,
             dest_lat=req.dest_lat,
             dest_lon=req.dest_lon,
             bus_travel_time_mins=bus_mins,
+            max_station_access_km=max_access,
         )
 
+        resp_status = rec.status
+        resp_msg = rec.message
+        if req.service_filter == "METRO":
+            if metro_opt:
+                resp_status = "OK"
+                resp_msg = "Namma Metro route available."
+            else:
+                resp_status = "NO_METRO"
+                resp_msg = "No direct Namma Metro line for this corridor yet. Try 'All Buses' or 'Ordinary' for BMTC bus routes."
+
         return {
-            "status": rec.status,
-            "message": rec.message,
+            "status": resp_status,
+            "message": resp_msg,
             "origin": {
                 "name": rec.origin_name,
                 "lat": rec.origin_lat,
