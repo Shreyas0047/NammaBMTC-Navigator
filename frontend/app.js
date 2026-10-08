@@ -442,10 +442,30 @@ function setupAutocomplete(inputEl, dropdownEl, onSelect) {
       try {
         const uLat = state.origin.lat || "";
         const uLon = state.origin.lon || "";
+        const cacheKey = `${q.toLowerCase()}:${uLat ? Number(uLat).toFixed(2) : ""}:${uLon ? Number(uLon).toFixed(2) : ""}`;
+
+        // Return from client-side memory cache if available for instant 0ms response
+        if (!window.__stopSearchCache) window.__stopSearchCache = new Map();
+        if (window.__stopSearchCache.has(cacheKey)) {
+          const cachedStops = window.__stopSearchCache.get(cacheKey);
+          if (inputEl.value.trim() !== q) return;
+          activeIndex = -1;
+          renderDropdown(cachedStops, dropdownEl, (item) => {
+            onSelect(item);
+            closeDropdown();
+          });
+          return;
+        }
+
         const url = `${API_BASE}/api/stops/search?q=${encodeURIComponent(q)}&user_lat=${uLat}&user_lon=${uLon}`;
         const res = await fetch(url);
         const stops = await res.json();
         if (inputEl.value.trim() !== q) return; // Discard stale response
+        
+        // Save to cache (limit size to 200 queries)
+        if (window.__stopSearchCache.size > 200) window.__stopSearchCache.clear();
+        window.__stopSearchCache.set(cacheKey, stops);
+
         activeIndex = -1;
         renderDropdown(stops, dropdownEl, (item) => {
           onSelect(item);

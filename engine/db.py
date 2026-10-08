@@ -21,6 +21,13 @@ def get_db_connection(readonly=True) -> sqlite3.Connection:
     else:
         conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    # High-performance in-memory pragmas for sub-millisecond reads
+    try:
+        conn.execute("PRAGMA mmap_size = 268435456;")  # 256MB memory-mapped I/O
+        conn.execute("PRAGMA cache_size = -64000;")    # 64MB memory page cache
+        conn.execute("PRAGMA temp_store = MEMORY;")
+    except Exception:
+        pass
     return conn
 
 

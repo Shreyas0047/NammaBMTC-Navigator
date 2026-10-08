@@ -11,6 +11,7 @@ from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import PlainTextResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -30,6 +31,9 @@ app = FastAPI(
     description="Destination-aware BMTC transit boarding and multi-transfer routing recommendations for Bengaluru Urban & Rural",
     version="1.0.0",
 )
+
+# Enable GZip compression for fast payload transfers (>500 bytes)
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 # Enable CORS for local development
 app.add_middleware(
@@ -77,6 +81,11 @@ from engine.stop_resolver import (
 )
 
 
+# In-memory search cache for ultra-fast autocomplete lookups
+STOP_SEARCH_CACHE: Dict[str, List[Dict[str, Any]]] = {}
+SEARCH_CACHE_MAX_SIZE = 1000
+
+
 @app.get("/api/stops/search")
 def search_stops(
     q: str = Query(..., min_length=2),
@@ -94,6 +103,12 @@ def search_stops(
         return []
 
     norm = term.lower()
+    has_coords = isinstance(user_lat, (int, float)) and isinstance(user_lon, (int, float))
+    cache_key = f"{norm}:{round(user_lat, 2) if has_coords else 'none'}:{round(user_lon, 2) if has_coords else 'none'}:{limit}"
+
+    if cache_key in STOP_SEARCH_CACHE:
+        return STOP_SEARCH_CACHE[cache_key]
+
     primary, candidates = resolve_search_term(norm)
 
     # Build SQL search patterns for verbatim query, landmark resolution, and phonetic candidates
@@ -131,7 +146,7 @@ def search_stops(
         seen.add(clean_name)
 
         dist_km = None
-        if isinstance(user_lat, (int, float)) and isinstance(user_lon, (int, float)):
+        if has_coords:
             dist_km = round(haversine(user_lat, user_lon, r["stop_lat"], r["stop_lon"]) / 1000.0, 1)
 
         # Relevance scoring
@@ -162,7 +177,13 @@ def search_stops(
         }))
 
     ranked.sort(key=lambda x: (x[0], x[1], x[2]))
-    return [item[3] for item in ranked[:limit]]
+    final_res = [item[3] for item in ranked[:limit]]
+
+    if len(STOP_SEARCH_CACHE) > SEARCH_CACHE_MAX_SIZE:
+        STOP_SEARCH_CACHE.clear()
+    STOP_SEARCH_CACHE[cache_key] = final_res
+
+    return final_res
 
 
 @app.post("/api/recommend")

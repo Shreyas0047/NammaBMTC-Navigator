@@ -39,40 +39,81 @@
   <meta name="twitter:description" content="Find exact BMTC boarding stops, connecting bus routes, and Namma Metro across Bengaluru.">
   <meta name="twitter:image" content="https://nammabmtc-navigator.onrender.com/assets/app-icon.jpg">
 
-  <!-- Structured Data: Schema.org WebApplication / TransitApp -->
+  <!-- Structured Data: Schema.org WebApplication / TransitApp & FAQPage -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "NammaBMTC Navigator",
-    "alternateName": ["BMTC Boarding Recommender", "Namma BMTC Bus Route Finder", "Bangalore Bus & Metro Guide"],
-    "url": "https://nammabmtc-navigator.onrender.com/",
-    "description": "Destination-aware BMTC boarding point recommender, multi-transfer bus route guide, and Namma Metro navigator for Bengaluru Urban and Rural.",
-    "applicationCategory": "TravelApplication",
-    "operatingSystem": "All",
-    "areaServed": {
-      "@type": "AdministrativeArea",
-      "name": "Bengaluru, Karnataka, India"
-    },
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://nammabmtc-navigator.onrender.com/?to={search_term_string}",
-      "query-input": "required name=search_term_string"
-    },
-    "provider": {
-      "@type": "Organization",
-      "name": "NammaBMTC Transit Guide"
-    }
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "NammaBMTC Navigator",
+        "alternateName": ["BMTC Boarding Recommender", "Namma BMTC Bus Route Finder", "Bangalore Bus & Metro Guide"],
+        "url": "https://nammabmtc-navigator.onrender.com/",
+        "description": "Destination-aware BMTC boarding point recommender, multi-transfer bus route guide, and Namma Metro navigator for Bengaluru Urban and Rural.",
+        "applicationCategory": "TravelApplication",
+        "operatingSystem": "All",
+        "areaServed": {
+          "@type": "AdministrativeArea",
+          "name": "Bengaluru, Karnataka, India"
+        },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://nammabmtc-navigator.onrender.com/?to={search_term_string}",
+          "query-input": "required name=search_term_string"
+        },
+        "provider": {
+          "@type": "Organization",
+          "name": "NammaBMTC Transit Guide"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How to find the nearest BMTC bus boarding point in Bengaluru?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Open NammaBMTC Navigator, type your destination (e.g., Silk Board, ITPL, Kempegowda Airport), and get the exact physical bus stop name, turn-by-turn walking distance, and active route numbers."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which BMTC buses are free for women under the Shakti Scheme?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All BMTC Ordinary (Non-AC) city buses are 100% free for women domicile in Karnataka under the Shakti Scheme. AC Vajra and Vayu Vajra airport buses are excluded."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I check connecting BMTC buses with 1 or 2 transfers?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. NammaBMTC Navigator computes verified multi-leg connecting routes through major interchange hubs like Majestic (Kempegowda Bus Station), Silk Board, Banashankari, and Hebbal."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does NammaBMTC Navigator show Namma Metro routes?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, switch to the 'Metro' tab to view BMRCL Purple, Green, and Yellow Line stations, token fares, travel duration, and interchange details."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 
   <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
   <link rel="apple-touch-icon" href="assets/app-icon.jpg">
-  <link rel="stylesheet" href="vendor/leaflet.css">
-  <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="vendor/leaflet.css" media="print" onload="this.media='all'">
 </head>
 <body>
   <!-- Global Top Navigation Bar (High-Performance Industrial Transit) -->
@@ -563,7 +604,7 @@
     </div>
   </div>
 
-  <script src="vendor/leaflet.js"></script>
-  <script src="app.js"></script>
+  <script src="vendor/leaflet.js" defer></script>
+  <script src="app.js" defer></script>
 </body>
 </html>
